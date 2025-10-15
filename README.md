@@ -1,4 +1,4 @@
-# SERecruitment-Backend
+# SEJobs-Backend
 
 ## Structure
 
@@ -15,7 +15,7 @@
 ## Important config files
 
 - `package.json` - scripts and dependencies
-- `tsconfig.json` - TypeScript configuration (rootDir=`./src`, outDir=`./dist`)
+- `tsconfig.json` - TypeScript configuration
 
 ## Install dependencies
 ```powershell
