@@ -1,9 +1,10 @@
+// src/index.ts
 import { createApp } from "./createApp";
+import { env } from "./config/env";
+import logger from "./utils/logger";
 
 const app = createApp();
 
-const PORT = 3000;
-
-app.listen(PORT, () => {
-	console.log(`Running on Port ${PORT}`);
+app.listen(env.PORT, () => {
+  logger.info(`Server running on port ${env.PORT} in ${env.NODE_ENV} mode`);
 });
