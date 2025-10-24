@@ -5,7 +5,8 @@ const logger = winston.createLogger({
   level: "info",
   format: winston.format.combine(
     winston.format.timestamp(),
-    winston.format.printf(({ timestamp, level, message }) => {
+    winston.format.printf((info: winston.Logform.TransformableInfo) => {
+      const { timestamp, level, message } = info;
       return `${timestamp} [${level.toUpperCase()}]: ${message}`;
     })
   ),

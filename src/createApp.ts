@@ -2,6 +2,7 @@
 import express from "express";
 import cors from "cors";
 import testRoutes from "./routes/test.route";
+import userRoutes from "./routes/users.route";
 import { errorHandler } from "./middlewares/error.middleware";
 
 export const createApp = () => {
@@ -15,7 +16,7 @@ export const createApp = () => {
   // Routes (sẽ import sau)
   app.use("/api/test", testRoutes);
   // app.use('/api/auth', authRoutes);
-  // app.use('/api/users', userRoutes);
+  app.use("/api/users", userRoutes);
 
   // Error handler (phải ở cuối)
   app.use(errorHandler);
