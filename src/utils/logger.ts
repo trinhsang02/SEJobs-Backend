@@ -1,13 +1,28 @@
 // src/utils/logger.ts
 import winston from "winston";
 
+const { combine, timestamp, printf } = winston.format;
+
+const colors = {
+  error: "red",
+  warn: "yellow",
+  info: "green",
+  http: "magenta",
+  debug: "cyan",
+};
+
+winston.addColors(colors);
+
 const logger = winston.createLogger({
   level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.printf((info: winston.Logform.TransformableInfo) => {
-      const { timestamp, level, message } = info;
-      return `${timestamp} [${level.toUpperCase()}]: ${message}`;
+  format: combine(
+    timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    printf(({ timestamp, level, message }) => {
+      const coloredLevel = winston.format.colorize().colorize(
+        level,
+        level.toUpperCase()
+      );
+      return `${timestamp} [${coloredLevel}]: ${message}`;
     })
   ),
   transports: [new winston.transports.Console()],

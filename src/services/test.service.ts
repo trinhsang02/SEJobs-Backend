@@ -1,6 +1,6 @@
 // src/services/test.service.ts
-import { supabase } from "../config/supabase";
-import logger from "../utils/logger";
+import { supabase } from "@/config/supabase";
+import logger from "@/utils/logger";
 
 export const testSupabaseConnection = async () => {
   logger.info("🧪 Testing Supabase connection...");
