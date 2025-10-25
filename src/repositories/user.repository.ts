@@ -1,5 +1,5 @@
 import { supabase } from "@/config/supabase";
-import { Database } from "@/types/database";
+import { UserInsert, UserUpdate } from "@/types/common";
 import { NotFoundError } from "@/utils/errors";
 import { SupabaseClient } from "@supabase/supabase-js";
 
@@ -20,21 +20,18 @@ export class UserRepository {
     return data;
   }
 
-  async findById(id: string) {
-    const { data, error } = await this.db.from("users").select("*").eq("id", id).single();
+  async findById(userId: number) {
+    const { data, error } = await this.db.from("users").select("*").eq("user_id", userId).maybeSingle();
 
     if (error) {
-      if (error.message.includes("no rows found")) {
-        throw new NotFoundError({ message: `User with ID ${id} not found` });
-      }
-      throw new Error(`Failed to fetch user with ID ${id}: ${error.message}`);
+      throw error;
     }
 
     return data;
   }
 
-  async create(userData: Database["public"]["Tables"]["users"]["Insert"]) {
-    const { data, error } = await this.db.from("users").insert([userData]).select().single();
+  async create(input: { userData: UserInsert }) {
+    const { data, error } = await this.db.from("users").insert([input.userData]).select().single();
 
     if (error) {
       throw new Error(`Failed to create user: ${error.message}`);
@@ -43,27 +40,24 @@ export class UserRepository {
     return data;
   }
 
-  async update(id: string, userData: Database["public"]["Tables"]["users"]["Update"]) {
-    const { data, error } = await this.db.from("users").update(userData).eq("id", id).select().single();
+  async update(input: { userId: number, userData: UserUpdate }) {
+    const { data, error } = await this.db.from("users").update(input.userData).eq("user_id", input.userId).select().maybeSingle();
 
     if (error) {
       if (error.message.includes("no rows found")) {
-        throw new NotFoundError({ message: `User with ID ${id} not found` });
+        throw new NotFoundError({ message: `User with ID ${input.userId} not found` });
       }
-      throw new Error(`Failed to update user with ID ${id}: ${error.message}`);
+      throw new Error(`Failed to update user with ID ${input.userId}: ${error.message}`);
     }
 
     return data;
   }
 
-  async delete(id: string) {
-    const { data, error } = await this.db.from("users").delete().eq("id", id).select().single();
+  async delete(userId: number) {
+    const { data, error } = await this.db.from("users").delete().eq("user_id", userId).select().maybeSingle();
 
     if (error) {
-      if (error.message.includes("no rows found")) {
-        throw new NotFoundError({message: `User with ID ${id} not found`});
-      }
-      throw new Error(`Failed to delete user with ID ${id}: ${error.message}`);
+      throw error;
     }
 
     return data;
