@@ -1,7 +1,7 @@
-import { CreateUserDto } from "../dtos/CreateUser.dto";
-import userRepository from "../repositories/user.repository";
-import { Database } from "../types/database";
-import { NotFoundError } from "../utils/errors";
+import { NotFoundError } from "@/utils/errors";
+import { CreateUserDto } from "@/dtos/CreateUser.dto";
+import { Database } from "@/types/database";
+import userRepository from "@/repositories/user.repository";
 
 type UserUpdate = Partial<Database["public"]["Tables"]["users"]["Update"]>;
 

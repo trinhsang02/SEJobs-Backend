@@ -1,7 +1,7 @@
+import { supabase } from "@/config/supabase";
+import { Database } from "@/types/database";
+import { NotFoundError } from "@/utils/errors";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { supabase } from "../config/supabase";
-import { Database } from "../types/database";
-import { NotFoundError } from "../utils/errors";
 
 export class UserRepository {
   private readonly db: SupabaseClient;

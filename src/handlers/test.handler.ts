@@ -1,6 +1,6 @@
 // src/handlers/test.handler.ts
+import { testSupabaseConnection } from "@/services/test.service";
 import { Request, Response } from "express";
-import { testSupabaseConnection } from "../services/test.service";
 
 export const getTestStatus = async (req: Request, res: Response) => {
   try {

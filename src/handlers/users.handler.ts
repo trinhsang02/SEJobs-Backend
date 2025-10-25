@@ -1,8 +1,8 @@
 import { Request, Response } from "express-serve-static-core";
-import { CreateUserDto } from "../dtos/CreateUser.dto";
-import { CreateUserQueryParams } from "../types/query-param";
-import userService from "../services/users.service";
-import logger from "../utils/logger";
+import userService from "@/services/users.service";
+import logger from "@/utils/logger";
+import { CreateUserDto } from "@/dtos/CreateUser.dto";
+import { CreateUserQueryParams } from "@/types/query-param";
 
 export async function getUsers(request: Request, response: Response) {
   try {

@@ -1,6 +1,6 @@
 // src/middlewares/error.middleware.ts
+import logger from "@/utils/logger";
 import { Request, Response, NextFunction } from "express";
-import logger from "../utils/logger";
 
 export interface CustomError extends Error {
   statusCode?: number;
