@@ -8,11 +8,12 @@ export const env = {
   PORT: process.env.PORT ? parseInt(process.env.PORT, 10) : 3000,
   SUPABASE_URL: process.env.SUPABASE_URL!,
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY!,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY!,
   // the 2 supabase are undefined right now
   JWT_SECRET: process.env.JWT_SECRET,
 };
 
 // Validate required env vars
-if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !env.JWT_SECRET) {
+if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !env.JWT_SECRET || !env.SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error("Missing required environment variables");
 }

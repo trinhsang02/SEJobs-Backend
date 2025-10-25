@@ -1,12 +1,13 @@
+import _ from "lodash";
+import validate from "@/utils/validate";
+import UserService from "@/services/users.service";
 import { Request, Response } from "express-serve-static-core";
-import userService from "@/services/users.service";
-import logger from "@/utils/logger";
-import { CreateUserDto } from "@/dtos/user/CreateUser.dto";
-import { CreateUserQueryParams } from "@/types/query-param";
+import { createUserSchema } from "@/dtos/user/CreateUser.dto";
 import { BadRequestError, NotFoundError } from "@/utils/errors";
+import { updateUserSchema } from "@/dtos/user/UpdateUser.dto";
 
 export async function getUsers(req: Request, res: Response) {
-  const users = await userService.getAllUsers();
+  const users = await UserService.getAllUsers();
 
   res.status(200).json({
     success: true,
@@ -22,7 +23,7 @@ export async function getUserById(req: Request, res: Response) {
     throw new BadRequestError({ message: 'Missing required param: id'});
   }
 
-  const user = await userService.getUserById(id);
+  const user = await UserService.getUserById(_.toNumber(id));
   if (!user) {
     throw new NotFoundError({ message: `User with ID ${id} not found` });
   }
@@ -34,91 +35,43 @@ export async function getUserById(req: Request, res: Response) {
 }
 
 
-// TODO: REMOVE TRY_CATCH THROW ERROR
-export async function createUser(request: Request<{}, {}, CreateUserDto, CreateUserQueryParams>, response: Response) {
-  try {
-    const userData = request.body;
-    if (!userData.username || !userData.email || !userData.password || !userData.role) {
-      return response.status(400).json({
-        success: false,
-        message: "Missing required fields",
-      });
-    }
+export async function createUser(request: Request, response: Response) {
 
-    logger.info("Creating new user");
-    const newUser = await userService.createUser(userData);
-    response.status(201).json({
-      success: true,
-      data: newUser,
-    });
-  } catch (error) {
-    logger.error("Error in createUser:", error);
-    response.status(500).json({
-      success: false,
-      message: error instanceof Error ? error.message : "Failed to create user",
-    });
-  }
+  const userData = validate.schema_validate(createUserSchema, request.body);
+
+  const newUser = await UserService.createUser({ userData });
+
+  response.status(201).json({
+    success: true,
+    data: newUser,
+  });
 }
 
 export async function updateUser(request: Request, response: Response) {
   const id = request.params.id;
   if (!id) {
-    return response.status(400).json({
-      success: false,
-      message: "User ID is required",
-    });
+    throw new BadRequestError({ message: 'Missing required param: id'});
   }
 
-  try {
-    logger.info(`Updating user: ${id}`);
-    const userData = request.body;
-    const updatedUser = await userService.updateUser(id, userData);
-    response.status(200).json({
-      success: true,
-      data: updatedUser,
-    });
-  } catch (error) {
-    logger.error(`Error in updateUser: ${id}`, error);
-    if (error instanceof Error && error.message.includes("not found")) {
-      return response.status(404).json({
-        success: false,
-        message: error.message,
-      });
-    }
-    response.status(500).json({
-      success: false,
-      message: error instanceof Error ? error.message : "Failed to update user",
-    });
-  }
+  const userData = validate.schema_validate(updateUserSchema, request.body);
+
+  const updatedUser = await UserService.updateUser({ userId: _.toNumber(id), userData: userData });
+
+  response.status(200).json({
+    success: true,
+    data: updatedUser,
+  });
 }
 
 export async function deleteUser(request: Request, response: Response) {
   const id = request.params.id;
   if (!id) {
-    return response.status(400).json({
-      success: false,
-      message: "User ID is required",
-    });
+    throw new BadRequestError({ message: 'Missing required param: id'});
   }
 
-  try {
-    logger.info(`Deleting user: ${id}`);
-    const deletedUser = await userService.deleteUser(id);
-    response.status(200).json({
-      success: true,
-      data: deletedUser,
-    });
-  } catch (error) {
-    logger.error(`Error in deleteUser: ${id}`, error);
-    if (error instanceof Error && error.message.includes("not found")) {
-      return response.status(404).json({
-        success: false,
-        message: error.message,
-      });
-    }
-    response.status(500).json({
-      success: false,
-      message: error instanceof Error ? error.message : "Failed to delete user",
-    });
-  }
+  await UserService.deleteUser(_.toNumber(id));
+
+  response.status(200).json({
+    success: true,
+  });
 }

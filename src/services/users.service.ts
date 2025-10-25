@@ -1,9 +1,8 @@
+import _ from "lodash";
 import { NotFoundError } from "@/utils/errors";
-import { CreateUserDto } from "@/dtos/user/CreateUser.dto";
-import { Database } from "@/types/database";
 import userRepository from "@/repositories/user.repository";
-
-type UserUpdate = Partial<Database["public"]["Tables"]["users"]["Update"]>;
+import { CreateUserDto } from "@/dtos/user/CreateUser.dto";
+import { UpdateUserDto } from "@/dtos/user/UpdateUser.dto";
 
 export class UserService {
   async getAllUsers() {
@@ -11,49 +10,46 @@ export class UserService {
     return users;
   }
 
-  async getUserById(id: string) {
-    const user = await userRepository.findById(id);
+  async getUserById(userId: number) {
+    const user = await userRepository.findById(userId);
     if (!user) {
-      throw new NotFoundError({ message: `User with ID ${id} not found` });
+      throw new NotFoundError({ message: `User with ID ${userId} not found` });
     }
     return user;
   }
 
-  async createUser(userData: CreateUserDto) {
-    const newUser = await userRepository.create({
-      name: userData.username,
-      email: userData.email,
-      password: userData.password,
-      role: userData.role,
-    });
+  async createUser(input: { userData: CreateUserDto }) {
+
+    // TODO: HASH_PASSWORD
+    const newUser = await userRepository.create({ userData: {
+      ...input.userData,
+      avatar: _.get(input, 'userData.avatar', null),
+    }});
 
     return newUser;
   }
 
-  async updateUser(id: string, userData: Partial<CreateUserDto>) {
-    const existingUser = await this.getUserById(id);
+  async updateUser(input: { userId: number, userData: UpdateUserDto }) {
+    const existingUser = await this.getUserById(input.userId);
     if (!existingUser) {
-      throw new NotFoundError({ message:`User with ID ${id} not found` });
+      throw new NotFoundError({ message: `User with ID ${input.userId} not found` });
     }
 
-    const updateData: UserUpdate = {};
-    // TODO: CLEAN OBJECT, DONT CHECK
-    if (userData.username) updateData.name = userData.username;
-    if (userData.email) updateData.email = userData.email;
-    if (userData.password) updateData.password = userData.password;
-    if (userData.role) updateData.role = userData.role;
+    const updatedUser = await userRepository.update({ userId: input.userId, userData: {
+      ...input.userData,
+      avatar: _.get(input, 'userData.avatar', null),
+    }});
 
-    const updatedUser = await userRepository.update(id, updateData);
     return updatedUser;
   }
 
-  async deleteUser(id: string) {
-    const existingUser = await this.getUserById(id);
-    if (!existingUser) {
-      throw new NotFoundError({ message: `User with ID ${id} not found` });
+  async deleteUser(userId: number) {
+    const deletedUser = await userRepository.delete(userId);
+
+    if (!deletedUser) {
+      throw new NotFoundError({ message: `User with ID ${userId} not found` });
     }
 
-    const deletedUser = await userRepository.delete(id);
     return deletedUser;
   }
 }
