@@ -1,63 +1,40 @@
 import { Request, Response } from "express-serve-static-core";
 import userService from "@/services/users.service";
 import logger from "@/utils/logger";
-import { CreateUserDto } from "@/dtos/CreateUser.dto";
+import { CreateUserDto } from "@/dtos/user/CreateUser.dto";
 import { CreateUserQueryParams } from "@/types/query-param";
+import { BadRequestError, NotFoundError } from "@/utils/errors";
 
-export async function getUsers(request: Request, response: Response) {
-  try {
-    logger.info("Getting all users");
-    const users = await userService.getAllUsers();
-    response.status(200).json({
-      success: true,
-      data: users,
-    });
-  } catch (error) {
-    logger.error("Error in getUsers:", error);
-    response.status(500).json({
-      success: false,
-      message: error instanceof Error ? error.message : "Failed to fetch users",
-    });
-  }
+export async function getUsers(req: Request, res: Response) {
+  const users = await userService.getAllUsers();
+
+  res.status(200).json({
+    success: true,
+    data: users,
+  });
 }
 
-export async function getUserById(request: Request, response: Response) {
-  const id = request.params.id;
+export async function getUserById(req: Request, res: Response) {
+  const id = req.params.id;
+
+  // TODO: MAKE CUSTOM VALIDATE FUNC
   if (!id) {
-    return response.status(400).json({
-      success: false,
-      message: "User ID is required",
-    });
+    throw new BadRequestError({ message: 'Missing required param: id'});
   }
 
-  try {
-    logger.info(`Getting user by ID: ${id}`);
-    const user = await userService.getUserById(id);
-    if (!user) {
-      return response.status(404).json({
-        success: false,
-        message: `User with ID ${id} not found`,
-      });
-    }
-    response.status(200).json({
-      success: true,
-      data: user,
-    });
-  } catch (error) {
-    logger.error(`Error in getUserById: ${id}`, error);
-    if (error instanceof Error && error.message.includes("not found")) {
-      return response.status(404).json({
-        success: false,
-        message: error.message,
-      });
-    }
-    response.status(500).json({
-      success: false,
-      message: error instanceof Error ? error.message : "Failed to fetch user",
-    });
+  const user = await userService.getUserById(id);
+  if (!user) {
+    throw new NotFoundError({ message: `User with ID ${id} not found` });
   }
+
+  res.status(200).json({
+    success: true,
+    data: user,
+  });
 }
 
+
+// TODO: REMOVE TRY_CATCH THROW ERROR
 export async function createUser(request: Request<{}, {}, CreateUserDto, CreateUserQueryParams>, response: Response) {
   try {
     const userData = request.body;
