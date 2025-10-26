@@ -1,17 +1,66 @@
 import _ from "lodash";
-import { NotFoundError } from "@/utils/errors";
+import * as bcrypt from 'bcrypt';
+import { BadRequestError, NotFoundError } from "@/utils/errors";
 import userRepository from "@/repositories/user.repository";
 import { CreateUserDto } from "@/dtos/user/CreateUser.dto";
 import { UpdateUserDto } from "@/dtos/user/UpdateUser.dto";
+import { LoginDto } from "@/dtos/user/Login.dto";
+import { UserQueryParams } from "@/types/common";
+import { RegisterDto } from "@/dtos/user/Register.dto";
 
 export class UserService {
-  async getAllUsers() {
-    const users = await userRepository.getAll();
-    return users;
+
+  async login(input: { loginData: LoginDto }) {
+    const { loginData } = input;
+
+    const curUser = await userRepository.findOne({
+      email: loginData.email,
+      fields: userRepository.fields + ", password",
+    });
+
+    if (!curUser) {
+      throw new BadRequestError({ message: `Invalid email or password` });
+    }
+
+    const isValidPassword = await bcrypt.compare(loginData.password, curUser.password);
+
+    if(!isValidPassword) {
+      throw new BadRequestError({ message: `Invalid email or password` });
+    }
+
+    const { password, ...user } = curUser;
+    // TODO: ADD JWT
+    return user;
   }
 
-  async getUserById(userId: number) {
-    const user = await userRepository.findById(userId);
+  async register(input: { registerData: RegisterDto }) {
+    const { registerData } = input;
+
+    if (registerData.password !== registerData.confirm_password) {
+      throw new BadRequestError({ message: `Confirm password is not correct` });
+    }
+
+    const hashedPassword = await bcrypt.hash(registerData.password, 10);
+    const { confirm_password, ...userData } = registerData;
+
+    const newUser = await userRepository.create({ userData: {
+      ...userData,
+      role: "user",
+      password: hashedPassword,
+    }});
+
+    return newUser;
+  }
+
+  async findAll(input: UserQueryParams) {
+    const data = await userRepository.findAll(input);
+    return data;
+  }
+
+  async findOne(input: { userId: number }) {
+    const { userId } = input;
+
+    const user = await userRepository.findOne({ user_id: userId });
     if (!user) {
       throw new NotFoundError({ message: `User with ID ${userId} not found` });
     }
@@ -19,25 +68,29 @@ export class UserService {
   }
 
   async createUser(input: { userData: CreateUserDto }) {
+    const { userData } = input;
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-    // TODO: HASH_PASSWORD
     const newUser = await userRepository.create({ userData: {
-      ...input.userData,
-      avatar: _.get(input, 'userData.avatar', null),
+      ...userData,
+      password: hashedPassword,
+      avatar: _.get(userData, 'avatar', null),
     }});
 
     return newUser;
   }
 
   async updateUser(input: { userId: number, userData: UpdateUserDto }) {
-    const existingUser = await this.getUserById(input.userId);
+    const { userId, userData } = input;
+
+    const existingUser = await this.findOne({ userId });
     if (!existingUser) {
       throw new NotFoundError({ message: `User with ID ${input.userId} not found` });
     }
 
-    const updatedUser = await userRepository.update({ userId: input.userId, userData: {
-      ...input.userData,
-      avatar: _.get(input, 'userData.avatar', null),
+    const updatedUser = await userRepository.update({ userId, userData: {
+      ...userData,
+      avatar: _.get(userData, 'avatar', null),
     }});
 
     return updatedUser;
