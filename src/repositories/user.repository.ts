@@ -1,37 +1,61 @@
 import { supabase } from "@/config/supabase";
-import { UserInsert, UserUpdate } from "@/types/common";
+import { UserInsert, UserUpdate, User, UserQueryParams } from "@/types/common";
 import { NotFoundError } from "@/utils/errors";
 import { SupabaseClient } from "@supabase/supabase-js";
-
+import _ from "lodash";
 export class UserRepository {
   private readonly db: SupabaseClient;
+  public readonly fields = "user_id, email, first_name, last_name, avatar, role, is_verified, created_at, updated_at";
 
   constructor() {
     this.db = supabase;
   }
 
-  async getAll() {
-    const { data, error } = await this.db.from("users").select("*");
+  // BUG: https://github.com/supabase/supabase-js/issues/1571
+  async findAll(input: UserQueryParams) {
+    const fields = _.get(input, 'fields', this.fields);
+    const page = _.get(input, 'page', 1);
+    const limit = _.get(input, 'limit', 10);
 
-    if (error) {
-      throw new Error(`Failed to fetch users: ${error.message}`);
-    }
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
 
-    return data;
+    const { data, error, count } = await this.db.from("users").select(fields, { count: "exact" }).range(from, to);
+
+    if (error) throw error;
+
+    return { 
+      data,
+      pagination: { page, limit,
+        total: count || 0,
+        total_pages: count ? Math.ceil(count / limit) : 0,
+      },
+    };
   }
 
-  async findById(userId: number) {
-    const { data, error } = await this.db.from("users").select("*").eq("user_id", userId).maybeSingle();
+  async findOne(input: UserQueryParams) {
+    const { user_id, email, fields } = input;
+    const select_fields = fields || this.fields;
+    
+    let dbQuery = this.db.from("users").select(select_fields);
 
-    if (error) {
-      throw error;
+    if (user_id) {
+      dbQuery = dbQuery.eq("user_id", user_id);
     }
+
+    if (email) {
+      dbQuery = dbQuery.eq("email", email);
+    }
+
+    const { data, error } = await dbQuery.maybeSingle<User>();
+
+    if (error) throw error;
 
     return data;
   }
 
   async create(input: { userData: UserInsert }) {
-    const { data, error } = await this.db.from("users").insert([input.userData]).select().single();
+    const { data, error } = await this.db.from("users").insert([input.userData]).select(this.fields).single();
 
     if (error) {
       throw new Error(`Failed to create user: ${error.message}`);
@@ -41,7 +65,7 @@ export class UserRepository {
   }
 
   async update(input: { userId: number, userData: UserUpdate }) {
-    const { data, error } = await this.db.from("users").update(input.userData).eq("user_id", input.userId).select().maybeSingle();
+    const { data, error } = await this.db.from("users").update(input.userData).eq("user_id", input.userId).select(this.fields).maybeSingle();
 
     if (error) {
       if (error.message.includes("no rows found")) {
@@ -54,7 +78,7 @@ export class UserRepository {
   }
 
   async delete(userId: number) {
-    const { data, error } = await this.db.from("users").delete().eq("user_id", userId).select().maybeSingle();
+    const { data, error } = await this.db.from("users").delete().eq("user_id", userId).select(this.fields).maybeSingle();
 
     if (error) {
       throw error;

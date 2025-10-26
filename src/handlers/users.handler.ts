@@ -7,23 +7,27 @@ import { BadRequestError, NotFoundError } from "@/utils/errors";
 import { updateUserSchema } from "@/dtos/user/UpdateUser.dto";
 
 export async function getUsers(req: Request, res: Response) {
-  const users = await UserService.getAllUsers();
+  const { page, limit } = req.query;
+  const { data: users, pagination } = await UserService.findAll({
+    page: _.toInteger(page) || 1,
+    limit: _.toInteger(limit) || 10,
+  });
 
   res.status(200).json({
     success: true,
     data: users,
+    pagination,
   });
 }
 
 export async function getUserById(req: Request, res: Response) {
   const id = req.params.id;
 
-  // TODO: MAKE CUSTOM VALIDATE FUNC
   if (!id) {
     throw new BadRequestError({ message: 'Missing required param: id'});
   }
 
-  const user = await UserService.getUserById(_.toNumber(id));
+  const user = await UserService.findOne({ userId: _.toNumber(id) });
   if (!user) {
     throw new NotFoundError({ message: `User with ID ${id} not found` });
   }
