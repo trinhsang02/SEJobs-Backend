@@ -4,7 +4,7 @@ export class AppError extends Error {
   isOperational: boolean;
   status: string;
 
-  constructor(error: { message: string, statusCode: number, status: string }) {
+  constructor(error: { message: string; statusCode: number; status: string }) {
     super(error.message);
     this.statusCode = error.statusCode;
     this.status = error.status;
@@ -57,6 +57,12 @@ export class TooManyRequestsError extends AppError {
 
 export class InternalServerError extends AppError {
   constructor({ message = "Internal server error", statusCode = 500, status = "INTERNAL_SERVER_ERROR" }) {
+    super({ message, statusCode, status });
+  }
+}
+
+export class JWTError extends AppError {
+  constructor({ message = "JWT Error", statusCode = 401, status = "JWT_ERROR" }) {
     super({ message, statusCode, status });
   }
 }

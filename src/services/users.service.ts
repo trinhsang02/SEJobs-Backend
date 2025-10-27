@@ -1,5 +1,5 @@
 import _ from "lodash";
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from "bcrypt";
 import { BadRequestError, NotFoundError } from "@/utils/errors";
 import userRepository from "@/repositories/user.repository";
 import { CreateUserDto } from "@/dtos/user/CreateUser.dto";
@@ -7,9 +7,9 @@ import { UpdateUserDto } from "@/dtos/user/UpdateUser.dto";
 import { LoginDto } from "@/dtos/user/Login.dto";
 import { UserQueryParams } from "@/types/common";
 import { RegisterDto } from "@/dtos/user/Register.dto";
+import { generateToken } from "@/utils/jwt.util";
 
 export class UserService {
-
   async login(input: { loginData: LoginDto }) {
     const { loginData } = input;
 
@@ -24,13 +24,22 @@ export class UserService {
 
     const isValidPassword = await bcrypt.compare(loginData.password, curUser.password);
 
-    if(!isValidPassword) {
+    if (!isValidPassword) {
       throw new BadRequestError({ message: `Invalid email or password` });
     }
 
     const { password, ...user } = curUser;
-    // TODO: ADD JWT
-    return user;
+
+    const token = generateToken({
+      userId: user.user_id,
+      email: user.email,
+      role: user.role,
+    });
+
+    return {
+      user,
+      token,
+    };
   }
 
   async register(input: { registerData: RegisterDto }) {
@@ -43,11 +52,13 @@ export class UserService {
     const hashedPassword = await bcrypt.hash(registerData.password, 10);
     const { confirm_password, ...userData } = registerData;
 
-    const newUser = await userRepository.create({ userData: {
-      ...userData,
-      role: "user",
-      password: hashedPassword,
-    }});
+    const newUser = await userRepository.create({
+      userData: {
+        ...userData,
+        role: "user",
+        password: hashedPassword,
+      },
+    });
 
     return newUser;
   }
@@ -71,16 +82,18 @@ export class UserService {
     const { userData } = input;
     const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-    const newUser = await userRepository.create({ userData: {
-      ...userData,
-      password: hashedPassword,
-      avatar: _.get(userData, 'avatar', null),
-    }});
+    const newUser = await userRepository.create({
+      userData: {
+        ...userData,
+        password: hashedPassword,
+        avatar: _.get(userData, "avatar", null),
+      },
+    });
 
     return newUser;
   }
 
-  async updateUser(input: { userId: number, userData: UpdateUserDto }) {
+  async updateUser(input: { userId: number; userData: UpdateUserDto }) {
     const { userId, userData } = input;
 
     const existingUser = await this.findOne({ userId });
@@ -88,10 +101,13 @@ export class UserService {
       throw new NotFoundError({ message: `User with ID ${input.userId} not found` });
     }
 
-    const updatedUser = await userRepository.update({ userId, userData: {
-      ...userData,
-      avatar: _.get(userData, 'avatar', null),
-    }});
+    const updatedUser = await userRepository.update({
+      userId,
+      userData: {
+        ...userData,
+        avatar: _.get(userData, "avatar", null),
+      },
+    });
 
     return updatedUser;
   }
