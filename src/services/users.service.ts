@@ -101,12 +101,37 @@ export class UserService {
       throw new NotFoundError({ message: `User with ID ${input.userId} not found` });
     }
 
+    // Check email uniqueness if email is being updated
+    if (userData.email) {
+      const userWithEmail = await userRepository.findOne({ email: userData.email });
+      if (userWithEmail && userWithEmail.user_id !== userId) {
+        throw new BadRequestError({ message: "Email already exists" });
+      }
+    }
+
+    // Check optimistic concurrency if updated_at is provided
+    if (userData.updated_at && userData.updated_at !== existingUser.updated_at) {
+      throw new BadRequestError({
+        message: "Record was modified by another user. Please refresh and try again.",
+      });
+    }
+
+    // Prepare update data
+    const updateData = _.pickBy(
+      {
+        avatar: userData.avatar ?? null,
+        email: userData.email,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        role: userData.role,
+        updated_at: new Date().toISOString(),
+      },
+      (value) => value !== undefined
+    );
+
     const updatedUser = await userRepository.update({
       userId,
-      userData: {
-        ...userData,
-        avatar: _.get(userData, "avatar", null),
-      },
+      userData: updateData,
     });
 
     return updatedUser;

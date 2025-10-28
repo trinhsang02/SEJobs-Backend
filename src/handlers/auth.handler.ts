@@ -10,9 +10,11 @@ export async function login(req: Request, res: Response) {
 
   const { user, token } = await UsersService.login({ loginData });
 
+  res.setHeader("Authorization", `Bearer ${token}`);
+
   res.status(200).json({
     success: true,
-    data: { user, token },
+    data: { user },
   });
 }
 
