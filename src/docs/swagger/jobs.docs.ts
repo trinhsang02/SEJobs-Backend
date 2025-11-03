@@ -137,7 +137,7 @@
 
 /**
  * @openapi
- * /api/v1/jobs/{id}:
+ * /api/jobs/{id}:
  *   get:
  *     summary: Get job by ID
  *     parameters:
@@ -165,7 +165,7 @@
 
 /**
  * @openapi
- * /api/v1/jobs:
+ * /api/jobs:
  *   post:
  *     summary: Create a new job (protected)
  *     security:
@@ -195,7 +195,7 @@
 
 /**
  * @openapi
- * /api/v1/jobs/{id}:
+ * /api/jobs/{id}:
  *   put:
  *     summary: Update job by ID (protected)
  *     security:
@@ -233,7 +233,7 @@
 
 /**
  * @openapi
- * /api/v1/jobs/{id}:
+ * /api/jobs/{id}:
  *   delete:
  *     summary: Delete job by ID (protected)
  *     security:

@@ -187,7 +187,7 @@ export class JobRepository {
     // Upsert company if company payload provided
     if (company) {
       const whereClause = company.external_id ? { external_id: company.external_id } : { name: company.name };
-      // try to find existing (typed result to satisfy TS)
+
       const findCompanyRes = (await this.db.from("companies").select("id").match(whereClause).limit(1)) as {
         data: Array<{ id: number }> | null;
         error: any;
@@ -200,7 +200,7 @@ export class JobRepository {
         const firstCompany = existingCompanies[0];
         if (!firstCompany) throw new Error("Failed to read existing company");
         usedCompanyId = firstCompany.id;
-        // optional update
+
         await this.db
           .from("companies")
           .update({
@@ -228,7 +228,6 @@ export class JobRepository {
       }
     }
 
-    // Insert job
     const { data: createdJob, error: jobErr } = await this.db
       .from("jobs")
       .insert([
@@ -258,7 +257,6 @@ export class JobRepository {
     // Handle locations linking
     if (Array.isArray(locations) && locations.length > 0) {
       for (const fullName of locations) {
-        // find or insert location (typed results and explicit string param)
         const findLocRes = (await this.db.from("locations").select("id").eq("full_name", fullName).limit(1)) as {
           data: Array<{ id: number }> | null;
           error: any;
@@ -318,7 +316,6 @@ export class JobRepository {
     if (existing.error) throw existing.error;
     if (!existing.data) throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
 
-    // Optional optimistic concurrency check
     if (input.updated_at && input.updated_at !== existing.data.updated_at) {
       throw new Error("Record was modified by another user. Please refresh and try again.");
     }
@@ -396,12 +393,10 @@ export class JobRepository {
 
     // Handle locations: if provided, replace links
     if (Array.isArray(input.locations)) {
-      // delete existing links
       const { error: delErr } = await this.db.from("job_locations").delete().eq("job_id", jobId);
       if (delErr) throw delErr;
 
       for (const fullName of input.locations) {
-        // find or create location (typed responses)
         const findLocRes = (await this.db.from("locations").select("id").eq("full_name", fullName).limit(1)) as {
           data: Array<{ id: number }> | null;
           error: any;

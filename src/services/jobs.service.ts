@@ -36,7 +36,6 @@ export class JobService {
       throw new BadRequestError({ message: "Job title is required" });
     }
 
-    // delegate to repository which handles company upsert and locations
     const created = await jobRepository.create(jobData as any);
     return created;
   }
@@ -50,7 +49,6 @@ export class JobService {
       throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
     }
 
-    // optimistic concurrency handled in repository if updated_at provided
     const updated = await jobRepository.update(jobId, jobData as any);
     return updated;
   }
