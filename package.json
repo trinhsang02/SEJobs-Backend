@@ -12,7 +12,9 @@
     "docker:run": "docker run -p 3000:3000 sejobs-backend",
     "docker:compose:up": "docker-compose up",
     "docker:compose:down": "docker-compose down",
-    "gen-db": "npx supabase gen types typescript --project-id cpkzdkklmowjgvtzqvoh > src/types/database.ts"
+    "gen-db": "npx supabase gen types typescript --project-id cpkzdkklmowjgvtzqvoh > src/types/database.ts",
+    "migrate": "psql \"$DATABASE_URL\" -f ./db/migrations/001_create_jobs.sql",
+    "migrate:seed": "psql \"$DATABASE_URL\" -f ./db/migrations/001_seed_jobs.sql"
   },
   "keywords": [],
   "author": "",
