@@ -40,10 +40,8 @@
  *           $ref: '#/components/schemas/Company'
  *         salary:
  *           $ref: '#/components/schemas/Salary'
- *         locations:
- *           type: array
- *           items:
- *             type: string
+ *         company_branches_id:
+ *           type: integer
  *         deadline:
  *           type: string
  *           format: date
@@ -51,6 +49,22 @@
  *           type: string
  *         publish:
  *           type: string
+ *         category_ids:
+ *           type: array
+ *           items:
+ *             type: integer
+ *         required_skill_ids:
+ *           type: array
+ *           items:
+ *             type: integer
+ *         employment_type_ids:
+ *           type: array
+ *           items:
+ *             type: integer
+ *         job_level_ids:
+ *           type: array
+ *           items:
+ *             type: integer
  *     CreateJob:
  *       type: object
  *       properties:
@@ -60,8 +74,6 @@
  *           type: string
  *         company:
  *           $ref: '#/components/schemas/Company'
- *         category_id:
- *           type: integer
  *         experience_id:
  *           type: integer
  *         salary_from:
@@ -72,11 +84,24 @@
  *           type: string
  *         salary_currency:
  *           type: string
- *         locations:
+ *         company_branches_id:
+ *           type: integer
+ *         category_ids:
  *           type: array
  *           items:
- *             type: string
- *
+ *             type: integer
+ *         required_skill_ids:
+ *           type: array
+ *           items:
+ *             type: integer
+ *         employment_type_ids:
+ *           type: array
+ *           items:
+ *             type: integer
+ *         job_level_ids:
+ *           type: array
+ *           items:
+ *             type: integer
  */
 
 /**
@@ -84,6 +109,7 @@
  * /api/jobs:
  *   get:
  *     summary: List jobs with pagination and filters
+ *     tags: [Jobs]
  *     parameters:
  *       - in: query
  *         name: page
@@ -122,52 +148,24 @@
  *                 data:
  *                   type: object
  *                   properties:
- *                     total:
- *                       type: integer
- *                     perPage:
- *                       type: integer
- *                     currentPage:
- *                       type: integer
  *                     data:
  *                       type: array
  *                       items:
  *                         $ref: '#/components/schemas/Job'
- *
- */
-
-/**
- * @openapi
- * /api/jobs/{id}:
- *   get:
- *     summary: Get job by ID
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Job object
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   $ref: '#/components/schemas/Job'
- *       404:
- *         description: Job not found
- *
- */
-
-/**
- * @openapi
- * /api/jobs:
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         total:
+ *                           type: integer
+ *                         total_pages:
+ *                           type: integer
  *   post:
  *     summary: Create a new job (protected)
+ *     tags: [Jobs]
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -191,13 +189,33 @@
  *       400:
  *         description: Validation error
  *
- */
-
-/**
- * @openapi
  * /api/jobs/{id}:
+ *   get:
+ *     summary: Get job by ID
+ *     tags: [Jobs]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Job object
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Job'
+ *       404:
+ *         description: Job not found
  *   put:
  *     summary: Update job by ID (protected)
+ *     tags: [Jobs]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -228,14 +246,9 @@
  *         description: Validation error
  *       404:
  *         description: Job not found
- *
- */
-
-/**
- * @openapi
- * /api/jobs/{id}:
  *   delete:
  *     summary: Delete job by ID (protected)
+ *     tags: [Jobs]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -258,7 +271,6 @@
  *                   $ref: '#/components/schemas/Job'
  *       404:
  *         description: Job not found
- *
  */
 
 export default {};
