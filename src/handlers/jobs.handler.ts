@@ -6,11 +6,11 @@ import { BadRequestError } from "@/utils/errors";
  * Handlers for jobs endpoints
  *
  * Routes:
- * - GET    /api/v1/jobs
- * - GET    /api/v1/jobs/:id
- * - POST   /api/v1/jobs
- * - PUT    /api/v1/jobs/:id
- * - DELETE /api/v1/jobs/:id
+ * - GET    /api/jobs
+ * - GET    /api/jobs/:id
+ * - POST   /api/jobs
+ * - PUT    /api/jobs/:id
+ * - DELETE /api/jobs/:id
  */
 
 export async function listJobs(req: Request, res: Response) {
@@ -29,7 +29,13 @@ export async function getJob(req: Request, res: Response) {
 }
 
 export async function createJob(req: Request, res: Response) {
-  const jobData = req.body;
+  // Validate using DTO schema
+  const { createJobSchema } = await import("@/dtos/job/CreateJob.dto");
+  const parseResult = createJobSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ success: false, errors: parseResult.error.issues });
+  }
+  const jobData = parseResult.data;
   const created = await jobService.create({ jobData });
   return res.status(201).json({ success: true, data: created });
 }
@@ -39,7 +45,13 @@ export async function updateJob(req: Request, res: Response) {
   if (Number.isNaN(id)) {
     throw new BadRequestError({ message: "Invalid job id" });
   }
-  const jobData = req.body;
+  // Validate using DTO schema
+  const { updateJobSchema } = await import("@/dtos/job/UpdateJob.dto");
+  const parseResult = updateJobSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ success: false, errors: parseResult.error.issues });
+  }
+  const jobData = parseResult.data;
   const updated = await jobService.update({ jobId: id, jobData });
   return res.status(200).json({ success: true, data: updated });
 }
