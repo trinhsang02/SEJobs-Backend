@@ -1,5 +1,5 @@
 import { supabase } from "@/config/supabase";
-import { UserInsert, UserUpdate, User, UserQueryParams, CompanyInsert, CompanyUpdate, Company, CompanyQueryParams } from "@/types/common";
+import { UserInsert, UserUpdate, User, UserQueryParams, CompanyInsert, CompanyUpdate, Company, CompanyQueryParams, CompanyCompanyTypesInsert } from "@/types/common";
 import { NotFoundError } from "@/utils/errors";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
@@ -15,22 +15,25 @@ export class CompanyRepository {
   // BUG: https://github.com/supabase/supabase-js/issues/1571
   async findAll(input: CompanyQueryParams) {
     const fields = _.get(input, 'fields', this.fields);
-    const page = _.get(input, 'page', 1);
-    const limit = _.get(input, 'limit', 10);
+    const page = _.get(input, 'page');
+    const limit = _.get(input, 'limit');
 
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
+    let dbQuery = this.db.from("companies").select(fields, { count: "exact" });
 
-    const { data, error, count } = await this.db.from("companies").select(fields, { count: "exact" }).range(from, to);
+    const executeQuery = page && limit
+        ? dbQuery.range((page - 1) * limit, page * limit - 1)
+        : dbQuery;
+
+    const { data, error, count } = await executeQuery;
 
     if (error) throw error;
 
     return { 
       data,
-      pagination: { page, limit,
+      pagination: page && limit ? { page, limit,
         total: count || 0,
         total_pages: count ? Math.ceil(count / limit) : 0,
-      },
+      } : null,
     };
   }
 
@@ -59,7 +62,7 @@ export class CompanyRepository {
     const { data, error } = await this.db.from("companies").insert([input.companyData]).select(this.fields).single();
 
     if (error) {
-      throw new Error(`Failed to create user: ${error.message}`);
+      throw new Error(`Failed to create company: ${error.message}`);
     }
 
     return data;

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const createCompanySchema = z.object({
   id: z.number().optional(),
+  company_types: z.number().array().optional(),
   external_id: z.number().nullable().optional(),
   name: z.string().min(1, "Company name is required"),
   tech_stack: z.array(z.string()).nullable().optional(),
