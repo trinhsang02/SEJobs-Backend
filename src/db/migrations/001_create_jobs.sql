@@ -1,11 +1,26 @@
 -- 001_create_jobs.sql
 -- Normalized schema for jobs service (companies, categories, experiences, locations, jobs, job_locations)
+CREATE TABLE users (
+  user_id bigserial PRIMARY KEY,
+  avatar text,
+  first_name text NOT NULL,
+  last_name text NOT NULL,
+  email text NOT NULL UNIQUE,
+  password text NOT NULL,
+  role text NOT NULL, 
+  is_verified boolean DEFAULT false,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+
 CREATE TABLE countries (
   id bigserial PRIMARY KEY,
   name text NOT NULL,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
+
 CREATE TABLE provinces (
   id bigserial PRIMARY KEY,
   country_id bigint REFERENCES countries(id) ON DELETE CASCADE,
@@ -13,19 +28,22 @@ CREATE TABLE provinces (
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
-CREATE TABLE districts (
+
+CREATE TABLE wards (
   id bigserial PRIMARY KEY,
   province_id bigint REFERENCES provinces(id) ON DELETE CASCADE,
   name text NOT NULL,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
+
 CREATE TABLE company_types (
   id bigserial PRIMARY KEY,
   name text NOT NULL,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
+
 CREATE TABLE companies (
   id bigserial PRIMARY KEY,
   external_id bigint,
@@ -34,15 +52,20 @@ CREATE TABLE companies (
   logo text,
   background text,
   description text,
-  phone numeric,
+  phone text,
   email text,
   website_url text,
   socials jsonb,
   images text[],
-  company_type_id bigint REFERENCES company_types(id) ON DELETE SET NULL,
   employee_count numeric,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE company_company_types (
+  company_id bigint REFERENCES companies(id) ON DELETE CASCADE,
+  company_type_id bigint REFERENCES company_types(id) ON DELETE CASCADE,
+  PRIMARY KEY (company_id, company_type_id)
 );
 
 CREATE TABLE company_branches (
@@ -51,7 +74,7 @@ CREATE TABLE company_branches (
   company_id bigint REFERENCES companies(id) ON DELETE CASCADE,
   country_id bigint REFERENCES countries(id) ON DELETE SET NULL,
   province_id bigint REFERENCES provinces(id) ON DELETE SET NULL,
-  district_id bigint REFERENCES districts(id) ON DELETE SET NULL,
+  ward_id bigint REFERENCES wards(id) ON DELETE SET NULL,
   address text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
