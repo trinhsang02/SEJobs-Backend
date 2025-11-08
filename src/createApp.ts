@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import testRoutes from "./routes/test.route";
 import userRoutes from "./routes/users.route";
+import companyRoutes from "./routes/company.route";
 import authRoutes from "./routes/auth.route";
 import jobRoutes from "./routes/jobs.route";
 import { requestLogger, errorHandler } from "@/middlewares";
@@ -30,6 +31,7 @@ export const createApp = () => {
   app.use("/api/test", testRoutes);
   app.use("/api/auth", authRoutes);
   app.use("/api/users", userRoutes);
+  app.use("/api/companies", companyRoutes);
   app.use("/api/jobs", jobRoutes);
 
   // Error handler
