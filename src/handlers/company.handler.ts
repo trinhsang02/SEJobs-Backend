@@ -29,9 +29,6 @@ export async function getCompany(req: Request, res: Response) {
   }
 
   const company = await CompanyService.findOne({ company_id: _.toNumber(id) });
-  if (!company) {
-    throw new NotFoundError({ message: `Company with ID ${id} not found` });
-  }
 
   res.status(200).json({
     success: true,
@@ -39,11 +36,10 @@ export async function getCompany(req: Request, res: Response) {
   });
 }
 
-
 export async function createCompany(request: Request, response: Response) {
 
   const companyData = validate.schema_validate(createCompanySchema, request.body);    
-  
+
   const newCompany = await CompanyService.createCompany({ companyData });
 
   response.status(201).json({
