@@ -55,7 +55,7 @@ export class UserService {
     const newUser = await userRepository.create({
       userData: {
         ...userData,
-        role: "user",
+        role: "Student",
         password: hashedPassword,
       },
     });
