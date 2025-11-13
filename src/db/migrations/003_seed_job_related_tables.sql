@@ -61,3 +61,9 @@ INSERT INTO categories (name) VALUES
   ('finance'),
   ('engineering'),
   ('technology');
+
+-- Mock 2 jobs
+INSERT INTO jobs (title, description, company_id, website_url, salary_from, salary_to, salary_text, salary_currency, job_posted_at, job_deadline, status, created_at, updated_at)
+VALUES
+  ('Frontend Developer', 'Work on modern web apps.', 1, 'https://acme.com/jobs/frontend', 1000, 2000, 'Negotiable', 'USD', '2025-11-01', '2025-12-01', 'open', NOW(), NOW()),
+  ('Backend Engineer', 'Develop scalable APIs.', 2, 'https://betainno.com/jobs/backend', 1200, 2500, 'Competitive', 'USD', '2025-11-05', '2025-12-10', 'open', NOW(), NOW());

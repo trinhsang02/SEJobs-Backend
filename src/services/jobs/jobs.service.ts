@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { BadRequestError, NotFoundError } from "@/utils/errors";
-import jobRepository from "@/repositories/job.repository";
+import jobRepository from "@/repositories/jobs/job.repository";
 import { supabase } from "@/config/supabase";
 import { CreateJobDto } from "@/dtos/job/CreateJob.dto";
 import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
@@ -8,24 +8,23 @@ import { QueryJobsDto } from "@/dtos/job/QueryJobs.dto";
 
 export class JobService {
   async list(input: QueryJobsDto) {
-    // Use per_page and page, like user pagination
     const page = Number(input.page) > 0 ? Number(input.page) : 1;
     const limit = Number(input.per_page) > 0 ? Number(input.per_page) : 10;
     const offset = (page - 1) * limit;
 
-    // Remove pagination params from query for filtering
+    // Remove page and per_page before passing to repository
     const { page: _page, per_page: _per_page, ...filters } = input;
 
-    // Get total count
     const { count, error: countError } = await jobRepository.countJobs(filters);
 
     if (countError) throw countError;
 
-    // Get paginated data
-    const jobs = await jobRepository.findJobsPaginated(filters, offset, limit);
+    // Use findAll and paginate in handler/service
+    const jobs = await jobRepository.findAll(filters as any);
+    const paginatedJobs = Array.isArray(jobs) ? jobs.slice(offset, offset + limit) : [];
 
     return {
-      data: jobs,
+      data: paginatedJobs,
       pagination: {
         page,
         limit,
@@ -107,23 +106,7 @@ export class JobService {
     const createdJob = await jobRepository.create(jobPayload as any);
     const jobId = createdJob.id;
 
-    // Link relations if provided
-    if (jobData.category_ids) {
-      await jobRepository.unlinkJobCategories(jobId);
-      await jobRepository.linkJobCategories(jobId, jobData.category_ids);
-    }
-    if (jobData.required_skill_ids) {
-      await jobRepository.unlinkJobSkills(jobId);
-      await jobRepository.linkJobSkills(jobId, jobData.required_skill_ids);
-    }
-    if (jobData.employment_type_ids) {
-      await jobRepository.unlinkJobEmploymentTypes(jobId);
-      await jobRepository.linkJobEmploymentTypes(jobId, jobData.employment_type_ids);
-    }
-    if (jobData.job_level_ids) {
-      await jobRepository.unlinkJobLevels(jobId);
-      await jobRepository.linkJobLevels(jobId, jobData.job_level_ids);
-    }
+    // Company flow: do not handle job relations here. Job-category and other relations should be managed in their own modules/services.
     return await jobRepository.findOne(jobId);
   }
 
@@ -186,23 +169,7 @@ export class JobService {
 
     await jobRepository.update(jobId, jobPayload as any);
 
-    // Update relations if provided
-    if (jobData.category_ids) {
-      await jobRepository.unlinkJobCategories(jobId);
-      await jobRepository.linkJobCategories(jobId, jobData.category_ids);
-    }
-    if (jobData.required_skill_ids) {
-      await jobRepository.unlinkJobSkills(jobId);
-      await jobRepository.linkJobSkills(jobId, jobData.required_skill_ids);
-    }
-    if (jobData.employment_type_ids) {
-      await jobRepository.unlinkJobEmploymentTypes(jobId);
-      await jobRepository.linkJobEmploymentTypes(jobId, jobData.employment_type_ids);
-    }
-    if (jobData.job_level_ids) {
-      await jobRepository.unlinkJobLevels(jobId);
-      await jobRepository.linkJobLevels(jobId, jobData.job_level_ids);
-    }
+    // Company flow: do not handle job relations here. Job-category and other relations should be managed in their own modules/services.
 
     return await jobRepository.findOne(jobId);
   }

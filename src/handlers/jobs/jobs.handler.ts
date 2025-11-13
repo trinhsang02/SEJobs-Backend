@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import jobService from "@/services/jobs.service";
+import jobService from "@/services/jobs/jobs.service";
 import { BadRequestError } from "@/utils/errors";
 
 /**
@@ -13,10 +13,29 @@ import { BadRequestError } from "@/utils/errors";
  * - DELETE /api/jobs/:id
  */
 
+import _ from "lodash";
+import validate from "@/utils/validate";
+import { createJobSchema } from "@/dtos/job/CreateJob.dto";
+import { updateJobSchema } from "@/dtos/job/UpdateJob.dto";
+
 export async function listJobs(req: Request, res: Response) {
-  const query = req.query;
-  const result = await jobService.list(query as any);
-  return res.status(200).json({ success: true, data: result });
+  const page = _.toInteger(req.query.page) || 1;
+  const limit = _.toInteger(req.query.per_page) || 10;
+  const filters = { ...req.query };
+  delete filters.page;
+  delete filters.per_page;
+
+  const { data: jobs, pagination } = await jobService.list({
+    ...filters,
+    page,
+    per_page: limit,
+  } as any);
+
+  res.status(200).json({
+    success: true,
+    data: jobs,
+    pagination,
+  });
 }
 
 export async function getJob(req: Request, res: Response) {
@@ -29,38 +48,35 @@ export async function getJob(req: Request, res: Response) {
 }
 
 export async function createJob(req: Request, res: Response) {
-  // Validate using DTO schema
-  const { createJobSchema } = await import("@/dtos/job/CreateJob.dto");
-  const parseResult = createJobSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    return res.status(400).json({ success: false, errors: parseResult.error.issues });
-  }
-  const jobData = parseResult.data;
+  const jobData = validate.schema_validate(createJobSchema, req.body);
   const created = await jobService.create({ jobData });
-  return res.status(201).json({ success: true, data: created });
+  res.status(201).json({
+    success: true,
+    data: created,
+  });
 }
 
 export async function updateJob(req: Request, res: Response) {
-  const id = Number(req.params.id);
-  if (Number.isNaN(id)) {
+  const id = _.toNumber(req.params.id);
+  if (!id) {
     throw new BadRequestError({ message: "Invalid job id" });
   }
-  // Validate using DTO schema
-  const { updateJobSchema } = await import("@/dtos/job/UpdateJob.dto");
-  const parseResult = updateJobSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    return res.status(400).json({ success: false, errors: parseResult.error.issues });
-  }
-  const jobData = parseResult.data;
+  const jobData = validate.schema_validate(updateJobSchema, req.body);
   const updated = await jobService.update({ jobId: id, jobData });
-  return res.status(200).json({ success: true, data: updated });
+  res.status(200).json({
+    success: true,
+    data: updated,
+  });
 }
 
 export async function deleteJob(req: Request, res: Response) {
-  const id = Number(req.params.id);
-  if (Number.isNaN(id)) {
+  const id = _.toNumber(req.params.id);
+  if (!id) {
     throw new BadRequestError({ message: "Invalid job id" });
   }
   const deleted = await jobService.delete({ jobId: id });
-  return res.status(200).json({ success: true, data: deleted });
+  res.status(200).json({
+    success: true,
+    data: deleted,
+  });
 }

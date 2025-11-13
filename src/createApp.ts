@@ -8,6 +8,10 @@ import companyRoutes from "./routes/company.route";
 import companyTypeRoutes from "./routes/company_type.route";
 import authRoutes from "./routes/auth.route";
 import jobRoutes from "./routes/jobs.route";
+import jobCategoryRoutes from "./routes/jobs/job_category.route";
+import jobSkillRoutes from "./routes/jobs/job_skill.route";
+import jobEmploymentTypeRoutes from "./routes/jobs/job_employment_type.route";
+import jobLevelRoutes from "./routes/jobs/job_level.route";
 import { requestLogger, errorHandler } from "@/middlewares";
 import { specs, swaggerUi } from "./config/swagger";
 import logger from "./utils/logger";
@@ -16,9 +20,11 @@ export const createApp = () => {
   const app = express();
 
   // Middlewares
-  app.use(cors({
-    exposedHeaders: ["Authorization"],
-  }));
+  app.use(
+    cors({
+      exposedHeaders: ["Authorization"],
+    })
+  );
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true }));
 
@@ -35,6 +41,10 @@ export const createApp = () => {
   app.use("/api/companies", companyRoutes);
   app.use("/api/company_types", companyTypeRoutes);
   app.use("/api/jobs", jobRoutes);
+  app.use("/api/job-categories", jobCategoryRoutes);
+  app.use("/api/job-skills", jobSkillRoutes);
+  app.use("/api/job-employment-types", jobEmploymentTypeRoutes);
+  app.use("/api/job-levels", jobLevelRoutes);
 
   // Error handler
   app.use(errorHandler);

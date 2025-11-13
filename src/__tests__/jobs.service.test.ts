@@ -1,5 +1,5 @@
-import jobRepository from "@/repositories/job.repository";
-import jobService from "@/services/jobs.service";
+import jobRepository from "@/repositories/jobs/job.repository";
+import jobService from "@/services/jobs/jobs.service";
 
 jest.mock("@/repositories/job.repository", () => ({
   findAll: jest.fn(),
