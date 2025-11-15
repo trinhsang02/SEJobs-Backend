@@ -31,23 +31,59 @@
  *           type: integer
  *         external_id:
  *           type: integer
- *         url:
+ *         website_url:
  *           type: string
- *           format: uri
- *         title:
- *           type: string
- *         company:
- *           $ref: '#/components/schemas/Company'
- *         salary:
- *           $ref: '#/components/schemas/Salary'
+ *         company_id:
+ *           type: integer
  *         company_branches_id:
  *           type: integer
- *         deadline:
+ *         title:
  *           type: string
- *           format: date
+ *         responsibilities:
+ *           type: array
+ *           items:
+ *             type: string
+ *         requirement:
+ *           type: array
+ *           items:
+ *             type: string
+ *         nice_to_haves:
+ *           type: array
+ *           items:
+ *             type: string
+ *         benefit:
+ *           type: object
+ *         working_time:
+ *           type: string
+ *         description:
+ *           type: string
+ *         apply_guide:
+ *           type: string
+ *         is_diamond:
+ *           type: boolean
+ *         is_job_flash_active:
+ *           type: boolean
+ *         is_hot:
+ *           type: boolean
+ *         salary_from:
+ *           type: number
+ *         salary_to:
+ *           type: number
+ *         salary_text:
+ *           type: string
+ *         salary_currency:
+ *           type: string
+ *         job_posted_at:
+ *           type: string
+ *         job_deadline:
+ *           type: string
+ *         apply_reasons:
+ *           type: array
+ *           items:
+ *             type: string
+ *         status:
+ *           type: string
  *         updated_at:
- *           type: string
- *         publish:
  *           type: string
  *         category_ids:
  *           type: array
@@ -68,14 +104,42 @@
  *     CreateJob:
  *       type: object
  *       properties:
+ *         external_id:
+ *           type: integer
+ *         website_url:
+ *           type: string
+ *         company_id:
+ *           type: integer
+ *         company_branches_id:
+ *           type: integer
  *         title:
  *           type: string
- *         url:
+ *         responsibilities:
+ *           type: array
+ *           items:
+ *             type: string
+ *         requirement:
+ *           type: array
+ *           items:
+ *             type: string
+ *         nice_to_haves:
+ *           type: array
+ *           items:
+ *             type: string
+ *         benefit:
+ *           type: object
+ *         working_time:
  *           type: string
- *         company:
- *           $ref: '#/components/schemas/Company'
- *         experience_id:
- *           type: integer
+ *         description:
+ *           type: string
+ *         apply_guide:
+ *           type: string
+ *         is_diamond:
+ *           type: boolean
+ *         is_job_flash_active:
+ *           type: boolean
+ *         is_hot:
+ *           type: boolean
  *         salary_from:
  *           type: number
  *         salary_to:
@@ -84,8 +148,16 @@
  *           type: string
  *         salary_currency:
  *           type: string
- *         company_branches_id:
- *           type: integer
+ *         job_posted_at:
+ *           type: string
+ *         job_deadline:
+ *           type: string
+ *         apply_reasons:
+ *           type: array
+ *           items:
+ *             type: string
+ *         status:
+ *           type: string
  *         category_ids:
  *           type: array
  *           items:

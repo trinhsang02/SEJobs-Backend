@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { listJobs, getJob, createJob, updateJob, deleteJob } from "@/handlers/jobs.handler";
+import { listJobs, getJob, createJob, updateJob, deleteJob } from "@/handlers/jobs/jobs.handler";
 import { authenticate } from "@/middlewares/auth.middleware";
 
 const router = Router();

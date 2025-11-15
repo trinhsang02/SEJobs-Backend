@@ -13,6 +13,7 @@ export const registerSchema = z
       .regex(/[0-9]/, "Password must contain at least one number")
       .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
     confirm_password: z.string().min(8, "Confirm password must be at least 8 characters"),
+    role: z.enum(["Student", "Employer", "Manager", "Admin"]),
   })
   .refine((data) => data.password === data.confirm_password, {
     path: ["confirm_password"],
