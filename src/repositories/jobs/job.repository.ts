@@ -8,7 +8,8 @@ import { QueryJobsDto } from "@/dtos/job/QueryJobs.dto";
 
 export class JobRepository {
   private readonly db: SupabaseClient;
-  public readonly fields = "id, title, description, company_id, created_at, updated_at";
+  public readonly fields =
+    "id, external_id, website_url, company_id, company_branches_id, title, responsibilities, requirement, nice_to_haves, benefit, working_time, description, apply_guide, is_diamond, is_job_flash_active, is_hot, salary_from, salary_to, salary_text, salary_currency, job_posted_at, job_deadline, apply_reasons, status, created_at, updated_at";
 
   constructor() {
     this.db = supabase;

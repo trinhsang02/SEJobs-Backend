@@ -65,6 +65,7 @@
  *               - last_name
  *               - password
  *               - confirm_password
+ *               - role
  *             properties:
  *               email:
  *                 type: string
@@ -85,6 +86,10 @@
  *                 type: string
  *                 format: password
  *                 description: Must match password field
+ *               role:
+ *                 type: string
+ *                 enum: [Student, Employer, Manager, Admin]
+ *                 description: User role
  *     responses:
  *       201:
  *         description: User registered successfully

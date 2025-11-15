@@ -50,54 +50,9 @@ export class JobService {
       throw new BadRequestError({ message: "Job title is required" });
     }
 
-    // Company upsert logic
     let companyId = jobData.company_id;
-    if (jobData.company) {
-      const company = jobData.company;
-      let { data: existingCompany, error } = await supabase
-        .from("companies")
-        .select("id")
-        .or(
-          [
-            company.external_id ? `external_id.eq.${company.external_id}` : null,
-            company.name ? `name.eq.${company.name}` : null,
-          ]
-            .filter(Boolean)
-            .join(",")
-        )
-        .maybeSingle();
-      if (error) throw error;
-      if (existingCompany) {
-        companyId = existingCompany.id;
-        // Optionally update company info
-        await supabase
-          .from("companies")
-          .update({
-            logo: company.logo || null,
-            url: company.url || null,
-            name: company.name,
-            external_id: company.external_id || null,
-          })
-          .eq("id", companyId);
-      } else {
-        const { data: newCompany, error: newCompanyErr } = await supabase
-          .from("companies")
-          .insert([
-            {
-              external_id: company.external_id || null,
-              name: company.name,
-              logo: company.logo || null,
-              url: company.url || null,
-            },
-          ])
-          .select("id")
-          .single();
-        if (newCompanyErr) throw newCompanyErr;
-        companyId = newCompany.id;
-      }
-    }
 
-    const { category_ids, required_skill_ids, employment_type_ids, job_level_ids, company, ...jobPayload } = {
+    const { category_ids, required_skill_ids, employment_type_ids, job_level_ids, ...jobPayload } = {
       ...jobData,
       company_id: companyId,
     };
@@ -121,49 +76,7 @@ export class JobService {
 
     // Company upsert logic
     let companyId = jobData.company_id;
-    if (jobData.company) {
-      const company = jobData.company;
-      let { data: existingCompany, error } = await supabase
-        .from("companies")
-        .select("id")
-        .or(
-          [
-            company.external_id ? `external_id.eq.${company.external_id}` : null,
-            company.name ? `name.eq.${company.name}` : null,
-          ]
-            .filter(Boolean)
-            .join(",")
-        )
-        .maybeSingle();
-      if (error) throw error;
-      if (existingCompany) {
-        companyId = existingCompany.id;
-        await supabase
-          .from("companies")
-          .update({
-            logo: company.logo || null,
-            url: company.url || null,
-            name: company.name,
-            external_id: company.external_id || null,
-          })
-          .eq("id", companyId);
-      } else {
-        const { data: newCompany, error: newCompanyErr } = await supabase
-          .from("companies")
-          .insert([
-            {
-              external_id: company.external_id || null,
-              name: company.name,
-              logo: company.logo || null,
-              url: company.url || null,
-            },
-          ])
-          .select("id")
-          .single();
-        if (newCompanyErr) throw newCompanyErr;
-        companyId = newCompany.id;
-      }
-    }
+    // company upsert logic removed: company object is not part of DTO anymore
 
     const jobPayload = { ...jobData, company_id: companyId };
 
