@@ -4,13 +4,30 @@ import { Request, Response } from "express-serve-static-core";
 import { loginSchema } from "@/dtos/user/Login.dto";
 import UsersService from "@/services/users.service";
 import { registerSchema } from "@/dtos/user/Register.dto";
+import { generateRefreshToken } from "@/utils/jwt.util";
 
 export async function login(req: Request, res: Response) {
   const loginData = validate.schema_validate(loginSchema, req.body);
 
   const { user, token } = await UsersService.login({ loginData });
 
-  res.setHeader("Authorization", `Bearer ${token}`);
+  const refreshToken = generateRefreshToken({ userId: user.user_id, email: user.email, role: user.role });
+
+  res.cookie("access_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
+    path: "/",
+  });
+
+  res.cookie("refresh_token", refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    path: "/",
+  });
 
   res.status(200).json({
     success: true,

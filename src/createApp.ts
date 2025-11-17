@@ -1,6 +1,7 @@
 // src/createApp.ts
 import "express-async-errors";
 import express from "express";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import testRoutes from "./routes/test.route";
 import userRoutes from "./routes/users.route";
@@ -27,6 +28,7 @@ export const createApp = () => {
   );
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true }));
+  app.use(cookieParser());
 
   app.use(requestLogger);
 

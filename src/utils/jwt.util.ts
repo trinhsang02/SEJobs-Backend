@@ -20,6 +20,17 @@ export const generateToken = (payload: JWTPayload): string => {
     expiresIn: "1d",
   });
 };
+export const generateRefreshToken = (payload: JWTPayload): string => {
+  if (!env.JWT_SECRET) {
+    throw new InternalServerError({
+      message: "JWT_SECRET is not defined",
+      status: "JWT_CONFIG_ERROR",
+    });
+  }
+  return jwt.sign(payload, env.JWT_SECRET, {
+    expiresIn: "30d",
+  });
+};
 
 export const verifyToken = (token: string): JWTPayload => {
   try {
