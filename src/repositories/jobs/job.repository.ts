@@ -27,17 +27,44 @@ export class JobRepository {
     return { count, error };
   }
 
-  // Find all jobs with filters (no pagination/limit here)
-  async findAll(filters: Record<string, any>) {
-    let query = this.db.from("jobs").select("*");
-    if (filters.keyword) {
-      query = query.ilike("title", `%${filters.keyword}%`);
-      delete filters.keyword;
+  async findAll(input: QueryJobsDto) {
+    const fields = _.get(input, "fields", this.fields);
+    const page = _.get(input, "page");
+    const limit = _.get(input, "per_page");
+
+    const { page: _page, per_page: _per_page, fields: _fields, ...filterParams } = input;
+
+    let dbQuery = this.db.from("jobs").select(fields, { count: "exact" });
+
+    if (filterParams.keyword) {
+      dbQuery = dbQuery.ilike("title", `%${filterParams.keyword}%`);
     }
-    query = query.match(filters);
-    const { data, error } = await query;
+    if (Object.keys(filterParams).length > 0) {
+      const { keyword, ...otherFilters } = filterParams;
+      if (Object.keys(otherFilters).length > 0) {
+        dbQuery = dbQuery.match(otherFilters);
+      }
+    }
+
+    const executeQuery =
+      page && limit && page > 0 && limit > 0 ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
+
+    const { data, error, count } = await executeQuery;
+
     if (error) throw error;
-    return data;
+
+    return {
+      data,
+      pagination:
+        page && limit && page > 0 && limit > 0
+          ? {
+              page: page,
+              limit: limit,
+              total: count || 0,
+              total_pages: count ? Math.ceil(count / limit) : 0,
+            }
+          : null,
+    };
   }
 
   // Find one job by id

@@ -8,29 +8,11 @@ import { QueryJobsDto } from "@/dtos/job/QueryJobs.dto";
 
 export class JobService {
   async list(input: QueryJobsDto) {
-    const page = Number(input.page) > 0 ? Number(input.page) : 1;
-    const limit = Number(input.per_page) > 0 ? Number(input.per_page) : 10;
-    const offset = (page - 1) * limit;
-
-    // Remove page and per_page before passing to repository
-    const { page: _page, per_page: _per_page, ...filters } = input;
-
-    const { count, error: countError } = await jobRepository.countJobs(filters);
-
-    if (countError) throw countError;
-
-    // Use findAll and paginate in handler/service
-    const jobs = await jobRepository.findAll(filters as any);
-    const paginatedJobs = Array.isArray(jobs) ? jobs.slice(offset, offset + limit) : [];
+    const result = await jobRepository.findAll(input);
 
     return {
-      data: paginatedJobs,
-      pagination: {
-        page,
-        limit,
-        total: count ?? 0,
-        total_pages: Math.ceil((count ?? 0) / limit),
-      },
+      data: result.data,
+      pagination: result.pagination,
     };
   }
 
@@ -60,8 +42,6 @@ export class JobService {
     // Create the job
     const createdJob = await jobRepository.create(jobPayload as any);
     const jobId = createdJob.id;
-
-    // Company flow: do not handle job relations here. Job-category and other relations should be managed in their own modules/services.
     return await jobRepository.findOne(jobId);
   }
 
@@ -76,13 +56,10 @@ export class JobService {
 
     // Company upsert logic
     let companyId = jobData.company_id;
-    // company upsert logic removed: company object is not part of DTO anymore
 
     const jobPayload = { ...jobData, company_id: companyId };
 
     await jobRepository.update(jobId, jobPayload as any);
-
-    // Company flow: do not handle job relations here. Job-category and other relations should be managed in their own modules/services.
 
     return await jobRepository.findOne(jobId);
   }

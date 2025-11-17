@@ -12,23 +12,23 @@ declare global {
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
+    let token: string | undefined;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new UnauthorizedError({
-        message: "No token provided",
-        status: "NO_TOKEN",
-      });
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
     }
 
-    const token = authHeader.split(" ")[1];
+    if (!token) {
+      token = req.cookies?.access_token;
+    }
+
     if (!token) {
       throw new UnauthorizedError({
         message: "No token provided",
         status: "NO_TOKEN",
       });
     }
-
     const decoded = verifyToken(token);
     req.user = decoded;
     next();
