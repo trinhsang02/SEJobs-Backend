@@ -77,6 +77,18 @@ export class JobCategoryRepository {
     if (error) throw error;
     return data;
   }
-}
+  async bulkCreateJobCategories(input: { jobCategoriesData: { job_id: number; category_id: number }[] }) {
+    const { jobCategoriesData } = input;
+    if (!jobCategoriesData || jobCategoriesData.length === 0) return [];
+    const { data, error } = await this.db.from("job_categories").insert(jobCategoriesData).select();
+    if (error) throw error;
+    return data;
+  }
 
+  async deleteByJobId(jobId: number) {
+    const { error } = await this.db.from("job_categories").delete().eq("job_id", jobId);
+    if (error) throw error;
+    return true;
+  }
+}
 export default new JobCategoryRepository();

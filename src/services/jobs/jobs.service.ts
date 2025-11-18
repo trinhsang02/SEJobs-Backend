@@ -5,6 +5,11 @@ import { supabase } from "@/config/supabase";
 import { CreateJobDto } from "@/dtos/job/CreateJob.dto";
 import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
 import { QueryJobsDto } from "@/dtos/job/QueryJobs.dto";
+// Import các repository mới cho relation
+import jobCategoryRepository from "@/repositories/jobs/job_category.repository"; // Thay bằng đường dẫn đúng
+import jobSkillRepository from "@/repositories/jobs/job_skill.repository"; // Thay bằng đường dẫn đúng
+import jobLevelRepository from "@/repositories/jobs/job_level.repository"; // Thay bằng đường dẫn đúng
+import jobEmploymentTypeRepository from "@/repositories/jobs/job_employment_type.repository"; // Thay bằng đường dẫn đúng
 
 export class JobService {
   async list(input: QueryJobsDto) {
@@ -32,35 +37,114 @@ export class JobService {
       throw new BadRequestError({ message: "Job title is required" });
     }
 
-    let companyId = jobData.company_id;
+    const {
+      category_ids = [],
+      required_skill_ids = [],
+      employment_type_ids = [],
+      job_level_ids = [],
+      ...jobPayload
+    } = jobData;
 
-    const { category_ids, required_skill_ids, employment_type_ids, job_level_ids, ...jobPayload } = {
-      ...jobData,
-      company_id: companyId,
-    };
-
-    // Create the job
     const createdJob = await jobRepository.create(jobPayload as any);
     const jobId = createdJob.id;
+
+    if (category_ids.length > 0) {
+      await jobCategoryRepository.bulkCreateJobCategories({
+        jobCategoriesData: category_ids.map((category_id) => ({
+          job_id: jobId,
+          category_id: category_id,
+        })),
+      });
+    }
+
+    if (required_skill_ids.length > 0) {
+      await jobSkillRepository.bulkCreateJobSkills({
+        jobSkillsData: required_skill_ids.map((required_skill_id) => ({
+          job_id: jobId,
+          required_skill_id: required_skill_id,
+        })),
+      });
+    }
+
+    if (employment_type_ids.length > 0) {
+      await jobEmploymentTypeRepository.bulkCreateJobEmploymentTypes({
+        jobEmploymentTypesData: employment_type_ids.map((employment_type_id) => ({
+          job_id: jobId,
+          employment_type_id: employment_type_id,
+        })),
+      });
+    }
+
+    if (job_level_ids.length > 0) {
+      await jobLevelRepository.bulkCreateJobLevels({
+        jobLevelsData: job_level_ids.map((job_level_id) => ({
+          job_id: jobId,
+          job_level_id: job_level_id,
+        })),
+      });
+    }
+
     return await jobRepository.findOne(jobId);
   }
 
   async update(input: { jobId: number; jobData: UpdateJobDto }) {
     const { jobId, jobData } = input;
 
-    // ensure job exists
     const existing = await jobRepository.findOne(jobId);
     if (!existing) {
       throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
     }
 
-    // Company upsert logic
-    let companyId = jobData.company_id;
+    const { category_ids, required_skill_ids, employment_type_ids, job_level_ids, ...jobPayload } = jobData;
 
-    const jobPayload = { ...jobData, company_id: companyId };
+    const jobPayloadWithUpdatedAt = { ...jobPayload, updated_at: new Date().toISOString() };
 
-    await jobRepository.update(jobId, jobPayload as any);
+    await jobRepository.update(jobId, jobPayloadWithUpdatedAt as any);
 
+    if (category_ids !== undefined) {
+      await jobCategoryRepository.deleteByJobId(jobId);
+      if (category_ids.length > 0) {
+        await jobCategoryRepository.bulkCreateJobCategories({
+          jobCategoriesData: category_ids.map((category_id) => ({
+            job_id: jobId,
+            category_id: category_id,
+          })),
+        });
+      }
+    }
+    if (required_skill_ids !== undefined) {
+      await jobSkillRepository.deleteByJobId(jobId);
+      if (required_skill_ids.length > 0) {
+        await jobSkillRepository.bulkCreateJobSkills({
+          jobSkillsData: required_skill_ids.map((required_skill_id) => ({
+            job_id: jobId,
+            required_skill_id: required_skill_id,
+          })),
+        });
+      }
+    }
+    if (employment_type_ids !== undefined) {
+      await jobEmploymentTypeRepository.deleteByJobId(jobId);
+      if (employment_type_ids.length > 0) {
+        await jobEmploymentTypeRepository.bulkCreateJobEmploymentTypes({
+          jobEmploymentTypesData: employment_type_ids.map((employment_type_id) => ({
+            job_id: jobId,
+            employment_type_id: employment_type_id,
+          })),
+        });
+      }
+    }
+    if (job_level_ids !== undefined) {
+      await jobLevelRepository.deleteByJobId(jobId);
+      if (job_level_ids.length > 0) {
+        await jobLevelRepository.bulkCreateJobLevels({
+          jobLevelsData: job_level_ids.map((job_level_id) => ({
+            job_id: jobId,
+            job_level_id: job_level_id,
+          })),
+        });
+      }
+    }
     return await jobRepository.findOne(jobId);
   }
 

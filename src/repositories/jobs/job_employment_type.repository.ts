@@ -92,6 +92,20 @@ export class JobEmploymentTypeRepository {
     if (error) throw error;
     return data;
   }
+  async bulkCreateJobEmploymentTypes(input: {
+    jobEmploymentTypesData: { job_id: number; employment_type_id: number }[];
+  }) {
+    const { jobEmploymentTypesData } = input;
+    if (!jobEmploymentTypesData || jobEmploymentTypesData.length === 0) return [];
+    const { data, error } = await this.db.from("job_employment_types").insert(jobEmploymentTypesData).select();
+    if (error) throw error;
+    return data;
+  }
+  async deleteByJobId(jobId: number) {
+    const { error } = await this.db.from("job_employment_types").delete().eq("job_id", jobId);
+    if (error) throw error;
+    return true;
+  }
 }
 
 export default new JobEmploymentTypeRepository();
