@@ -48,13 +48,17 @@ export class JobSkillRepository {
   }
 
   async findOne(input: { id: number }) {
-    const { data, error } = await this.db.from("skills").select(this.fields).eq("id", input.id).maybeSingle();
+    const { data, error } = await this.db.from("required_skills").select(this.fields).eq("id", input.id).maybeSingle();
     if (error) throw error;
     return data;
   }
 
   async create(input: { jobSkillData: CreateJobSkillDto }) {
-    const { data, error } = await this.db.from("skills").insert([input.jobSkillData]).select(this.fields).single();
+    const { data, error } = await this.db
+      .from("required_skills")
+      .insert([input.jobSkillData])
+      .select(this.fields)
+      .single();
     if (error) throw error;
     return data;
   }
@@ -62,7 +66,7 @@ export class JobSkillRepository {
   async update(input: { jobSkillId: number; jobSkillData: UpdateJobSkillDto }) {
     const filteredData = _.pickBy(input.jobSkillData, (v) => v !== null && v !== undefined);
     const { data, error } = await this.db
-      .from("skills")
+      .from("required_skills")
       .update(filteredData)
       .eq("id", input.jobSkillId)
       .select(this.fields)
@@ -72,9 +76,26 @@ export class JobSkillRepository {
   }
 
   async delete(id: number) {
-    const { data, error } = await this.db.from("skills").delete().eq("id", id).select(this.fields).maybeSingle();
+    const { data, error } = await this.db
+      .from("required_skills")
+      .delete()
+      .eq("id", id)
+      .select(this.fields)
+      .maybeSingle();
     if (error) throw error;
     return data;
+  }
+  async bulkCreateJobSkills(input: { jobSkillsData: { job_id: number; required_skill_id: number }[] }) {
+    const { jobSkillsData } = input;
+    if (!jobSkillsData || jobSkillsData.length === 0) return [];
+    const { data, error } = await this.db.from("job_required_skills").insert(jobSkillsData).select();
+    if (error) throw error;
+    return data;
+  }
+  async deleteByJobId(jobId: number) {
+    const { error } = await this.db.from("job_required_skills").delete().eq("job_id", jobId);
+    if (error) throw error;
+    return true;
   }
 }
 
