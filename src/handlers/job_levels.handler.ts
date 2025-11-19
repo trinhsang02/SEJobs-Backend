@@ -1,16 +1,20 @@
 import _ from "lodash";
 import validate from "@/utils/validate";
 import { Request, Response } from "express-serve-static-core";
-import JobLevelService from "@/services/jobs/job_level.service";
+import JobLevelService from "@/services/job_levels.service";
 import { BadRequestError } from "@/utils/errors";
-import { createJobLevelSchema } from "@/dtos/job/CreateJobLevel.dto";
-import { updateJobLevelSchema } from "@/dtos/job/UpdateJobLevel.dto";
+import { updateLevelSchema } from "@/dtos/job/UpdateLevel.dto";
+import { createLevelSchema } from "@/dtos/job/CreateLevel.dto";
+import convert from "@/utils/convert";
 
 export async function getJobLevels(req: Request, res: Response) {
-  const { page, limit, job_id, job_level_ids } = req.query;
+  const { page, limit, ids } = req.query;
 
-  const { data: jobLevels } = await JobLevelService.findAll();
-  const pagination = null;
+  const { data: jobLevels, pagination } = await JobLevelService.findAll({
+    page: _.toInteger(page) || 1,
+    limit: _.toInteger(limit) || 10,
+    ids: convert.split(ids as string, ",", Number),
+  });
 
   res.status(200).json({
     success: true,
@@ -35,9 +39,9 @@ export async function getJobLevel(req: Request, res: Response) {
 }
 
 export async function createJobLevel(request: Request, response: Response) {
-  const jobLevelData = validate.schema_validate(createJobLevelSchema, request.body);
+  const jobLevelData = validate.schema_validate(createLevelSchema, request.body);
 
-  const newJobLevel = await JobLevelService.createJobLevel({ jobLevelData });
+  const newJobLevel = await JobLevelService.create({ jobLevelData });
 
   response.status(201).json({
     success: true,
@@ -51,11 +55,11 @@ export async function updateJobLevel(request: Request, response: Response) {
     throw new BadRequestError({ message: "Missing required param: id" });
   }
 
-  const jobLevelData = validate.schema_validate(updateJobLevelSchema, request.body);
+  request.body.id = id;
+  const jobLevelData = validate.schema_validate(updateLevelSchema, request.body);
 
-  const updatedJobLevel = await JobLevelService.updateJobLevel({
-    jobLevelId: _.toNumber(id),
-    jobLevelData,
+  const updatedJobLevel = await JobLevelService.update({
+    jobLevelData: jobLevelData,
   });
 
   response.status(200).json({

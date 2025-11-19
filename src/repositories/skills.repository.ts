@@ -10,7 +10,6 @@ export class SkillRepository {
     this.db = supabase;
   }
 
-
   async findAll(input: SkillQueryParams) {
     const { page, limit, name } = input;
     const hasPagination = page && limit;
@@ -38,7 +37,7 @@ export class SkillRepository {
       },
     };
   }
-  
+
   async findOne(id: number) {
     const { data, error } = await this.db.from("required_skills").select(this.fields).eq("id", id).maybeSingle();
 
@@ -48,17 +47,26 @@ export class SkillRepository {
   }
 
   async create(input: { skillData: SkillInsert }) {
-    const { data, error } = await this.db.from("required_skills").insert([input.skillData]).select(this.fields).single();
+    const { data, error } = await this.db
+      .from("required_skills")
+      .insert([input.skillData])
+      .select(this.fields)
+      .single();
 
     if (error) throw error;
 
     return data;
   }
-
-  async update(jobId: number, input: SkillUpdate) {
+  // async update(jobId: number, input: SkillUpdate) {
+  async update(skillId: number, input: SkillUpdate) {
     const filteredData = _.pickBy(input, (v) => v !== null && v !== undefined && v !== "");
 
-    const { data, error } = await this.db.from("required_skills").update(filteredData).eq("id", jobId).select("id").maybeSingle();
+    const { data, error } = await this.db
+      .from("required_skills")
+      .update(filteredData)
+      .eq("id", skillId)
+      .select("id")
+      .maybeSingle();
 
     if (error) throw error;
 
@@ -66,7 +74,12 @@ export class SkillRepository {
   }
 
   async delete(id: number) {
-    const { data, error } = await this.db.from("required_skills").delete().eq("id", id).select(this.fields).maybeSingle();
+    const { data, error } = await this.db
+      .from("required_skills")
+      .delete()
+      .eq("id", id)
+      .select(this.fields)
+      .maybeSingle();
 
     if (error) {
       throw error;
@@ -86,22 +99,16 @@ export class SkillRepository {
 
     return data;
   }
-  
-  async bulkDeleteJobSkills(pairs: { jobId: number; skillId: number }[]) {
-    const conditions = pairs
-      .map(p => `and(job_id.eq.${p.jobId},required_skill_id.eq.${p.skillId})`)
-      .join(",");
 
-    const { error } = await this.db
-      .from("job_required_skills")
-      .delete()
-      .or(conditions);
+  async bulkDeleteJobSkills(pairs: { jobId: number; skillId: number }[]) {
+    const conditions = pairs.map((p) => `and(job_id.eq.${p.jobId},required_skill_id.eq.${p.skillId})`).join(",");
+
+    const { error } = await this.db.from("job_required_skills").delete().or(conditions);
 
     if (error) throw error;
 
     return true;
   }
-
 }
 
 export default new SkillRepository();

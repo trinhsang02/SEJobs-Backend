@@ -1,7 +1,7 @@
 import { supabase } from "@/config/supabase";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
-import { JobLevelInsert, JobLevelJobInsert, JobLevelQueryParams } from "@/types/common";
+import { JobLevelInsert, JobLevelJobInsert, JobLevelQueryParams, JobLevelUpdate } from "@/types/common";
 
 export class JobLevelRepository {
   private readonly db: SupabaseClient;
@@ -54,6 +54,30 @@ export class JobLevelRepository {
 
     return data;
   }
+  async update(levelId: number, input: JobLevelUpdate) {
+    const filteredData = _.pickBy(input, (v) => v !== null && v !== undefined && v !== "");
+
+    const { data, error } = await this.db
+      .from("job_levels")
+      .update(filteredData)
+      .eq("id", levelId)
+      .select("id")
+      .maybeSingle();
+
+    if (error) throw error;
+
+    return data;
+  }
+
+  async delete(id: number) {
+    const { data, error } = await this.db.from("job_levels").delete().eq("id", id).select(this.fields).maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }
 
   async bulkCreateJobLevelJobs(input: { jobLevelJobsData: JobLevelJobInsert[] }) {
     const { jobLevelJobsData } = input;
@@ -67,14 +91,9 @@ export class JobLevelRepository {
   }
 
   async bulkDeleteJobLevelJobs(pairs: { jobId: number; jobLevelId: number }[]) {
-    const conditions = pairs
-      .map(p => `and(job_id.eq.${p.jobId},job_level_id.eq.${p.jobLevelId})`)
-      .join(",");
+    const conditions = pairs.map((p) => `and(job_id.eq.${p.jobId},job_level_id.eq.${p.jobLevelId})`).join(",");
 
-    const { error } = await this.db
-      .from("job_levels_jobs")
-      .delete()
-      .or(conditions);
+    const { error } = await this.db.from("job_levels_jobs").delete().or(conditions);
 
     if (error) throw error;
 

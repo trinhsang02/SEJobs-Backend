@@ -16,7 +16,7 @@ export class SkillService {
     const { skillData } = input;
 
     return await skillRepository.create({
-      skillData: skillData
+      skillData: skillData,
     });
   }
 
@@ -24,11 +24,11 @@ export class SkillService {
     const { skillData } = input;
 
     return await skillRepository.update(skillData.id, {
-      name: skillData.name || ""
+      name: skillData.name || "",
     });
   }
 
-  async delete(id: number) {
+  async deleteSkill(id: number) {
     return await skillRepository.delete(id);
   }
 }

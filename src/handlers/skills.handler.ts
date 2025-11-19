@@ -4,16 +4,17 @@ import { Request, Response } from "express-serve-static-core";
 
 import { BadRequestError } from "@/utils/errors";
 import SkillService from "@/services/required_skills.service";
+import { createSkillSchema } from "@/dtos/job/CreateSkill.dto";
 import { updateSkillSchema } from "@/dtos/job/UpdateSkill.dto";
 import convert from "@/utils/convert";
 
 export async function getJobSkills(req: Request, res: Response) {
-  const { page, limit, ids, } = req.query;
+  const { page, limit, ids } = req.query;
 
   const { data: jobSkills, pagination } = await SkillService.findAll({
     page: _.toInteger(page) || 1,
     limit: _.toInteger(limit) || 10,
-    ids: convert.split(ids as string, ',', Number),
+    ids: convert.split(ids as string, ",", Number),
   });
 
   res.status(200).json({
@@ -39,10 +40,10 @@ export async function getJobSkill(req: Request, res: Response) {
 }
 
 export async function createJobSkill(request: Request, response: Response) {
-  const skillData = request.body;
+  const skillData = validate.schema_validate(createSkillSchema, request.body);
 
   const newJobSkill = await SkillService.create({
-    skillData
+    skillData,
   });
 
   response.status(201).json({
@@ -73,7 +74,7 @@ export async function deleteJobSkill(request: Request, response: Response) {
     throw new BadRequestError({ message: "Missing required param: id" });
   }
 
-  await SkillService.delete(_.toNumber(id));
+  await SkillService.deleteSkill(_.toNumber(id));
 
   response.status(200).json({
     success: true,
