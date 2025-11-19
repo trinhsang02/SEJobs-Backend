@@ -55,7 +55,7 @@ export async function updateJobLevel(request: Request, response: Response) {
     throw new BadRequestError({ message: "Missing required param: id" });
   }
 
-  request.body.id = id;
+  request.body.id = _.toNumber(id);
   const jobLevelData = validate.schema_validate(updateLevelSchema, request.body);
 
   const updatedJobLevel = await JobLevelService.update({

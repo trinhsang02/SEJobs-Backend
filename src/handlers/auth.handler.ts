@@ -54,3 +54,12 @@ export async function getMe(req: Request, res: Response) {
     data: user,
   });
 }
+// Logout handler: clears auth cookies
+export async function logout(req: Request, res: Response) {
+  res.clearCookie("access_token", { path: "/" });
+  res.clearCookie("refresh_token", { path: "/" });
+  res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+  });
+}

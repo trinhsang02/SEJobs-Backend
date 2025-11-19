@@ -57,7 +57,7 @@ export async function updateJobSkill(request: Request, response: Response) {
   if (!id) {
     throw new BadRequestError({ message: "Missing required param: id" });
   }
-  request.body.id = id;
+  request.body.id = _.toNumber(id);
   const skillData = validate.schema_validate(updateSkillSchema, request.body);
 
   const updatedJobSkill = await SkillService.update({ skillData });
