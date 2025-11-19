@@ -13,7 +13,7 @@ export async function getCategories(req: Request, res: Response) {
   const { data: categories, pagination } = await CategoryService.findAll({
     page: _.toInteger(page) || 1,
     limit: _.toInteger(limit) || 10,
-    ids: convert.split(ids as string, ',', Number),
+    ids: convert.split(ids as string, ",", Number),
   });
 
   res.status(200).json({
@@ -54,12 +54,13 @@ export async function updateCategory(request: Request, response: Response) {
   if (!id) {
     throw new BadRequestError({ message: "Missing required param: id" });
   }
-
-  request.body.id = id;
+  // Hiện tại các id đều là số nên chuyển về số
+  // Lúc truyền "id": 6, thì nó là chuỗi "6" nên không work
+  request.body.id = _.toNumber(id);
   const categoryData = validate.schema_validate(updateCategorySchema, request.body);
 
   const updatedCategory = await CategoryService.update({
-    categoryData: categoryData
+    categoryData: categoryData,
   });
 
   response.status(200).json({

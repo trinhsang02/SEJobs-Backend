@@ -56,7 +56,7 @@ export async function updateEmploymentType(request: Request, response: Response)
     throw new BadRequestError({ message: "Missing required param: id" });
   }
 
-  request.body.id = id;
+  request.body.id = _.toNumber(id);
   const employmentTypeData = validate.schema_validate(updateEmploymentTypeSchema, request.body);
 
   const updatedEmploymentType = await EmploymentTypeService.update({
