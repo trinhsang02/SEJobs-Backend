@@ -42,7 +42,7 @@ export async function createCompanyType(request: Request, response: Response) {
 
   const companyTypeData = validate.schema_validate(createCompanyTypeSchema, request.body);    
 
-  const newCompany = await CompanyTypesService.createCompany({ companyTypeData });
+  const newCompany = await CompanyTypesService.create({ companyTypeData });
 
   response.status(201).json({
     success: true,
@@ -58,7 +58,7 @@ export async function updateCompanyType(request: Request, response: Response) {
 
   const companyTypeData = validate.schema_validate(updateCompanyTypeSchema, request.body);
 
-  const updatedCompanyType = await CompanyTypesService.updateCompanyType({ companyTypeId: _.toNumber(id), companyTypeData });
+  const updatedCompanyType = await CompanyTypesService.update({ companyTypeId: _.toNumber(id), companyTypeData });
 
   response.status(200).json({
     success: true,
@@ -72,7 +72,7 @@ export async function deleteCompanyType(request: Request, response: Response) {
     throw new BadRequestError({ message: 'Missing required param: id'});
   }
 
-  await CompanyTypesService.deleteCompanyType(_.toNumber(id));
+  await CompanyTypesService.delete(_.toNumber(id));
 
   response.status(200).json({
     success: true,

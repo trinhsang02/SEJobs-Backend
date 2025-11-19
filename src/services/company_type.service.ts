@@ -25,7 +25,7 @@ export class CompanyTypeService {
     return companyType;
   }
 
-  async createCompany(input: { companyTypeData: CreateCompanyTypeDto }) {
+  async create(input: { companyTypeData: CreateCompanyTypeDto }) {
     const { companyTypeData } = input;
 
     const newCompanyType = await companyTypesRepository.create({ companyTypeData: {
@@ -35,7 +35,7 @@ export class CompanyTypeService {
     return newCompanyType;
   }
 
-  async updateCompanyType(input: { companyTypeId: number; companyTypeData: UpdateCompanyTypeDto }) {
+  async update(input: { companyTypeId: number; companyTypeData: UpdateCompanyTypeDto }) {
     const { companyTypeId, companyTypeData } = input;
 
     const existingCompanyType = await this.findOne({ company_type_id: companyTypeId });
@@ -60,7 +60,7 @@ export class CompanyTypeService {
     return updatedCompanyType;
   }
 
-  async deleteCompanyType(companyTypeId: number) {
+  async delete(companyTypeId: number) {
     const deletedCompanyType = await companyTypesRepository.delete(companyTypeId);
 
     if (!deletedCompanyType) {
