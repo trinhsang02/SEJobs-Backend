@@ -1,7 +1,12 @@
 import _ from "lodash";
 import { supabase } from "@/config/supabase";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { EmploymentTypeInsert, EmploymentTypeQueryParams, JobEmploymentTypeInsert } from "@/types/common";
+import {
+  EmploymentTypeInsert,
+  EmploymentTypeQueryParams,
+  EmploymentTypeUpdate,
+  JobEmploymentTypeInsert,
+} from "@/types/common";
 
 export class EmploymentTypeRepository {
   private readonly db: SupabaseClient;
@@ -48,13 +53,45 @@ export class EmploymentTypeRepository {
   }
 
   async create(input: { employmentTypeData: EmploymentTypeInsert }) {
-    const { data, error } = await this.db.from("employment_types").insert([input.employmentTypeData]).select(this.fields).single();
+    const { data, error } = await this.db
+      .from("employment_types")
+      .insert([input.employmentTypeData])
+      .select(this.fields)
+      .single();
+
+    if (error) throw error;
+
+    return data;
+  }
+  async update(employmentTypeId: number, input: EmploymentTypeUpdate) {
+    const filteredData = _.pickBy(input, (v) => v !== null && v !== undefined && v !== "");
+
+    const { data, error } = await this.db
+      .from("employment_types")
+      .update(filteredData)
+      .eq("id", employmentTypeId)
+      .select("id")
+      .maybeSingle();
 
     if (error) throw error;
 
     return data;
   }
 
+  async delete(id: number) {
+    const { data, error } = await this.db
+      .from("employment_types")
+      .delete()
+      .eq("id", id)
+      .select(this.fields)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }
   async bulkCreateJobEmploymentTypes(input: { jobEmploymentTypesData: JobEmploymentTypeInsert[] }) {
     const { jobEmploymentTypesData } = input;
 
@@ -68,13 +105,10 @@ export class EmploymentTypeRepository {
 
   async bulkDeleteJobEmploymentTypes(pairs: { jobId: number; employmentTypeId: number }[]) {
     const conditions = pairs
-      .map(p => `and(job_id.eq.${p.jobId},employment_type_id.eq.${p.employmentTypeId})`)
+      .map((p) => `and(job_id.eq.${p.jobId},employment_type_id.eq.${p.employmentTypeId})`)
       .join(",");
 
-    const { error } = await this.db
-      .from("job_employment_types")
-      .delete()
-      .or(conditions);
+    const { error } = await this.db.from("job_employment_types").delete().or(conditions);
 
     if (error) throw error;
 

@@ -1,10 +1,18 @@
 import { Router } from "express";
-import { getJobLevels, createJobLevel, updateJobLevel, deleteJobLevel } from "@/handlers/jobs/job_level.handler";
+
 import { authenticate } from "@/middlewares/auth.middleware";
+import {
+  createJobLevel,
+  getJobLevel,
+  getJobLevels,
+  updateJobLevel,
+  deleteJobLevel,
+} from "@/handlers/job_levels.handler";
 
 const router = Router();
 
 router.get("/", getJobLevels);
+router.get("/:id", getJobLevel);
 router.post("/", authenticate, createJobLevel);
 router.put("/:id", authenticate, updateJobLevel);
 router.delete("/:id", authenticate, deleteJobLevel);
