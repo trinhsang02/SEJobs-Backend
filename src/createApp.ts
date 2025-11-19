@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import testRoutes from "./routes/test.route";
 import userRoutes from "./routes/users.route";
+import addressRoutes from "./routes/address.route";
 import companyRoutes from "./routes/companies.route";
 import companyTypeRoutes from "./routes/company_types.route";
 import authRoutes from "./routes/auth.route";
@@ -40,6 +41,7 @@ export const createApp = () => {
   app.use("/api/test", testRoutes);
   app.use("/api/auth", authRoutes);
   app.use("/api/users", userRoutes);
+  app.use("/api/address", addressRoutes);
   app.use("/api/companies", companyRoutes);
   app.use("/api/company_types", companyTypeRoutes);
   app.use("/api/jobs", jobRoutes);
