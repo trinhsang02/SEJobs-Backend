@@ -3,16 +3,17 @@ import validate from "@/utils/validate";
 import { Request, Response } from "express-serve-static-core";
 
 import { BadRequestError } from "@/utils/errors";
-import JobSkillService from "@/services/jobs/job_skill.service";
+import SkillService from "@/services/required_skills.service";
+import { updateSkillSchema } from "@/dtos/job/UpdateSkill.dto";
+import convert from "@/utils/convert";
 
 export async function getJobSkills(req: Request, res: Response) {
-  const { page, limit, job_id, required_skill_ids } = req.query;
+  const { page, limit, ids, } = req.query;
 
-  const { data: jobSkills, pagination } = await JobSkillService.findAll({
+  const { data: jobSkills, pagination } = await SkillService.findAll({
     page: _.toInteger(page) || 1,
     limit: _.toInteger(limit) || 10,
-    job_id: _.toNumber(job_id),
-    required_skill_ids: typeof required_skill_ids === "string" ? required_skill_ids.split(",").map(Number) : [],
+    ids: convert.split(ids as string, ',', Number),
   });
 
   res.status(200).json({
@@ -29,7 +30,7 @@ export async function getJobSkill(req: Request, res: Response) {
     throw new BadRequestError({ message: "Missing required param: id" });
   }
 
-  const jobSkill = await JobSkillService.findOne({ id: _.toNumber(id) });
+  const jobSkill = await SkillService.findOne({ id: _.toNumber(id) });
 
   res.status(200).json({
     success: true,
@@ -38,9 +39,11 @@ export async function getJobSkill(req: Request, res: Response) {
 }
 
 export async function createJobSkill(request: Request, response: Response) {
-  const jobSkillData = request.body; // Add validation if needed
+  const skillData = request.body;
 
-  const newJobSkill = await JobSkillService.createJobSkill({ jobSkillData });
+  const newJobSkill = await SkillService.create({
+    skillData
+  });
 
   response.status(201).json({
     success: true,
@@ -53,10 +56,10 @@ export async function updateJobSkill(request: Request, response: Response) {
   if (!id) {
     throw new BadRequestError({ message: "Missing required param: id" });
   }
+  request.body.id = id;
+  const skillData = validate.schema_validate(updateSkillSchema, request.body);
 
-  const jobSkillData = request.body; // Add validation if needed
-
-  const updatedJobSkill = await JobSkillService.updateJobSkill({ jobSkillId: _.toNumber(id), jobSkillData });
+  const updatedJobSkill = await SkillService.update({ skillData });
 
   response.status(200).json({
     success: true,
@@ -70,7 +73,7 @@ export async function deleteJobSkill(request: Request, response: Response) {
     throw new BadRequestError({ message: "Missing required param: id" });
   }
 
-  await JobSkillService.deleteJobSkill(_.toNumber(id));
+  await SkillService.delete(_.toNumber(id));
 
   response.status(200).json({
     success: true,

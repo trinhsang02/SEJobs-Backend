@@ -51,7 +51,16 @@ export interface JobQueryParams extends QueryParams {
   job_id?: number;
   company_id?: number;
   title?: string;
-  fields?: string;
+}
+
+// CATEGORY
+export type Category = Database["public"]["Tables"]["categories"]["Row"];
+export type CategoryInsert = Database["public"]["Tables"]["categories"]["Insert"];
+export type CategoryUpdate = Database["public"]["Tables"]["categories"]["Update"];
+
+export interface CategoryQueryParams extends QueryParams {
+  ids?: number[];
+  name?: string;
 }
 
 // JOB_CATEGORY
@@ -61,7 +70,69 @@ export type JobCategoryUpdate = Database["public"]["Tables"]["job_categories"]["
 
 export interface JobCategoryQueryParams extends QueryParams {
   id?: number;
-  job_id?: number;
+  job_ids?: number[];
   category_ids?: number[];
-  fields?: string;
+}
+
+// EMPLOYMENT_TYPE
+export type EmploymentType = Database["public"]["Tables"]["employment_types"]["Row"];
+export type EmploymentTypeInsert = Database["public"]["Tables"]["employment_types"]["Insert"];
+export type EmploymentTypeUpdate = Database["public"]["Tables"]["employment_types"]["Update"];
+
+export interface EmploymentTypeQueryParams extends QueryParams {
+  ids?: number[];
+  name?: string;
+}
+
+// JOB_EMPLOYMENT_TYPE
+export type JobEmploymentType = Database["public"]["Tables"]["job_employment_types"]["Row"];
+export type JobEmploymentTypeInsert = Database["public"]["Tables"]["job_employment_types"]["Insert"];
+export type JobEmploymentTypeUpdate = Database["public"]["Tables"]["job_employment_types"]["Update"];
+
+export interface JobEmploymentTypeQueryParams extends QueryParams {
+  id?: number;
+  job_ids?: number[];
+  employment_type_ids?: number[];
+}
+
+// SKILL
+export type Skill = Database["public"]["Tables"]["required_skills"]["Row"];
+export type SkillInsert = Database["public"]["Tables"]["required_skills"]["Insert"];
+export type SkillUpdate = Database["public"]["Tables"]["required_skills"]["Update"];
+
+export interface SkillQueryParams extends QueryParams {
+  ids?: number[];
+  name?: string;
+}
+
+// JOB_SKILL
+export type JobSkill = Database["public"]["Tables"]["job_required_skills"]["Row"];
+export type JobSkillInsert = Database["public"]["Tables"]["job_required_skills"]["Insert"];
+export type JobSkillUpdate = Database["public"]["Tables"]["job_required_skills"]["Update"];
+
+export interface JobSkillQueryParams extends QueryParams {
+  id?: number;
+  job_ids?: number[];
+  skill_ids?: number[];
+}
+
+// JOB_LEVEL
+export type JobLevel = Database["public"]["Tables"]["job_levels"]["Row"];
+export type JobLevelInsert = Database["public"]["Tables"]["job_levels"]["Insert"];
+export type JobLevelUpdate = Database["public"]["Tables"]["job_levels"]["Update"];
+
+export interface JobLevelQueryParams extends QueryParams {
+  ids?: number[];
+  name?: string;
+}
+
+// JOB_LEVEL_JOBS
+export type JobLevelJob = Database["public"]["Tables"]["job_levels_jobs"]["Row"];
+export type JobLevelJobInsert = Database["public"]["Tables"]["job_levels_jobs"]["Insert"];
+export type JobLevelJobUpdate = Database["public"]["Tables"]["job_levels_jobs"]["Update"];
+
+export interface JobLevelJobQueryParams extends QueryParams {
+  id?: number;
+  job_ids?: number[];
+  job_level_ids?: number[];
 }
