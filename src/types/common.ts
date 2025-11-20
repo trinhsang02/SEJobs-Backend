@@ -136,3 +136,20 @@ export interface JobLevelJobQueryParams extends QueryParams {
   job_ids?: number[];
   job_level_ids?: number[];
 }
+
+// COMPANY_BRANCHES
+export type CompanyBranches = Database["public"]["Tables"]["company_branches"]["Row"];
+export type CompanyBranchesInsert = Database["public"]["Tables"]["company_branches"]["Insert"];
+export type CompanyBranchesUpdate = Database["public"]["Tables"]["company_branches"]["Update"];
+
+export interface CompanyBranchesQueryAll extends QueryParams {
+  ids?: number[];
+  company_id?: number;
+  name?: string;
+}
+
+export interface CompanyBranchesQuery extends QueryParams {
+  id?: number;
+  company_id?: number;
+  name?: string;
+}

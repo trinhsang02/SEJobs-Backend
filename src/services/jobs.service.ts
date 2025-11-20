@@ -9,6 +9,7 @@ import { CreateJobDto } from "@/dtos/job/CreateJob.dto";
 import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
 import { JobQueryParams } from "@/types/common";
 import companyRepo from "@/repositories/company.repository";
+import companyBranchesRepo from "@/repositories/company_branches.repository";
 
 export class JobService {
   async list(input: JobQueryParams) {
@@ -33,7 +34,7 @@ export class JobService {
 
   async create(input: { jobData: CreateJobDto }) {
     let createdJobId: number | null = null;
-
+    // TODO: API TOO SLOW
     try {
       const { jobData } = input;
   
@@ -60,11 +61,13 @@ export class JobService {
 
       const jobId = createdJob.id;
   
-      return await jobRepository.findOne(jobId);
+      const { job } = await jobRepository.findOne(jobId);
+
+      return job;
 
     } catch (error) {
       if (createdJobId) {
-        await this.rollbackCreate(createdJobId);
+        await this.delete(createdJobId);
       }
 
       throw error;
@@ -72,7 +75,7 @@ export class JobService {
   }
 
   async validateCreate(jobData: CreateJobDto) {
-    let { company_id, category_ids = [], required_skill_ids = [], employment_type_ids = [], job_level_ids = [] } = jobData;
+    let { company_id, company_branches_id, category_ids = [], required_skill_ids = [], employment_type_ids = [], job_level_ids = [] } = jobData;
 
     const error_messages: string[] = [];
     category_ids = _.uniq(category_ids);
@@ -84,6 +87,12 @@ export class JobService {
     // TODO: Check branches
     if (!company) {
       error_messages.push(`company_id ${company_id} not found.`);
+    }
+
+    const company_branches = await companyBranchesRepo.findOne({ id: company_branches_id, company_id: company_id });
+
+    if (!company_branches) {
+      error_messages.push(`company_branches_id ${company_branches_id} not found.`);
     }
 
     if (category_ids.length > 0) {
@@ -137,7 +146,7 @@ export class JobService {
     return { error: null };
   }
 
-  async rollbackCreate(jobId: number) {
+  async delete(jobId: number) {
     await Promise.all([
       categoryRepo.bulkDeleteJobCategories(jobId),
       skillRepo.bulkDeleteJobSkills(jobId),
@@ -165,17 +174,6 @@ export class JobService {
     return await jobRepository.findOne(jobId);
   }
 
-  async delete(input: { jobId: number }) {
-    const { jobId } = input;
-
-    const deleted = await jobRepository.delete(jobId);
-
-    if (!deleted) {
-      throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
-    }
-
-    return deleted;
-  }
 }
 
 export default new JobService();
