@@ -28,7 +28,7 @@ export class SkillService {
     });
   }
 
-  async deleteSkill(id: number) {
+  async delete(id: number) {
     return await skillRepository.delete(id);
   }
 }

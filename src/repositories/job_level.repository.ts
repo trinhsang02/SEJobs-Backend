@@ -57,12 +57,7 @@ export class JobLevelRepository {
   async update(levelId: number, input: JobLevelUpdate) {
     const filteredData = _.pickBy(input, (v) => v !== null && v !== undefined && v !== "");
 
-    const { data, error } = await this.db
-      .from("job_levels")
-      .update(filteredData)
-      .eq("id", levelId)
-      .select("id")
-      .maybeSingle();
+    const { data, error } = await this.db.from("job_levels").update(filteredData).eq("id", levelId).select("id").maybeSingle();
 
     if (error) throw error;
 
@@ -90,10 +85,8 @@ export class JobLevelRepository {
     return data;
   }
 
-  async bulkDeleteJobLevelJobs(pairs: { jobId: number; jobLevelId: number }[]) {
-    const conditions = pairs.map((p) => `and(job_id.eq.${p.jobId},job_level_id.eq.${p.jobLevelId})`).join(",");
-
-    const { error } = await this.db.from("job_levels_jobs").delete().or(conditions);
+  async bulkDeleteJobLevelJobs(jobId: number) {
+    const { error } = await this.db.from("job_levels_jobs").delete().eq("job_id", jobId);
 
     if (error) throw error;
 

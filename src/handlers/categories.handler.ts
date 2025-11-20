@@ -54,8 +54,7 @@ export async function updateCategory(request: Request, response: Response) {
   if (!id) {
     throw new BadRequestError({ message: "Missing required param: id" });
   }
-  // Hiện tại các id đều là số nên chuyển về số
-  // Lúc truyền "id": 6, thì nó là chuỗi "6" nên không work
+
   request.body.id = _.toNumber(id);
   const categoryData = validate.schema_validate(updateCategorySchema, request.body);
 
