@@ -83,7 +83,7 @@ export async function deleteJob(req: Request, res: Response) {
     throw new BadRequestError({ message: "Invalid job id" });
   }
 
-  await jobService.delete({ jobId: id });
+  await jobService.delete(id);
 
   res.status(200).json({
     success: true,
