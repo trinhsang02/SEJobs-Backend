@@ -21,10 +21,22 @@ import logger from "./utils/logger";
 export const createApp = () => {
   const app = express();
 
+  const allowedOrigins = [
+    "http://localhost:5173"
+  ];
+
   // Middlewares
   app.use(
     cors({
-      exposedHeaders: ["Authorization"],
+      origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        } else {
+          return callback(null, false);
+        }
+      },
+      credentials: true
     })
   );
   app.use(express.json({ limit: "10mb" }));
