@@ -28,7 +28,7 @@ export class EmploymentTypeService {
     });
   }
 
-  async deleteEmploymentType(id: number) {
+  async delete(id: number) {
     return await employment_typesRepository.delete(id);
   }
 }

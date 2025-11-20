@@ -100,10 +100,8 @@ export class SkillRepository {
     return data;
   }
 
-  async bulkDeleteJobSkills(pairs: { jobId: number; skillId: number }[]) {
-    const conditions = pairs.map((p) => `and(job_id.eq.${p.jobId},required_skill_id.eq.${p.skillId})`).join(",");
-
-    const { error } = await this.db.from("job_required_skills").delete().or(conditions);
+  async bulkDeleteJobSkills(jobId: number) {
+    const { error } = await this.db.from("job_required_skills").delete().eq("job_id", jobId);
 
     if (error) throw error;
 

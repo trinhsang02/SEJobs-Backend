@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createJobSchema, companyDto } from "./CreateJob.dto";
+import { createJobSchema } from "./CreateJob.dto";
 
 export const updateJobSchema = createJobSchema.partial().extend({
   responsibilities: z.array(z.string()).optional(),

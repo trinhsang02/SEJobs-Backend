@@ -60,16 +60,11 @@ export class CategoryRepository {
 
     return data;
   }
-  // async update(jobId: number, input: CategoryUpdate) {
+
   async update(categoryId: number, input: CategoryUpdate) {
     const filteredData = _.pickBy(input, (v) => v !== null && v !== undefined && v !== "");
 
-    const { data, error } = await this.db
-      .from("categories")
-      .update(filteredData)
-      .eq("id", categoryId)
-      .select("id")
-      .maybeSingle();
+    const { data, error } = await this.db.from("categories").update(filteredData).eq("id", categoryId).select("id").maybeSingle();
 
     if (error) throw error;
 
@@ -98,10 +93,8 @@ export class CategoryRepository {
     return data;
   }
 
-  async bulkDeleteJobCategories(pairs: { jobId: number; categoryId: number }[]) {
-    const conditions = pairs.map((p) => `and(job_id.eq.${p.jobId},category_id.eq.${p.categoryId})`).join(",");
-
-    const { error } = await this.db.from("job_categories").delete().or(conditions);
+  async bulkDeleteJobCategories(jobId: number) {
+    const { error } = await this.db.from("job_categories").delete().eq("job_id", jobId);
 
     if (error) throw error;
 

@@ -1,17 +1,9 @@
 import { z } from "zod";
 
-export const companyDto = z.object({
-  id: z.number().int().positive().optional(),
-  external_id: z.number().int().optional(),
-  name: z.string().min(1, "Company name is required"),
-  logo: z.string().url().optional(),
-  url: z.string().url().optional(),
-});
-
 export const createJobSchema = z.object({
   external_id: z.number().optional(),
   website_url: z.string().optional(),
-  company_id: z.number().int().positive().optional(),
+  company_id: z.number().int().positive(),
   company_branches_id: z.number().int().positive().optional(),
   title: z.string().min(1, "Job title is required"),
   responsibilities: z.array(z.string()).optional(),

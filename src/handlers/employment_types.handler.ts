@@ -75,7 +75,7 @@ export async function deleteEmploymentType(request: Request, response: Response)
     throw new BadRequestError({ message: "Missing required param: id" });
   }
 
-  await EmploymentTypeService.deleteEmploymentType(_.toNumber(id));
+  await EmploymentTypeService.delete(_.toNumber(id));
 
   response.status(200).json({
     success: true,
