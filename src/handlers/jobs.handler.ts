@@ -1,18 +1,6 @@
 import { Request, Response } from "express";
 import jobService from "@/services/jobs.service";
 import { BadRequestError } from "@/utils/errors";
-
-/**
- * Handlers for jobs endpoints
- *
- * Routes:
- * - GET    /api/jobs
- * - GET    /api/jobs/:id
- * - POST   /api/jobs
- * - PUT    /api/jobs/:id
- * - DELETE /api/jobs/:id
- */
-
 import _ from "lodash";
 import validate from "@/utils/validate";
 import { createJobSchema } from "@/dtos/job/CreateJob.dto";
