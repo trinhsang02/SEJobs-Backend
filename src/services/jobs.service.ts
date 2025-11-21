@@ -34,10 +34,10 @@ export class JobService {
 
   async create(input: { jobData: CreateJobDto }) {
     let createdJobId: number | null = null;
-    // TODO: API TOO SLOW
+    // TODO: API TOO SLOW -> INDEX
     try {
       const { jobData } = input;
-  
+
       const { category_ids = [], required_skill_ids = [], employment_type_ids = [], level_ids = [], ...jobPayload } = jobData;
 
       const { error } = await this.validateCreate(jobData);
@@ -51,7 +51,7 @@ export class JobService {
       const jobSkillsData = required_skill_ids.map((skill_id) => ({ skill_id, job_id: createdJob.id }));
       const jobEmploymentTypesData = employment_type_ids.map((employment_type_id) => ({ employment_type_id, job_id: createdJob.id }));
       const jobLevelsData = level_ids.map((level_id) => ({ level_id, job_id: createdJob.id }));
-  
+
       await Promise.all([
         categoryRepo.bulkCreateJobCategories({ jobCategoriesData }),
         skillRepo.bulkCreateJobSkills({ jobSkillsData }),
@@ -60,11 +60,10 @@ export class JobService {
       ]);
 
       const jobId = createdJob.id;
-  
+
       const { job } = await jobRepository.findOne(jobId);
 
       return job;
-
     } catch (error) {
       if (createdJobId) {
         await this.delete(createdJobId);
@@ -78,82 +77,81 @@ export class JobService {
     let { company_id, company_branches_id, category_ids = [], required_skill_ids = [], employment_type_ids = [], level_ids = [] } = jobData;
 
     const error_messages: string[] = [];
+
     category_ids = _.uniq(category_ids);
     required_skill_ids = _.uniq(required_skill_ids);
     employment_type_ids = _.uniq(employment_type_ids);
     level_ids = _.uniq(level_ids);
 
-    const company = await companyRepo.findOne({ company_id: company_id });
-    // TODO: Check branches
+    const promises: Promise<any>[] = [];
+
+    const companyPromise = companyRepo.findOne({ company_id });
+    promises.push(companyPromise);
+
+    const companyBranchesPromise = companyBranchesRepo.findOne({ id: company_branches_id, company_id });
+    promises.push(companyBranchesPromise);
+
+    const categoryPromise = category_ids.length > 0 ? categoryRepo.findAll({ ids: category_ids }) : Promise.resolve({ data: [] });
+    promises.push(categoryPromise);
+
+    // required_skill_ids
+    const skillsPromise = required_skill_ids.length > 0 ? skillRepo.findAll({ ids: required_skill_ids }) : Promise.resolve({ data: [] });
+    promises.push(skillsPromise);
+
+    // employment_type_ids
+    const employmentTypesPromise = employment_type_ids.length > 0 ? employmentTypeRepo.findAll({ ids: employment_type_ids }) : Promise.resolve({ data: [] });
+    promises.push(employmentTypesPromise);
+
+    // level_ids
+    const jobLevelsPromise = level_ids.length > 0 ? jobLevelRepo.findAll({ ids: level_ids }) : Promise.resolve({ data: [] });
+    promises.push(jobLevelsPromise);
+
+    const [company, companyBranch, categoriesResult, skillsResult, employmentTypesResult, jobLevelsResult] = await Promise.all(promises);
+
     if (!company) {
       error_messages.push(`company_id ${company_id} not found.`);
     }
 
-    const company_branches = await companyBranchesRepo.findOne({ id: company_branches_id, company_id: company_id });
-
-    if (!company_branches) {
+    if (!companyBranch) {
       error_messages.push(`company_branches_id ${company_branches_id} not found.`);
     }
 
-    if (category_ids.length > 0) {
-      const { data: categories } = await categoryRepo.findAll({ ids: category_ids });
-      const categoriesMap = _.keyBy(categories, 'id'); 
+    const categoriesMap = _.keyBy(categoriesResult.data, "id");
+    category_ids.forEach((id) => {
+      if (!categoriesMap[id]) {
+        error_messages.push(`category_id ${id} not found.`);
+      }
+    });
 
-      category_ids.forEach((id) => {
-        if (!categoriesMap[id]) {
-          error_messages.push(`category_id ${id} not found.`);
-        }
-      });
-    }
+    const skillsMap = _.keyBy(skillsResult.data, "id");
+    required_skill_ids.forEach((id) => {
+      if (!skillsMap[id]) {
+        error_messages.push(`required_skill_id ${id} not found.`);
+      }
+    });
 
-    if (required_skill_ids.length > 0) {
-      const { data: skills } = await skillRepo.findAll({ ids: required_skill_ids });
-      const skillsMap = _.keyBy(skills, 'id'); 
+    const employmentTypesMap = _.keyBy(employmentTypesResult.data, "id");
+    employment_type_ids.forEach((id) => {
+      if (!employmentTypesMap[id]) {
+        error_messages.push(`employment_id ${id} not found.`);
+      }
+    });
 
-      required_skill_ids.forEach((id) => {
-        if (!skillsMap[id]) {
-          error_messages.push(`required_skill_id ${id} not found.`);
-        }
-      });
-    }
-
-    if (employment_type_ids.length > 0) {
-      const { data: employmentTypes } = await employmentTypeRepo.findAll({ ids: employment_type_ids });
-      const employmentTypesMap = _.keyBy(employmentTypes, 'id'); 
-
-      employment_type_ids.forEach((id) => {
-        if (!employmentTypesMap[id]) {
-          error_messages.push(`employment_id ${id} not found.`);
-        }
-      });
-    }
-
-    if (level_ids.length > 0) {
-      const { data: jobLevels } = await jobLevelRepo.findAll({ ids: level_ids });
-      const jobLevelsMap = _.keyBy(jobLevels, 'id'); 
-
-      level_ids.forEach((id) => {
-        if (!jobLevelsMap[id]) {
-          error_messages.push(`job_level_id ${id} not found.`);
-        }
-      });
-    }
+    const jobLevelsMap = _.keyBy(jobLevelsResult.data, "id");
+    level_ids.forEach((id) => {
+      if (!jobLevelsMap[id]) {
+        error_messages.push(`job_level_id ${id} not found.`);
+      }
+    });
 
     if (error_messages.length > 0) {
-      return { error: new BadRequestError({ message: error_messages.join('|') }) }
+      return { error: new BadRequestError({ message: error_messages.join("|") }) };
     }
 
     return { error: null };
   }
 
   async delete(jobId: number) {
-    await Promise.all([
-      categoryRepo.bulkDeleteJobCategories(jobId),
-      skillRepo.bulkDeleteJobSkills(jobId),
-      employmentTypeRepo.bulkDeleteJobEmploymentTypes(jobId),
-      jobLevelRepo.bulkDeleteJobLevels(jobId),
-    ]);
-
     await jobRepository.delete(jobId);
   }
 
@@ -173,7 +171,6 @@ export class JobService {
 
     return await jobRepository.findOne(jobId);
   }
-
 }
 
 export default new JobService();
