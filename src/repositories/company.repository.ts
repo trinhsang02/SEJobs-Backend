@@ -1,5 +1,5 @@
 import { supabase } from "@/config/supabase";
-import { UserInsert, UserUpdate, User, UserQueryParams, CompanyInsert, CompanyUpdate, Company, CompanyQueryParams, CompanyCompanyTypesInsert } from "@/types/common";
+import { UserInsert, UserUpdate, User, UserQueryParams, CompanyInsert, CompanyUpdate, Company, CompanyQueryParams } from "@/types/common";
 import { NotFoundError } from "@/utils/errors";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";

@@ -54,6 +54,7 @@ CREATE TABLE companies (
   description text,
   phone text,
   email text,
+  is_verified boolean DEFAULT false,
   website_url text,
   socials jsonb,
   images text[],

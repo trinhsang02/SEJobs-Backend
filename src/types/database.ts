@@ -14,51 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      application: {
-        Row: {
-          feedback: string | null
-          id: number
-          jobid: number | null
-          reviewedat: string | null
-          status: Database["public"]["Enums"]["applicationstatus"] | null
-          studentid: number | null
-          submittedat: string | null
-        }
-        Insert: {
-          feedback?: string | null
-          id?: never
-          jobid?: number | null
-          reviewedat?: string | null
-          status?: Database["public"]["Enums"]["applicationstatus"] | null
-          studentid?: number | null
-          submittedat?: string | null
-        }
-        Update: {
-          feedback?: string | null
-          id?: never
-          jobid?: number | null
-          reviewedat?: string | null
-          status?: Database["public"]["Enums"]["applicationstatus"] | null
-          studentid?: number | null
-          submittedat?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "application_jobid_fkey"
-            columns: ["jobid"]
-            isOneToOne: false
-            referencedRelation: "jobs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "application_studentid_fkey"
-            columns: ["studentid"]
-            isOneToOne: false
-            referencedRelation: "student"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       categories: {
         Row: {
           created_at: string | null
@@ -83,6 +38,7 @@ export type Database = {
       companies: {
         Row: {
           background: string | null
+          company_type_id: number | null
           created_at: string | null
           description: string | null
           email: string | null
@@ -90,6 +46,7 @@ export type Database = {
           external_id: number | null
           id: number
           images: string[] | null
+          is_verified: boolean | null
           logo: string | null
           name: string
           phone: string | null
@@ -100,6 +57,7 @@ export type Database = {
         }
         Insert: {
           background?: string | null
+          company_type_id?: number | null
           created_at?: string | null
           description?: string | null
           email?: string | null
@@ -107,6 +65,7 @@ export type Database = {
           external_id?: number | null
           id?: number
           images?: string[] | null
+          is_verified?: boolean | null
           logo?: string | null
           name: string
           phone?: string | null
@@ -117,6 +76,7 @@ export type Database = {
         }
         Update: {
           background?: string | null
+          company_type_id?: number | null
           created_at?: string | null
           description?: string | null
           email?: string | null
@@ -124,6 +84,7 @@ export type Database = {
           external_id?: number | null
           id?: number
           images?: string[] | null
+          is_verified?: boolean | null
           logo?: string | null
           name?: string
           phone?: string | null
@@ -132,7 +93,15 @@ export type Database = {
           updated_at?: string | null
           website_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "companies_company_type_id_fkey"
+            columns: ["company_type_id"]
+            isOneToOne: false
+            referencedRelation: "company_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_branches: {
         Row: {
@@ -140,33 +109,33 @@ export type Database = {
           company_id: number | null
           country_id: number | null
           created_at: string | null
+          district_id: number | null
           id: number
           name: string
           province_id: number | null
           updated_at: string | null
-          ward_id: number | null
         }
         Insert: {
           address?: string | null
           company_id?: number | null
           country_id?: number | null
           created_at?: string | null
+          district_id?: number | null
           id?: number
           name: string
           province_id?: number | null
           updated_at?: string | null
-          ward_id?: number | null
         }
         Update: {
           address?: string | null
           company_id?: number | null
           country_id?: number | null
           created_at?: string | null
+          district_id?: number | null
           id?: number
           name?: string
           province_id?: number | null
           updated_at?: string | null
-          ward_id?: number | null
         }
         Relationships: [
           {
@@ -184,47 +153,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "company_branches_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "districts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "company_branches_province_id_fkey"
             columns: ["province_id"]
             isOneToOne: false
             referencedRelation: "provinces"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "company_branches_ward_id_fkey"
-            columns: ["ward_id"]
-            isOneToOne: false
-            referencedRelation: "wards"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      company_company_types: {
-        Row: {
-          company_id: number
-          company_type_id: number
-        }
-        Insert: {
-          company_id: number
-          company_type_id: number
-        }
-        Update: {
-          company_id?: number
-          company_type_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "company_company_types_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "company_company_types_company_type_id_fkey"
-            columns: ["company_type_id"]
-            isOneToOne: false
-            referencedRelation: "company_types"
             referencedColumns: ["id"]
           },
         ]
@@ -271,75 +210,34 @@ export type Database = {
         }
         Relationships: []
       }
-      cv: {
+      districts: {
         Row: {
-          createdat: string | null
-          cvid: number
-          filepath: string | null
-          studentid: number | null
-          title: string | null
-        }
-        Insert: {
-          createdat?: string | null
-          cvid?: never
-          filepath?: string | null
-          studentid?: number | null
-          title?: string | null
-        }
-        Update: {
-          createdat?: string | null
-          cvid?: never
-          filepath?: string | null
-          studentid?: number | null
-          title?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cv_studentid_fkey"
-            columns: ["studentid"]
-            isOneToOne: false
-            referencedRelation: "student"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      educations: {
-        Row: {
-          degree: string | null
-          description: string | null
-          end_date: string | null
+          created_at: string | null
           id: number
-          major: string | null
-          school: string
-          start_date: string | null
-          student_id: number | null
+          name: string
+          province_id: number | null
+          updated_at: string | null
         }
         Insert: {
-          degree?: string | null
-          description?: string | null
-          end_date?: string | null
-          id?: never
-          major?: string | null
-          school: string
-          start_date?: string | null
-          student_id?: number | null
+          created_at?: string | null
+          id?: number
+          name: string
+          province_id?: number | null
+          updated_at?: string | null
         }
         Update: {
-          degree?: string | null
-          description?: string | null
-          end_date?: string | null
-          id?: never
-          major?: string | null
-          school?: string
-          start_date?: string | null
-          student_id?: number | null
+          created_at?: string | null
+          id?: number
+          name?: string
+          province_id?: number | null
+          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "educations_student_id_fkey"
-            columns: ["student_id"]
+            foreignKeyName: "districts_province_id_fkey"
+            columns: ["province_id"]
             isOneToOne: false
-            referencedRelation: "student"
+            referencedRelation: "provinces"
             referencedColumns: ["id"]
           },
         ]
@@ -364,50 +262,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
-      }
-      experiences: {
-        Row: {
-          company: string
-          description: string | null
-          end_date: string | null
-          id: number
-          is_current: boolean | null
-          location: string | null
-          position: string
-          start_date: string
-          student_id: number | null
-        }
-        Insert: {
-          company: string
-          description?: string | null
-          end_date?: string | null
-          id?: never
-          is_current?: boolean | null
-          location?: string | null
-          position: string
-          start_date: string
-          student_id?: number | null
-        }
-        Update: {
-          company?: string
-          description?: string | null
-          end_date?: string | null
-          id?: never
-          is_current?: boolean | null
-          location?: string | null
-          position?: string
-          start_date?: string
-          student_id?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "experiences_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "student"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       job_categories: {
         Row: {
@@ -471,51 +325,30 @@ export type Database = {
       }
       job_levels: {
         Row: {
-          created_at: string | null
-          id: number
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      job_levels_jobs: {
-        Row: {
           job_id: number
-          job_level_id: number
+          level_id: number
         }
         Insert: {
           job_id: number
-          job_level_id: number
+          level_id: number
         }
         Update: {
           job_id?: number
-          job_level_id?: number
+          level_id?: number
         }
         Relationships: [
           {
-            foreignKeyName: "job_levels_jobs_job_id_fkey"
+            foreignKeyName: "job_levels_job_id_fkey"
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "job_levels_jobs_job_level_id_fkey"
-            columns: ["job_level_id"]
+            foreignKeyName: "job_levels_level_id_fkey"
+            columns: ["level_id"]
             isOneToOne: false
-            referencedRelation: "job_levels"
+            referencedRelation: "levels"
             referencedColumns: ["id"]
           },
         ]
@@ -549,32 +382,32 @@ export type Database = {
           },
         ]
       }
-      job_required_skills: {
+      job_skills: {
         Row: {
           job_id: number
-          required_skill_id: number
+          skill_id: number
         }
         Insert: {
           job_id: number
-          required_skill_id: number
+          skill_id: number
         }
         Update: {
           job_id?: number
-          required_skill_id?: number
+          skill_id?: number
         }
         Relationships: [
           {
-            foreignKeyName: "job_required_skills_job_id_fkey"
+            foreignKeyName: "job_skills_job_id_fkey"
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "job_required_skills_required_skill_id_fkey"
-            columns: ["required_skill_id"]
+            foreignKeyName: "job_skills_skill_id_fkey"
+            columns: ["skill_id"]
             isOneToOne: false
-            referencedRelation: "required_skills"
+            referencedRelation: "skills"
             referencedColumns: ["id"]
           },
         ]
@@ -681,75 +514,26 @@ export type Database = {
           },
         ]
       }
-      notification: {
+      levels: {
         Row: {
-          createdat: string | null
+          created_at: string | null
           id: number
-          isread: boolean | null
-          message: string
-          type: Database["public"]["Enums"]["notificationtype"] | null
-          userid: number | null
+          name: string
+          updated_at: string | null
         }
         Insert: {
-          createdat?: string | null
-          id?: never
-          isread?: boolean | null
-          message: string
-          type?: Database["public"]["Enums"]["notificationtype"] | null
-          userid?: number | null
+          created_at?: string | null
+          id?: number
+          name: string
+          updated_at?: string | null
         }
         Update: {
-          createdat?: string | null
-          id?: never
-          isread?: boolean | null
-          message?: string
-          type?: Database["public"]["Enums"]["notificationtype"] | null
-          userid?: number | null
+          created_at?: string | null
+          id?: number
+          name?: string
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "notification_userid_fkey"
-            columns: ["userid"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      portfolios: {
-        Row: {
-          description: string | null
-          id: number
-          image_url: string | null
-          link: string | null
-          student_id: number | null
-          title: string
-        }
-        Insert: {
-          description?: string | null
-          id?: never
-          image_url?: string | null
-          link?: string | null
-          student_id?: number | null
-          title: string
-        }
-        Update: {
-          description?: string | null
-          id?: never
-          image_url?: string | null
-          link?: string | null
-          student_id?: number | null
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "portfolios_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "student"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       provinces: {
         Row: {
@@ -783,7 +567,7 @@ export type Database = {
           },
         ]
       }
-      required_skills: {
+      skills: {
         Row: {
           created_at: string | null
           id: number
@@ -804,76 +588,6 @@ export type Database = {
         }
         Relationships: []
       }
-      social_links: {
-        Row: {
-          id: number
-          platform: string
-          student_id: number | null
-          url: string
-        }
-        Insert: {
-          id?: never
-          platform: string
-          student_id?: number | null
-          url: string
-        }
-        Update: {
-          id?: never
-          platform?: string
-          student_id?: number | null
-          url?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "social_links_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "student"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      student: {
-        Row: {
-          about: string | null
-          created_at: string | null
-          id: number
-          location: string | null
-          open_for_opportunities: boolean | null
-          skills: string[] | null
-          updated_at: string | null
-          user_id: number | null
-        }
-        Insert: {
-          about?: string | null
-          created_at?: string | null
-          id?: never
-          location?: string | null
-          open_for_opportunities?: boolean | null
-          skills?: string[] | null
-          updated_at?: string | null
-          user_id?: number | null
-        }
-        Update: {
-          about?: string | null
-          created_at?: string | null
-          id?: never
-          location?: string | null
-          open_for_opportunities?: boolean | null
-          skills?: string[] | null
-          updated_at?: string | null
-          user_id?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "student_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
       users: {
         Row: {
           avatar: string | null
@@ -883,8 +597,7 @@ export type Database = {
           is_verified: boolean | null
           last_name: string
           password: string
-          role: Database["public"]["Enums"]["role"]
-          status: Database["public"]["Enums"]["status"]
+          role: string
           updated_at: string | null
           user_id: number
         }
@@ -896,8 +609,7 @@ export type Database = {
           is_verified?: boolean | null
           last_name: string
           password: string
-          role?: Database["public"]["Enums"]["role"]
-          status?: Database["public"]["Enums"]["status"]
+          role: string
           updated_at?: string | null
           user_id?: number
         }
@@ -909,44 +621,11 @@ export type Database = {
           is_verified?: boolean | null
           last_name?: string
           password?: string
-          role?: Database["public"]["Enums"]["role"]
-          status?: Database["public"]["Enums"]["status"]
+          role?: string
           updated_at?: string | null
           user_id?: number
         }
         Relationships: []
-      }
-      wards: {
-        Row: {
-          created_at: string | null
-          id: number
-          name: string
-          province_id: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          name: string
-          province_id?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          name?: string
-          province_id?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "wards_province_id_fkey"
-            columns: ["province_id"]
-            isOneToOne: false
-            referencedRelation: "provinces"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Views: {
@@ -956,22 +635,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      applicationstatus:
-        | "Submitted"
-        | "Viewed"
-        | "Interview"
-        | "Accepted"
-        | "Rejected"
       jobstatus: "Pending" | "Approved" | "Rejected" | "Expired"
-      jobType:
-        | "Full-Time"
-        | "Part-Time"
-        | "Contract"
-        | "Internship"
-        | "Freelance"
-      notificationtype: "System" | "Job" | "Application"
-      role: "Student" | "Employer" | "Manager" | "Admin"
-      status: "Active" | "Inactive" | "Banned"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1099,24 +763,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      applicationstatus: [
-        "Submitted",
-        "Viewed",
-        "Interview",
-        "Accepted",
-        "Rejected",
-      ],
       jobstatus: ["Pending", "Approved", "Rejected", "Expired"],
-      jobType: [
-        "Full-Time",
-        "Part-Time",
-        "Contract",
-        "Internship",
-        "Freelance",
-      ],
-      notificationtype: ["System", "Job", "Application"],
-      role: ["Student", "Employer", "Manager", "Admin"],
-      status: ["Active", "Inactive", "Banned"],
     },
   },
 } as const
