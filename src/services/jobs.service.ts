@@ -3,7 +3,7 @@ import { BadRequestError, NotFoundError } from "@/utils/errors";
 import jobRepository from "@/repositories/job.repository";
 import categoryRepo from "@/repositories/categories.repository";
 import skillRepo from "@/repositories/skills.repository";
-import jobLevelRepo from "@/repositories/job_level.repository";
+import jobLevelRepo from "@/repositories/level.repository";
 import employmentTypeRepo from "@/repositories/employment_types.repository";
 import { CreateJobDto } from "@/dtos/job/CreateJob.dto";
 import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";

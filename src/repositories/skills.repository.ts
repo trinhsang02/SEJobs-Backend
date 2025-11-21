@@ -16,7 +16,7 @@ export class SkillRepository {
     const fields = _.get(input, "fields", this.fields);
     const skill_ids = _.get(input, "ids", []);
 
-    let dbQuery = this.db.from("required_skills").select(fields, { count: "exact" });
+    let dbQuery = this.db.from("skills").select(fields, { count: "exact" });
 
     if (skill_ids.length > 0) dbQuery = dbQuery.in("id", skill_ids);
     if (name) dbQuery = dbQuery.eq("name", name);
@@ -39,7 +39,7 @@ export class SkillRepository {
   }
 
   async findOne(id: number) {
-    const { data, error } = await this.db.from("required_skills").select(this.fields).eq("id", id).maybeSingle();
+    const { data, error } = await this.db.from("skills").select(this.fields).eq("id", id).maybeSingle();
 
     if (error) throw error;
 
@@ -48,7 +48,7 @@ export class SkillRepository {
 
   async create(input: { skillData: SkillInsert }) {
     const { data, error } = await this.db
-      .from("required_skills")
+      .from("skills")
       .insert([input.skillData])
       .select(this.fields)
       .single();
@@ -57,12 +57,12 @@ export class SkillRepository {
 
     return data;
   }
-  // async update(jobId: number, input: SkillUpdate) {
+
   async update(skillId: number, input: SkillUpdate) {
     const filteredData = _.pickBy(input, (v) => v !== null && v !== undefined && v !== "");
 
     const { data, error } = await this.db
-      .from("required_skills")
+      .from("skills")
       .update(filteredData)
       .eq("id", skillId)
       .select("id")
@@ -75,7 +75,7 @@ export class SkillRepository {
 
   async delete(id: number) {
     const { data, error } = await this.db
-      .from("required_skills")
+      .from("skills")
       .delete()
       .eq("id", id)
       .select(this.fields)
@@ -93,7 +93,7 @@ export class SkillRepository {
 
     if (!jobSkillsData || jobSkillsData.length === 0) return [];
 
-    const { data, error } = await this.db.from("job_required_skills").insert(jobSkillsData).select();
+    const { data, error } = await this.db.from("job_skills").insert(jobSkillsData).select();
 
     if (error) throw error;
 
@@ -101,7 +101,7 @@ export class SkillRepository {
   }
 
   async bulkDeleteJobSkills(jobId: number) {
-    const { error } = await this.db.from("job_required_skills").delete().eq("job_id", jobId);
+    const { error } = await this.db.from("job_skills").delete().eq("job_id", jobId);
 
     if (error) throw error;
 
