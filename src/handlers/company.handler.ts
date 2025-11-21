@@ -70,7 +70,7 @@ export async function deleteCompany(request: Request, response: Response) {
     throw new BadRequestError({ message: 'Missing required param: id'});
   }
 
-  await CompanyService.deleteCompany(_.toNumber(id));
+  await CompanyService.delete(_.toNumber(id));
 
   response.status(200).json({
     success: true,

@@ -38,9 +38,9 @@ export interface CompanyTypeQueryParams extends QueryParams {
 }
 
 // COMPANY_COMPANY_TYPES
-// export type CompanyCompanyTypes = Database["public"]["Tables"]["com"]["Row"];
-// export type CompanyCompanyTypesInsert = Database["public"]["Tables"]["company_company_types"]["Insert"];
-// export type CompanyCompanyTypesUpdate = Database["public"]["Tables"]["company_company_types"]["Update"];
+export type CompanyCompanyTypes = Database["public"]["Tables"]["company_company_types"]["Row"];
+export type CompanyCompanyTypesInsert = Database["public"]["Tables"]["company_company_types"]["Insert"];
+export type CompanyCompanyTypesUpdate = Database["public"]["Tables"]["company_company_types"]["Update"];
 
 // JOB
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];

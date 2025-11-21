@@ -56,14 +56,14 @@ export class CompanyService {
     }});
 
     // TODO/BUG: HANDLE WITH TRANSACTION
-    // if (companyTypeIds) {
-    //   await companyTypeRepository.bulkCreateCompanyCompanyTypes({
-    //     companyCompanyTypesData: companyTypeIds.map((company_type_id) => ({
-    //       company_id: newCompany.id,
-    //       company_type_id: company_type_id,
-    //     }))
-    //   });
-    // }
+    if (companyTypeIds) {
+      await companyTypeRepository.bulkCreateCompanyCompanyTypes({
+        companyCompanyTypesData: companyTypeIds.map((company_type_id) => ({
+          company_id: newCompany.id,
+          company_type_id: company_type_id,
+        }))
+      });
+    }
 
     return newCompany;
   }
@@ -93,7 +93,7 @@ export class CompanyService {
     return updatedCompany;
   }
 
-  async deleteCompany(companyId: number) {
+  async delete(companyId: number) {
     const deletedCompany = await companyRepository.delete(companyId);
 
     if (!deletedCompany) {

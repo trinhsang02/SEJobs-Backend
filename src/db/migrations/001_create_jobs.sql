@@ -37,13 +37,6 @@ CREATE TABLE wards (
   updated_at timestamptz DEFAULT now()
 );
 
-CREATE TABLE company_types (
-  id bigserial PRIMARY KEY,
-  name text NOT NULL,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
-
 CREATE TABLE companies (
   id bigserial PRIMARY KEY,
   external_id bigint,
@@ -59,6 +52,13 @@ CREATE TABLE companies (
   socials jsonb,
   images text[],
   employee_count numeric,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE company_types (
+  id bigserial PRIMARY KEY,
+  name text NOT NULL,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
