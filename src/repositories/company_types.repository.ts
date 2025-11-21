@@ -1,5 +1,5 @@
 import { supabase } from "@/config/supabase";
-import { CompanyTypeQueryParams, CompanyTypes, CompanyTypesInsert, CompanyTypesUpdate } from "@/types/common";
+import { CompanyCompanyTypesInsert, CompanyTypeQueryParams, CompanyTypes, CompanyTypesInsert, CompanyTypesUpdate } from "@/types/common";
 import { InternalServerError, NotFoundError } from "@/utils/errors";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
@@ -113,22 +113,22 @@ export class CompanyTypesRepository {
     return data;
   }
 
-  // async bulkCreateCompanyCompanyTypes(input: { companyCompanyTypesData: CompanyCompanyTypesInsert[] }) {
-  //   const { companyCompanyTypesData } = input;
+  async bulkCreateCompanyCompanyTypes(input: { companyCompanyTypesData: CompanyCompanyTypesInsert[] }) {
+    const { companyCompanyTypesData } = input;
 
-  //   if (!companyCompanyTypesData || companyCompanyTypesData.length === 0) return [];
+    if (!companyCompanyTypesData || companyCompanyTypesData.length === 0) return [];
 
-  //   const { data, error } = await this.db
-  //       .from("company_company_types")
-  //       .insert(companyCompanyTypesData)
-  //       .select(this.fields);
+    const { data, error } = await this.db
+        .from("company_company_types")
+        .insert(companyCompanyTypesData)
+        .select(this.fields);
 
-  //   if (error) {
-  //       throw new InternalServerError({ message: `Failed to create company company types: ${error.message}` });
-  //   }
+    if (error) {
+        throw new InternalServerError({ message: `Failed to create company company types: ${error.message}` });
+    }
 
-  //   return data;
-  // }
+    return data;
+  }
 }
 
 export default new CompanyTypesRepository();

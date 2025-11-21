@@ -38,7 +38,6 @@ export type Database = {
       companies: {
         Row: {
           background: string | null
-          company_type_id: number | null
           created_at: string | null
           description: string | null
           email: string | null
@@ -57,7 +56,6 @@ export type Database = {
         }
         Insert: {
           background?: string | null
-          company_type_id?: number | null
           created_at?: string | null
           description?: string | null
           email?: string | null
@@ -76,7 +74,6 @@ export type Database = {
         }
         Update: {
           background?: string | null
-          company_type_id?: number | null
           created_at?: string | null
           description?: string | null
           email?: string | null
@@ -93,15 +90,7 @@ export type Database = {
           updated_at?: string | null
           website_url?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "companies_company_type_id_fkey"
-            columns: ["company_type_id"]
-            isOneToOne: false
-            referencedRelation: "company_types"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       company_branches: {
         Row: {
@@ -164,6 +153,36 @@ export type Database = {
             columns: ["province_id"]
             isOneToOne: false
             referencedRelation: "provinces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_company_types: {
+        Row: {
+          company_id: number
+          company_type_id: number
+        }
+        Insert: {
+          company_id: number
+          company_type_id: number
+        }
+        Update: {
+          company_id?: number
+          company_type_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_company_types_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_company_types_company_type_id_fkey"
+            columns: ["company_type_id"]
+            isOneToOne: false
+            referencedRelation: "company_types"
             referencedColumns: ["id"]
           },
         ]
@@ -626,6 +645,38 @@ export type Database = {
           user_id?: number
         }
         Relationships: []
+      }
+      wards: {
+        Row: {
+          created_at: string | null
+          id: number
+          name: string
+          province_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          name: string
+          province_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          name?: string
+          province_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wards_province_id_fkey"
+            columns: ["province_id"]
+            isOneToOne: false
+            referencedRelation: "provinces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
