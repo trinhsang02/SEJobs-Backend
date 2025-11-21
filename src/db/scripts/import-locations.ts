@@ -82,8 +82,8 @@ const importWards = async () => {
 };
 
 const importLocations = async () => {
-    await importCountries();
-    await importProvinces();
-    await importWards();
+    // await importCountries();
+    // await importProvinces();
+    // await importWards();
 }
 importLocations();
