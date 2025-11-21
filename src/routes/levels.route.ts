@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 import { authenticate } from "@/middlewares/auth.middleware";
-import { createLevel, deleteLevel, getLevel, getLevels, updateLevel } from "@/handlers/job_levels.handler";
+import { createLevel, deleteLevel, getLevel, getLevels, updateLevel } from "@/handlers/levels.handler";
 
 const router = Router();
 

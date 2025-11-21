@@ -50,13 +50,13 @@ export class JobService {
       const jobCategoriesData = category_ids.map((category_id) => ({ category_id, job_id: createdJob.id }));
       const jobSkillsData = required_skill_ids.map((skill_id) => ({ skill_id, job_id: createdJob.id }));
       const jobEmploymentTypesData = employment_type_ids.map((employment_type_id) => ({ employment_type_id, job_id: createdJob.id }));
-      const jobLevelJobsData = level_ids.map((level_id) => ({ level_id, job_id: createdJob.id }));
+      const jobLevelsData = level_ids.map((level_id) => ({ level_id, job_id: createdJob.id }));
   
       await Promise.all([
         categoryRepo.bulkCreateJobCategories({ jobCategoriesData }),
         skillRepo.bulkCreateJobSkills({ jobSkillsData }),
         employmentTypeRepo.bulkCreateJobEmploymentTypes({ jobEmploymentTypesData }),
-        jobLevelRepo.bulkCreateJobLevelJobs({ jobLevelJobsData }),
+        jobLevelRepo.bulkCreateJobLevels({ jobLevelsData }),
       ]);
 
       const jobId = createdJob.id;
@@ -151,7 +151,7 @@ export class JobService {
       categoryRepo.bulkDeleteJobCategories(jobId),
       skillRepo.bulkDeleteJobSkills(jobId),
       employmentTypeRepo.bulkDeleteJobEmploymentTypes(jobId),
-      jobLevelRepo.bulkDeleteJobLevelJobs(jobId),
+      jobLevelRepo.bulkDeleteJobLevels(jobId),
     ]);
 
     await jobRepository.delete(jobId);

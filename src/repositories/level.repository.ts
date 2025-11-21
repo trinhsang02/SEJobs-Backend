@@ -75,19 +75,19 @@ export class LevelRepository {
     return data;
   }
 
-  async bulkCreateJobLevels(input: { jobLevelJobsData: JobLevelInsert[] }) {
-    const { jobLevelJobsData } = input;
+  async bulkCreateJobLevels(input: { jobLevelsData: JobLevelInsert[] }) {
+    const { jobLevelsData } = input;
 
-    if (jobLevelJobsData.length === 0) return [];
+    if (jobLevelsData.length === 0) return [];
 
-    const { data, error } = await this.db.from("job_levels_jobs").insert(jobLevelJobsData).select();
+    const { data, error } = await this.db.from("job_levels").insert(jobLevelsData).select();
     if (error) throw error;
 
     return data;
   }
 
   async bulkDeleteJobLevels(jobId: number) {
-    const { error } = await this.db.from("job_levels_jobs").delete().eq("job_id", jobId);
+    const { error } = await this.db.from("job_levels").delete().eq("job_id", jobId);
 
     if (error) throw error;
 
