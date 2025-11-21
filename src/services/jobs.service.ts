@@ -38,7 +38,7 @@ export class JobService {
     try {
       const { jobData } = input;
   
-      const { category_ids = [], required_skill_ids = [], employment_type_ids = [], job_level_ids = [], ...jobPayload } = jobData;
+      const { category_ids = [], required_skill_ids = [], employment_type_ids = [], level_ids = [], ...jobPayload } = jobData;
 
       const { error } = await this.validateCreate(jobData);
 
@@ -48,9 +48,9 @@ export class JobService {
       createdJobId = createdJob.id;
 
       const jobCategoriesData = category_ids.map((category_id) => ({ category_id, job_id: createdJob.id }));
-      const jobSkillsData = required_skill_ids.map((required_skill_id) => ({ required_skill_id, job_id: createdJob.id }));
+      const jobSkillsData = required_skill_ids.map((skill_id) => ({ skill_id, job_id: createdJob.id }));
       const jobEmploymentTypesData = employment_type_ids.map((employment_type_id) => ({ employment_type_id, job_id: createdJob.id }));
-      const jobLevelJobsData = job_level_ids.map((job_level_id) => ({ job_level_id, job_id: createdJob.id }));
+      const jobLevelJobsData = level_ids.map((level_id) => ({ level_id, job_id: createdJob.id }));
   
       await Promise.all([
         categoryRepo.bulkCreateJobCategories({ jobCategoriesData }),
@@ -75,13 +75,13 @@ export class JobService {
   }
 
   async validateCreate(jobData: CreateJobDto) {
-    let { company_id, company_branches_id, category_ids = [], required_skill_ids = [], employment_type_ids = [], job_level_ids = [] } = jobData;
+    let { company_id, company_branches_id, category_ids = [], required_skill_ids = [], employment_type_ids = [], level_ids = [] } = jobData;
 
     const error_messages: string[] = [];
     category_ids = _.uniq(category_ids);
     required_skill_ids = _.uniq(required_skill_ids);
     employment_type_ids = _.uniq(employment_type_ids);
-    job_level_ids = _.uniq(job_level_ids);
+    level_ids = _.uniq(level_ids);
 
     const company = await companyRepo.findOne({ company_id: company_id });
     // TODO: Check branches
@@ -128,11 +128,11 @@ export class JobService {
       });
     }
 
-    if (job_level_ids.length > 0) {
-      const { data: jobLevels } = await jobLevelRepo.findAll({ ids: job_level_ids });
+    if (level_ids.length > 0) {
+      const { data: jobLevels } = await jobLevelRepo.findAll({ ids: level_ids });
       const jobLevelsMap = _.keyBy(jobLevels, 'id'); 
 
-      job_level_ids.forEach((id) => {
+      level_ids.forEach((id) => {
         if (!jobLevelsMap[id]) {
           error_messages.push(`job_level_id ${id} not found.`);
         }
@@ -165,7 +165,7 @@ export class JobService {
       throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
     }
 
-    const { category_ids, required_skill_ids, employment_type_ids, job_level_ids, ...jobPayload } = jobData;
+    const { category_ids, required_skill_ids, employment_type_ids, level_ids, ...jobPayload } = jobData;
 
     const jobPayloadWithUpdatedAt = { ...jobPayload, updated_at: new Date().toISOString() };
 

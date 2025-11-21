@@ -1,10 +1,10 @@
 import { CreateLevelDto } from "@/dtos/job/CreateLevel.dto";
 import { UpdateLevelDto } from "@/dtos/job/UpdateLevel.dto";
 import job_levelRepository from "@/repositories/job_level.repository";
-import { JobLevelQueryParams } from "@/types/common";
+import { LevelQueryParams } from "@/types/common";
 
 export class JobLevelService {
-  async findAll(input: JobLevelQueryParams) {
+  async findAll(input: LevelQueryParams) {
     return await job_levelRepository.findAll(input);
   }
 

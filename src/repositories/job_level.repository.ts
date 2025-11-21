@@ -1,7 +1,7 @@
 import { supabase } from "@/config/supabase";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
-import { JobLevelInsert, JobLevelJobInsert, JobLevelQueryParams, JobLevelUpdate } from "@/types/common";
+import { LevelInsert, JobLevelInsert, LevelQueryParams, LevelUpdate } from "@/types/common";
 
 export class JobLevelRepository {
   private readonly db: SupabaseClient;
@@ -11,7 +11,7 @@ export class JobLevelRepository {
     this.db = supabase;
   }
 
-  async findAll(input: JobLevelQueryParams) {
+  async findAll(input: LevelQueryParams) {
     const { page, limit, name } = input;
     const hasPagination = page && limit;
     const fields = _.get(input, "fields", this.fields);
@@ -47,14 +47,14 @@ export class JobLevelRepository {
     return data;
   }
 
-  async create(input: { jobLevelData: JobLevelInsert }) {
+  async create(input: { jobLevelData: LevelInsert }) {
     const { data, error } = await this.db.from("job_levels").insert([input.jobLevelData]).select(this.fields).single();
 
     if (error) throw error;
 
     return data;
   }
-  async update(levelId: number, input: JobLevelUpdate) {
+  async update(levelId: number, input: LevelUpdate) {
     const filteredData = _.pickBy(input, (v) => v !== null && v !== undefined && v !== "");
 
     const { data, error } = await this.db.from("job_levels").update(filteredData).eq("id", levelId).select("id").maybeSingle();
@@ -74,7 +74,7 @@ export class JobLevelRepository {
     return data;
   }
 
-  async bulkCreateJobLevelJobs(input: { jobLevelJobsData: JobLevelJobInsert[] }) {
+  async bulkCreateJobLevelJobs(input: { jobLevelJobsData: JobLevelInsert[] }) {
     const { jobLevelJobsData } = input;
 
     if (jobLevelJobsData.length === 0) return [];

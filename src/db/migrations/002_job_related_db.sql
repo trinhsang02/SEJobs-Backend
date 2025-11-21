@@ -1,11 +1,11 @@
 
-CREATE TABLE job_levels (
+CREATE TABLE levels (
   id bigserial PRIMARY KEY,
   name text NOT NULL,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
-CREATE TABLE required_skills (
+CREATE TABLE skills (
   id bigserial PRIMARY KEY,
   name text NOT NULL,
   created_at timestamptz DEFAULT now(),
@@ -51,10 +51,10 @@ CREATE TABLE job_categories (
   PRIMARY KEY (job_id, category_id)
 );
 
-CREATE TABLE job_required_skills (
+CREATE TABLE job_skills (
   job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-  required_skill_id BIGINT NOT NULL REFERENCES required_skills(id) ON DELETE CASCADE,
-  PRIMARY KEY (job_id, required_skill_id)
+  skill_id BIGINT NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+  PRIMARY KEY (job_id, skill_id)
 );
 
 CREATE TABLE job_employment_types (
@@ -63,8 +63,8 @@ CREATE TABLE job_employment_types (
   PRIMARY KEY (job_id, employment_type_id)
 );
 
-CREATE TABLE job_levels_jobs (
+CREATE TABLE job_levels (
   job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-  job_level_id BIGINT NOT NULL REFERENCES job_levels(id) ON DELETE CASCADE,
-  PRIMARY KEY (job_id, job_level_id)
+  level_id BIGINT NOT NULL REFERENCES levels(id) ON DELETE CASCADE,
+  PRIMARY KEY (job_id, level_id)
 );
