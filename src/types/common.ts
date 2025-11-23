@@ -22,6 +22,11 @@ export type Company = Database["public"]["Tables"]["companies"]["Row"];
 export type CompanyInsert = Database["public"]["Tables"]["companies"]["Insert"];
 export type CompanyUpdate = Database["public"]["Tables"]["companies"]["Update"];
 
+export interface CompanyQueryAllParams extends QueryParams {
+  company_ids?: number[];
+  email?: string;
+}
+
 export interface CompanyQueryParams extends QueryParams {
   company_id?: number;
   email?: string;

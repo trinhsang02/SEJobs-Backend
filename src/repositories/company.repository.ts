@@ -1,5 +1,5 @@
 import { supabase } from "@/config/supabase";
-import { UserInsert, UserUpdate, User, UserQueryParams, CompanyInsert, CompanyUpdate, Company, CompanyQueryParams } from "@/types/common";
+import { UserInsert, UserUpdate, User, UserQueryParams, CompanyInsert, CompanyUpdate, Company, CompanyQueryParams, CompanyQueryAllParams } from "@/types/common";
 import { NotFoundError } from "@/utils/errors";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
@@ -13,14 +13,18 @@ export class CompanyRepository {
   }
 
   // BUG: https://github.com/supabase/supabase-js/issues/1571
-  async findAll(input: CompanyQueryParams) {
+  async findAll<T>(input: CompanyQueryAllParams) {
     const fields = _.get(input, 'fields', this.fields);
     const page = _.get(input, 'page');
     const limit = _.get(input, 'limit');
+    const hasPagination = page && limit;
+    const company_ids = _.get(input, "company_ids") || [];
 
     let dbQuery = this.db.from("companies").select(fields, { count: "exact" });
 
-    const executeQuery = page && limit
+    if (company_ids.length > 0) dbQuery = dbQuery.in("id", company_ids);
+
+    const executeQuery = hasPagination
         ? dbQuery.range((page - 1) * limit, page * limit - 1)
         : dbQuery;
 
@@ -29,11 +33,11 @@ export class CompanyRepository {
     if (error) throw error;
 
     return { 
-      data,
-      pagination: page && limit ? { page, limit,
+      data: data as T[],
+      pagination: hasPagination && { page, limit,
         total: count || 0,
         total_pages: count ? Math.ceil(count / limit) : 0,
-      } : null,
+      },
     };
   }
 
