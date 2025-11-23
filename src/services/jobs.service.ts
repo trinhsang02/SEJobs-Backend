@@ -14,9 +14,21 @@ import companyBranchesRepo from "@/repositories/company_branches.repository";
 export class JobService {
   async list(input: JobQueryParams) {
     const result = await jobRepository.findAll(input);
+    const jobsWithCompany = await Promise.all(
+      result.data.map(async (job: any) => {
+        let company = null;
+        if (job.company_id) {
+          company = await companyRepo.findOne({ company_id: job.company_id });
+          if (!company) {
+            throw new NotFoundError({ message: `Company with ID ${job.company_id} not found` });
+          }
+        }
+        return { ...job, company };
+      })
+    );
 
     return {
-      data: result.data,
+      data: jobsWithCompany,
       pagination: result.pagination,
     };
   }
@@ -28,17 +40,26 @@ export class JobService {
     if (!job) {
       throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
     }
+    const company = job.company_id ? await companyRepo.findOne({ company_id: job.company_id }) : null;
+    if (job.company_id && !company) {
+      throw new NotFoundError({ message: `Company with ID ${job.company_id} not found` });
+    }
 
-    return job;
+    return { ...job, company };
   }
 
   async create(input: { jobData: CreateJobDto }) {
     let createdJobId: number | null = null;
-    // TODO: API TOO SLOW -> INDEX
     try {
       const { jobData } = input;
 
-      const { category_ids = [], required_skill_ids = [], employment_type_ids = [], level_ids = [], ...jobPayload } = jobData;
+      const {
+        category_ids = [],
+        required_skill_ids = [],
+        employment_type_ids = [],
+        level_ids = [],
+        ...jobPayload
+      } = jobData;
 
       const { error } = await this.validateCreate(jobData);
 
@@ -49,9 +70,13 @@ export class JobService {
 
       const jobCategoriesData = category_ids.map((category_id) => ({ category_id, job_id: createdJob.id }));
       const jobSkillsData = required_skill_ids.map((skill_id) => ({ skill_id, job_id: createdJob.id }));
-      const jobEmploymentTypesData = employment_type_ids.map((employment_type_id) => ({ employment_type_id, job_id: createdJob.id }));
+      const jobEmploymentTypesData = employment_type_ids.map((employment_type_id) => ({
+        employment_type_id,
+        job_id: createdJob.id,
+      }));
+      console.log("employment", jobEmploymentTypesData);
       const jobLevelsData = level_ids.map((level_id) => ({ level_id, job_id: createdJob.id }));
-
+      console.log("jobLevelsData", jobLevelsData);
       await Promise.all([
         categoryRepo.bulkCreateJobCategories({ jobCategoriesData }),
         skillRepo.bulkCreateJobSkills({ jobSkillsData }),
@@ -61,9 +86,7 @@ export class JobService {
 
       const jobId = createdJob.id;
 
-      const { job } = await jobRepository.findOne(jobId);
-
-      return job;
+      return await this.findOne({ jobId });
     } catch (error) {
       if (createdJobId) {
         await this.delete(createdJobId);
@@ -74,7 +97,14 @@ export class JobService {
   }
 
   async validateCreate(jobData: CreateJobDto) {
-    let { company_id, company_branches_id, category_ids = [], required_skill_ids = [], employment_type_ids = [], level_ids = [] } = jobData;
+    let {
+      company_id,
+      company_branches_id,
+      category_ids = [],
+      required_skill_ids = [],
+      employment_type_ids = [],
+      level_ids = [],
+    } = jobData;
 
     const error_messages: string[] = [];
 
@@ -91,22 +121,29 @@ export class JobService {
     const companyBranchesPromise = companyBranchesRepo.findOne({ id: company_branches_id, company_id });
     promises.push(companyBranchesPromise);
 
-    const categoryPromise = category_ids.length > 0 ? categoryRepo.findAll({ ids: category_ids }) : Promise.resolve({ data: [] });
+    const categoryPromise =
+      category_ids.length > 0 ? categoryRepo.findAll({ ids: category_ids }) : Promise.resolve({ data: [] });
     promises.push(categoryPromise);
 
     // required_skill_ids
-    const skillsPromise = required_skill_ids.length > 0 ? skillRepo.findAll({ ids: required_skill_ids }) : Promise.resolve({ data: [] });
+    const skillsPromise =
+      required_skill_ids.length > 0 ? skillRepo.findAll({ ids: required_skill_ids }) : Promise.resolve({ data: [] });
     promises.push(skillsPromise);
 
     // employment_type_ids
-    const employmentTypesPromise = employment_type_ids.length > 0 ? employmentTypeRepo.findAll({ ids: employment_type_ids }) : Promise.resolve({ data: [] });
+    const employmentTypesPromise =
+      employment_type_ids.length > 0
+        ? employmentTypeRepo.findAll({ ids: employment_type_ids })
+        : Promise.resolve({ data: [] });
     promises.push(employmentTypesPromise);
 
     // level_ids
-    const jobLevelsPromise = level_ids.length > 0 ? jobLevelRepo.findAll({ ids: level_ids }) : Promise.resolve({ data: [] });
+    const jobLevelsPromise =
+      level_ids.length > 0 ? jobLevelRepo.findAll({ ids: level_ids }) : Promise.resolve({ data: [] });
     promises.push(jobLevelsPromise);
 
-    const [company, companyBranch, categoriesResult, skillsResult, employmentTypesResult, jobLevelsResult] = await Promise.all(promises);
+    const [company, companyBranch, categoriesResult, skillsResult, employmentTypesResult, jobLevelsResult] =
+      await Promise.all(promises);
 
     if (!company) {
       error_messages.push(`company_id ${company_id} not found.`);
@@ -168,8 +205,7 @@ export class JobService {
     const jobPayloadWithUpdatedAt = { ...jobPayload, updated_at: new Date().toISOString() };
 
     await jobRepository.update(jobId, jobPayloadWithUpdatedAt as any);
-
-    return await jobRepository.findOne(jobId);
+    return await this.findOne({ jobId });
   }
 }
 

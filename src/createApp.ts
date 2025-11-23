@@ -13,7 +13,8 @@ import jobRoutes from "./routes/jobs.route";
 import jobCategoryRoutes from "./routes/categories.route";
 import jobSkillRoutes from "./routes/skills.route";
 import jobEmploymentTypeRoutes from "./routes/employment_types.route";
-import jobLevelRoutes from "./routes/levels.route";
+import jobLevelRoutes from "./routes/job_levels.route";
+// import topcvRoutes from "./routes/topcv.route";
 import { requestLogger, errorHandler } from "@/middlewares";
 import { specs, swaggerUi } from "./config/swagger";
 import logger from "./utils/logger";
@@ -21,9 +22,7 @@ import logger from "./utils/logger";
 export const createApp = () => {
   const app = express();
 
-  const allowedOrigins = [
-    "http://localhost:5173"
-  ];
+  const allowedOrigins = ["http://localhost:5173"];
 
   // Middlewares
   app.use(
@@ -36,7 +35,7 @@ export const createApp = () => {
           return callback(null, false);
         }
       },
-      credentials: true
+      credentials: true,
     })
   );
   app.use(express.json({ limit: "10mb" }));
@@ -61,6 +60,7 @@ export const createApp = () => {
   app.use("/api/job-skills", jobSkillRoutes);
   app.use("/api/job-employment-types", jobEmploymentTypeRoutes);
   app.use("/api/job-levels", jobLevelRoutes);
+  // app.use("/api/topcv", topcvRoutes);
 
   // Error handler
   app.use(errorHandler);

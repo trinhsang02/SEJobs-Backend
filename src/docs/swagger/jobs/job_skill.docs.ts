@@ -167,3 +167,26 @@
  *                 success:
  *                   type: boolean
  */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     JobSkill:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 1
+ *         name:
+ *           type: string
+ *           example: "JavaScript"
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *           example: "2024-01-01T00:00:00Z"
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ *           example: "2024-01-01T00:00:00Z"
+ */

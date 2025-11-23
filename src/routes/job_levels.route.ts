@@ -1,5 +1,4 @@
 import { Router } from "express";
-
 import { authenticate } from "@/middlewares/auth.middleware";
 import { createLevel, deleteLevel, getLevel, getLevels, updateLevel } from "@/handlers/levels.handler";
 import { authorizeRoles } from "@/middlewares/authorizeRoles";

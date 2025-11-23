@@ -1,4 +1,4 @@
-import { login, register, getMe, logout } from "@/handlers/auth.handler";
+import { login, register, getMe, logout, refreshToken } from "@/handlers/auth.handler";
 import { Router } from "express";
 import { authenticate } from "@/middlewares/auth.middleware";
 
@@ -8,5 +8,6 @@ router.post("/login", login);
 router.post("/register", register);
 router.get("/me", authenticate, getMe);
 router.post("/logout", logout);
+router.post("/refresh", refreshToken);
 
 export default router;
