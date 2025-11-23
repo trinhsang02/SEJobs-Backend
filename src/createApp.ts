@@ -10,11 +10,10 @@ import companyRoutes from "./routes/companies.route";
 import companyTypeRoutes from "./routes/company_types.route";
 import authRoutes from "./routes/auth.route";
 import jobRoutes from "./routes/jobs.route";
-import jobCategoryRoutes from "./routes/categories.route";
-import jobSkillRoutes from "./routes/skills.route";
-import jobEmploymentTypeRoutes from "./routes/employment_types.route";
-import jobLevelRoutes from "./routes/job_levels.route";
-// import topcvRoutes from "./routes/topcv.route";
+import categoryRoutes from "./routes/categories.route";
+import skillRoutes from "./routes/skills.route";
+import employmentTypeRoutes from "./routes/employment_types.route";
+import levelRoutes from "./routes/levels.route";
 import { requestLogger, errorHandler } from "@/middlewares";
 import { specs, swaggerUi } from "./config/swagger";
 import logger from "./utils/logger";
@@ -56,10 +55,10 @@ export const createApp = () => {
   app.use("/api/companies", companyRoutes);
   app.use("/api/company_types", companyTypeRoutes);
   app.use("/api/jobs", jobRoutes);
-  app.use("/api/job-categories", jobCategoryRoutes);
-  app.use("/api/job-skills", jobSkillRoutes);
-  app.use("/api/job-employment-types", jobEmploymentTypeRoutes);
-  app.use("/api/job-levels", jobLevelRoutes);
+  app.use("/api/categories", categoryRoutes);
+  app.use("/api/skills", skillRoutes);
+  app.use("/api/employment-types", employmentTypeRoutes);
+  app.use("/api/levels", levelRoutes);
   // app.use("/api/topcv", topcvRoutes);
 
   // Error handler

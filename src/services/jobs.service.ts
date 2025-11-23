@@ -7,29 +7,28 @@ import jobLevelRepo from "@/repositories/level.repository";
 import employmentTypeRepo from "@/repositories/employment_types.repository";
 import { CreateJobDto } from "@/dtos/job/CreateJob.dto";
 import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
-import { JobQueryParams } from "@/types/common";
+import { Company, Job, JobQueryParams } from "@/types/common";
 import companyRepo from "@/repositories/company.repository";
 import companyBranchesRepo from "@/repositories/company_branches.repository";
 
 export class JobService {
   async list(input: JobQueryParams) {
-    const result = await jobRepository.findAll(input);
-    const jobsWithCompany = await Promise.all(
-      result.data.map(async (job: any) => {
-        let company = null;
-        if (job.company_id) {
-          company = await companyRepo.findOne({ company_id: job.company_id });
-          if (!company) {
-            throw new NotFoundError({ message: `Company with ID ${job.company_id} not found` });
-          }
-        }
-        return { ...job, company };
-      })
-    );
+    const { data: jobs, pagination } = await jobRepository.findAll<Job>(input);
+
+    const { data: companies } = await companyRepo.findAll<Company>({
+      company_ids: _.uniq(jobs.map((job) => job.company_id).filter((id) => id !== null)),
+    });
+  
+    const company_map = _.keyBy(companies, 'id');
+
+    const jobsWithCompany = jobs.map(job => ({
+      ...job,
+      company: job.company_id ? company_map[job.company_id] : null,
+    }));
 
     return {
       data: jobsWithCompany,
-      pagination: result.pagination,
+      pagination: pagination,
     };
   }
 
@@ -40,7 +39,9 @@ export class JobService {
     if (!job) {
       throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
     }
+
     const company = job.company_id ? await companyRepo.findOne({ company_id: job.company_id }) : null;
+
     if (job.company_id && !company) {
       throw new NotFoundError({ message: `Company with ID ${job.company_id} not found` });
     }

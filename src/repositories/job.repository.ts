@@ -15,7 +15,7 @@ export class JobRepository {
     this.db = supabase;
   }
 
-  async findAll(input: JobQueryParams) {
+  async findAll<T>(input: JobQueryParams) {
     const fields = _.get(input, "fields", this.fields);
     const page = _.get(input, "page");
     const limit = _.get(input, "limit");
@@ -36,7 +36,7 @@ export class JobRepository {
     if (error) throw error;
 
     return {
-      data,
+      data: data as T[],
       pagination: hasPagination && {
         page: page,
         limit: limit,
