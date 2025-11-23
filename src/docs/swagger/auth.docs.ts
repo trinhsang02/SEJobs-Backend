@@ -32,15 +32,47 @@
  *                 description: User's password (must contain uppercase, lowercase, number, special character)
  *     responses:
  *       200:
- *         description: Login successful
+ *         description: Login successful, authentication cookies set
+ *         headers:
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *             description: access_token and refresh_token cookies are set for authentication
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 token:
- *                   type: string
- *                   description: JWT access token
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         user_id:
+ *                           type: integer
+ *                         email:
+ *                           type: string
+ *                           format: email
+ *                         first_name:
+ *                           type: string
+ *                         last_name:
+ *                           type: string
+ *                         avatar:
+ *                           type: string
+ *                           nullable: true
+ *                         role:
+ *                           type: string
+ *                         is_verified:
+ *                           type: boolean
+ *                         created_at:
+ *                           type: string
+ *                           format: date-time
+ *                         updated_at:
+ *                           type: string
+ *                           format: date-time
  *       400:
  *         description: Invalid credentials
  *       401:
@@ -127,4 +159,39 @@
  *                   type: string
  *       401:
  *         description: Unauthorized - Invalid or missing token
+ */
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user (clears authentication cookies)
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Logout successful, cookies cleared
+ *         headers:
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *             description: access_token and refresh_token cookies are cleared
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                   example: Logged out successfully
+ */
+
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     CookieAuth:
+ *       type: apiKey
+ *       in: cookie
+ *       name: access_token
  */

@@ -37,6 +37,8 @@
  *           type: integer
  *         company_branches_id:
  *           type: integer
+ *         company:
+ *           $ref: '#/components/schemas/Company'
  *         title:
  *           type: string
  *         responsibilities:
