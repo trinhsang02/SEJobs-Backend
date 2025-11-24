@@ -52,10 +52,32 @@ export type Job = Database["public"]["Tables"]["jobs"]["Row"];
 export type JobInsert = Database["public"]["Tables"]["jobs"]["Insert"];
 export type JobUpdate = Database["public"]["Tables"]["jobs"]["Update"];
 
+export type SortableJobFields =
+  | "id"
+  | "title"
+  | "job_posted_at"
+  | "created_at"
+  | "updated_at"
+  | "salary_from"
+  | "company_id";
+
+export const SORTABLE_JOB_FIELDS = [
+  "id",
+  "title",
+  "job_posted_at",
+  "created_at",
+  "updated_at",
+  "salary_from",
+  "company_id",
+] as const;
+
 export interface JobQueryParams extends QueryParams {
   job_id?: number;
   company_id?: number;
+  //keyword search in job title
   title?: string;
+  sort_by?: SortableJobFields;
+  order?: "asc" | "desc";
 }
 
 // CATEGORY

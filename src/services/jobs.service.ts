@@ -18,10 +18,10 @@ export class JobService {
     const { data: companies } = await companyRepo.findAll<Company>({
       company_ids: _.uniq(jobs.map((job) => job.company_id).filter((id) => id !== null)),
     });
-  
-    const company_map = _.keyBy(companies, 'id');
 
-    const jobsWithCompany = jobs.map(job => ({
+    const company_map = _.keyBy(companies, "id");
+
+    const jobsWithCompany = jobs.map((job) => ({
       ...job,
       company: job.company_id ? company_map[job.company_id] : null,
     }));

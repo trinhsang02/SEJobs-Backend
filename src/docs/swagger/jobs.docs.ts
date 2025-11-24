@@ -209,6 +209,18 @@
  *         name: exp_id
  *         schema:
  *           type: integer
+ *       - in: query
+ *         name: sort_by
+ *         description: Field to sort by. Allowed values id, title, job_posted_at, created_at, salary_from, company_id
+ *         schema:
+ *           type: string
+ *           enum: [id, title, job_posted_at, created_at, salary_from, company_id]
+ *       - in: query
+ *         name: order
+ *         description: Sort direction. asc for ascending, desc for descending. Defaults to desc
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
  *     responses:
  *       200:
  *         description: Paginated list of jobs

@@ -5,16 +5,24 @@ import _ from "lodash";
 import validate from "@/utils/validate";
 import { createJobSchema } from "@/dtos/job/CreateJob.dto";
 import { updateJobSchema } from "@/dtos/job/UpdateJob.dto";
+import { SORTABLE_JOB_FIELDS, SortableJobFields } from "@/types/common";
 
 export async function listJobs(req: Request, res: Response) {
   const page = _.toInteger(req.query.page) || 1;
   const limit = _.toInteger(req.query.limit) || 10;
+  const order = req.query.order === "asc" ? "asc" : "desc";
+  const sort_by =
+    typeof req.query.sort_by === "string" && (SORTABLE_JOB_FIELDS as readonly string[]).includes(req.query.sort_by)
+      ? (req.query.sort_by as SortableJobFields)
+      : undefined;
   const filters = { ...req.query };
 
   const { data: jobs, pagination } = await jobService.list({
-    ...filters,
+    ...req.query,
     page,
     limit,
+    sort_by: typeof sort_by === "string" ? (sort_by as any) : undefined,
+    order,
   });
 
   res.status(200).json({

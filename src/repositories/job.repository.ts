@@ -1,9 +1,9 @@
-import { supabase } from "@/config/supabase"
+import { supabase } from "@/config/supabase";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
 import { CreateJobDto } from "@/dtos/job/CreateJob.dto";
 import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
-import { JobQueryParams } from "@/types/common";
+import { JobQueryParams, SORTABLE_JOB_FIELDS } from "@/types/common";
 import { NotFoundError } from "@/utils/errors";
 
 export class JobRepository {
@@ -19,17 +19,23 @@ export class JobRepository {
     const fields = _.get(input, "fields", this.fields);
     const page = _.get(input, "page");
     const limit = _.get(input, "limit");
-    const keyword = _.get(input, "keyword");
-    const hasPagination = page &&  limit && page > 0 && limit > 0;
+    const keyword = _.get(input, "title");
+    const sortBy = _.get(input, "sort_by", "job_posted_at");
+    const order = _.get(input, "order", "desc");
+    const hasPagination = page && limit && page > 0 && limit > 0;
 
     let dbQuery = this.db.from("jobs").select(fields, { count: "exact" });
 
     if (keyword) {
       dbQuery = dbQuery.ilike("title", `%${keyword}%`);
     }
+    if ((SORTABLE_JOB_FIELDS as readonly string[]).includes(sortBy)) {
+      dbQuery = dbQuery.order(sortBy, { ascending: order === "asc" });
+    } else {
+      dbQuery = dbQuery.order("job_posted_at", { ascending: false });
+    }
 
-    const executeQuery =
-      hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
+    const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
 
     const { data, error, count } = await executeQuery;
 
