@@ -17,7 +17,7 @@ export async function login(req: Request, res: Response) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
+    maxAge: parseInt(process.env.JWT_EXPIRES_IN!, 10),
     path: "/",
   });
 
@@ -84,7 +84,7 @@ export async function refreshToken(req: Request, res: Response) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 3 * 24 * 60 * 60 * 1000,
+      maxAge: parseInt(process.env.JWT_EXPIRES_IN!, 10),
       path: "/",
     });
 

@@ -15,9 +15,10 @@ export const generateToken = (payload: JWTPayload): string => {
       status: "JWT_CONFIG_ERROR",
     });
   }
+  const expiresInSeconds = Math.floor(env.JWT_EXPIRES_IN_MS / 1000);
 
   return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: "1d",
+    expiresIn: expiresInSeconds,
   });
 };
 export const generateRefreshToken = (payload: JWTPayload): string => {
