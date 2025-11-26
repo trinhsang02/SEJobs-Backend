@@ -4,7 +4,9 @@ import { getTopCVAccessToken } from "@/utils/topcv-auth";
 
 export async function listTopCVJobs(req: Request, res: Response) {
   const token = await getTopCVAccessToken();
-  const { page = 1, per_page = 15, keyword, city_id, category_id, exp_id } = req.query;
+  const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+  const per_page = Math.min(100, Math.max(1, parseInt(req.query.per_page as string, 10) || 15));
+  const { keyword, city_id, category_id, exp_id } = req.query;
 
   const params = {
     page,
@@ -16,7 +18,7 @@ export async function listTopCVJobs(req: Request, res: Response) {
   };
 
   try {
-    const response = await axios.get(`${process.env.TOPCV_API_URL}/topcv/jobs`, {
+    const response = await axios.get(`${process.env.TOPCV_JOBS_URL}`, {
       params,
       headers: {
         Authorization: `Bearer ${token}`,
@@ -49,16 +51,16 @@ export async function listTopCVJobs(req: Request, res: Response) {
       });
     }
     if (error.response) {
-      return res.status(error.response.status).json({
-        success: false,
-        message: error.response.data?.message || "TopCV API error",
-        error: error.response.data,
+      console.error("TopCV API error:", {
+        status: error.response.status,
+        data: error.response.data,
+        url: error.config?.url,
       });
     }
     res.status(502).json({
       success: false,
       message: "Network error or TopCV unavailable",
-      error: error.message,
+      //   error: error.message,
     });
   }
 }
@@ -67,7 +69,7 @@ export async function getTopCVJobDetail(req: Request, res: Response) {
   const { id } = req.params;
   try {
     const token = await getTopCVAccessToken();
-    const response = await axios.get(`${process.env.TOPCV_API_URL}/topcv/jobs/${id}`, {
+    const response = await axios.get(`${process.env.TOPCV_JOBS_URL}/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -92,16 +94,16 @@ export async function getTopCVJobDetail(req: Request, res: Response) {
       });
     }
     if (error.response) {
-      return res.status(error.response.status).json({
-        success: false,
-        message: error.response.data?.message || "TopCV API error",
-        error: error.response.data,
+      console.error("TopCV API error:", {
+        status: error.response.status,
+        data: error.response.data,
+        url: error.config?.url,
       });
     }
     res.status(502).json({
       success: false,
       message: "Network error or TopCV unavailable",
-      error: error.message,
+      //   error: error.message,
     });
   }
 }
@@ -116,7 +118,7 @@ export async function getTopCVJobRecommend(req: Request, res: Response) {
   }
   try {
     const token = await getTopCVAccessToken();
-    const response = await axios.get(`${process.env.TOPCV_API_URL}/topcv/jobs/recommend`, {
+    const response = await axios.get(`${process.env.TOPCV_JOBS_URL}/recommend`, {
       params: { email, page, per_page },
       headers: {
         Authorization: `Bearer ${token}`,
@@ -147,16 +149,16 @@ export async function getTopCVJobRecommend(req: Request, res: Response) {
       });
     }
     if (error.response) {
-      return res.status(error.response.status).json({
-        success: false,
-        message: error.response.data?.message || "TopCV API error",
-        error: error.response.data,
+      console.error("TopCV API error:", {
+        status: error.response.status,
+        data: error.response.data,
+        url: error.config?.url,
       });
     }
     res.status(502).json({
       success: false,
       message: "Network error or TopCV unavailable",
-      error: error.message,
+      //   error: error.message,
     });
   }
 }
