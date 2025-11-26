@@ -35,6 +35,7 @@ export const createApp = () => {
         }
       },
       credentials: true,
+      exposedHeaders: ["Authorization"],
     })
   );
   app.use(express.json({ limit: "10mb" }));
