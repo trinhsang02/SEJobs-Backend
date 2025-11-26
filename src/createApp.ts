@@ -14,6 +14,7 @@ import categoryRoutes from "./routes/categories.route";
 import skillRoutes from "./routes/skills.route";
 import employmentTypeRoutes from "./routes/employment_types.route";
 import levelRoutes from "./routes/levels.route";
+import topcvRoutes from "./routes/topcv.route";
 import { requestLogger, errorHandler } from "@/middlewares";
 import { specs, swaggerUi } from "./config/swagger";
 import logger from "./utils/logger";
@@ -60,7 +61,7 @@ export const createApp = () => {
   app.use("/api/skills", skillRoutes);
   app.use("/api/employment-types", employmentTypeRoutes);
   app.use("/api/levels", levelRoutes);
-  // app.use("/api/topcv", topcvRoutes);
+  app.use("/api/topcv", topcvRoutes);
 
   // Error handler
   app.use(errorHandler);
