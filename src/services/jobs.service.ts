@@ -213,6 +213,27 @@ export class JobService {
     await jobRepository.update(jobId, jobPayloadWithUpdatedAt as any);
     return await this.findOne({ jobId });
   }
+
+  async listByCompany(input: { companyId: number; page: number; limit: number }) {
+    const { companyId, page, limit } = input;
+
+    const company = await companyRepo.findOne({ company_id: companyId });
+    if (!company) {
+      throw new NotFoundError({ message: `Company with ID ${companyId} not found` });
+    }
+
+    const { data: jobs, pagination } = await jobRepository.findByCompanyId(companyId, { page, limit });
+
+    const { data: companies } = await companyRepo.findAll({ company_ids: [companyId] });
+    const companyMap = { [companyId]: companies[0] };
+
+    const data = jobs.map((job) => ({
+      ...toTopCvFormat(job),
+      company: companyMap[companyId] ? toCamelCaseKeys(companyMap[companyId]) : null,
+    }));
+
+    return { data, pagination };
+  }
 }
 
 export default new JobService();

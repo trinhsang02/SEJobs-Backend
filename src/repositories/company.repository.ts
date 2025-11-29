@@ -1,12 +1,23 @@
 import { supabase } from "@/config/supabase";
-import { UserInsert, UserUpdate, User, UserQueryParams, CompanyInsert, CompanyUpdate, Company, CompanyQueryParams, CompanyQueryAllParams } from "@/types/common";
+import {
+  UserInsert,
+  UserUpdate,
+  User,
+  UserQueryParams,
+  CompanyInsert,
+  CompanyUpdate,
+  Company,
+  CompanyQueryParams,
+  CompanyQueryAllParams,
+} from "@/types/common";
 import { NotFoundError } from "@/utils/errors";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
 
 export class CompanyRepository {
   private readonly db: SupabaseClient;
-  public readonly fields = "id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, created_at, updated_at";
+  public readonly fields =
+    "id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, created_at, updated_at";
 
   constructor() {
     this.db = supabase;
@@ -14,9 +25,9 @@ export class CompanyRepository {
 
   // BUG: https://github.com/supabase/supabase-js/issues/1571
   async findAll<T>(input: CompanyQueryAllParams) {
-    const fields = _.get(input, 'fields', this.fields);
-    const page = _.get(input, 'page');
-    const limit = _.get(input, 'limit');
+    const fields = _.get(input, "fields", this.fields);
+    const page = _.get(input, "page");
+    const limit = _.get(input, "limit");
     const hasPagination = page && limit;
     const company_ids = _.get(input, "company_ids") || [];
 
@@ -24,17 +35,17 @@ export class CompanyRepository {
 
     if (company_ids.length > 0) dbQuery = dbQuery.in("id", company_ids);
 
-    const executeQuery = hasPagination
-        ? dbQuery.range((page - 1) * limit, page * limit - 1)
-        : dbQuery;
+    const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
 
     const { data, error, count } = await executeQuery;
 
     if (error) throw error;
 
-    return { 
+    return {
       data: data as T[],
-      pagination: hasPagination && { page, limit,
+      pagination: hasPagination && {
+        page,
+        limit,
         total: count || 0,
         total_pages: count ? Math.ceil(count / limit) : 0,
       },
@@ -44,7 +55,7 @@ export class CompanyRepository {
   async findOne(input: CompanyQueryParams) {
     const { company_id, email, fields } = input;
     const select_fields = fields || this.fields;
-    
+
     let dbQuery = this.db.from("companies").select(select_fields);
 
     if (company_id) {
@@ -72,8 +83,13 @@ export class CompanyRepository {
     return data;
   }
 
-  async update(input: { companyId: number, companyData: CompanyUpdate }) {
-    const { data, error } = await this.db.from("companies").update(input.companyData).eq("id", input.companyId).select(this.fields).maybeSingle();
+  async update(input: { companyId: number; companyData: CompanyUpdate }) {
+    const { data, error } = await this.db
+      .from("companies")
+      .update(input.companyData)
+      .eq("id", input.companyId)
+      .select(this.fields)
+      .maybeSingle();
 
     if (error) {
       if (error.message.includes("no rows found")) {
@@ -86,7 +102,12 @@ export class CompanyRepository {
   }
 
   async delete(companyId: number) {
-    const { data, error } = await this.db.from("companies").delete().eq("id", companyId).select(this.fields).maybeSingle();
+    const { data, error } = await this.db
+      .from("companies")
+      .delete()
+      .eq("id", companyId)
+      .select(this.fields)
+      .maybeSingle();
 
     if (error) {
       throw error;
