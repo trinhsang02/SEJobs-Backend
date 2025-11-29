@@ -1,7 +1,7 @@
 import { supabase } from "@/config/supabase";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
-import { LevelInsert, JobLevelInsert, LevelQueryParams, LevelUpdate } from "@/types/common";
+import { LevelInsert, JobLevelInsert, LevelQueryParams, LevelUpdate, JobLevelQueryParams } from "@/types/common";
 
 export class LevelRepository {
   private readonly db: SupabaseClient;
@@ -73,6 +73,32 @@ export class LevelRepository {
     }
 
     return data;
+  }
+
+  async findAllJobLevels<T>(input: JobLevelQueryParams) {
+    const { page, limit, job_ids = [], level_ids = [] } = input;
+    const hasPagination = page && limit;
+
+    let dbQuery = this.db.from("job_levels").select("*", { count: "exact" });
+
+    if (level_ids.length > 0) dbQuery = dbQuery.in("level_id", level_ids);
+    if (job_ids.length > 0) dbQuery = dbQuery.in("job_id", job_ids);
+
+    const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
+
+    const { data, error, count } = await executeQuery;
+
+    if (error) throw error;
+
+    return {
+      data: data as T[],
+      pagination: hasPagination && {
+        page,
+        limit,
+        total: count || 0,
+        total_pages: count ? Math.ceil(count / limit) : 0,
+      },
+    };
   }
 
   async bulkCreateJobLevels(input: { jobLevelsData: JobLevelInsert[] }) {

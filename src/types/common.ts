@@ -158,10 +158,10 @@ export type JobLevel = Database["public"]["Tables"]["job_levels"]["Row"];
 export type JobLevelInsert = Database["public"]["Tables"]["job_levels"]["Insert"];
 export type JobLevelUpdate = Database["public"]["Tables"]["job_levels"]["Update"];
 
-export interface JobLevelJobQueryParams extends QueryParams {
+export interface JobLevelQueryParams extends QueryParams {
   id?: number;
   job_ids?: number[];
-  job_level_ids?: number[];
+  level_ids?: number[];
 }
 
 // COMPANY_BRANCHES
