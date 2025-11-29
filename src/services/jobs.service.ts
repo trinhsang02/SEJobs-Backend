@@ -10,6 +10,8 @@ import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
 import { Company, Job, JobQueryParams } from "@/types/common";
 import companyRepo from "@/repositories/company.repository";
 import companyBranchesRepo from "@/repositories/company_branches.repository";
+import { toCamelCaseKeys } from "@/utils/casing";
+import { toTopCvFormat } from "@/utils/topCVFormat";
 
 export class JobService {
   async list(input: JobQueryParams) {
@@ -19,12 +21,15 @@ export class JobService {
       company_ids: _.uniq(jobs.map((job) => job.company_id).filter((id) => id !== null)),
     });
 
-    const company_map = _.keyBy(companies, "id");
+    const companyMap = _.keyBy(companies, "id");
 
-    const jobsWithCompany = jobs.map((job) => ({
-      ...job,
-      company: job.company_id ? company_map[job.company_id] : null,
-    }));
+    const jobsWithCompany = jobs.map((job) => {
+      const company = job.company_id ? companyMap[job.company_id] : null;
+      return {
+        ...toTopCvFormat(job),
+        company: company ? toCamelCaseKeys(company) : null,
+      };
+    });
 
     return {
       data: jobsWithCompany,
@@ -45,8 +50,10 @@ export class JobService {
     if (job.company_id && !company) {
       throw new NotFoundError({ message: `Company with ID ${job.company_id} not found` });
     }
+    const jobCamel = toTopCvFormat(job);
+    const companyCamel = company ? toCamelCaseKeys(company) : null;
 
-    return { ...job, company };
+    return { ...jobCamel, company: companyCamel };
   }
 
   async create(input: { jobData: CreateJobDto }) {
@@ -75,9 +82,7 @@ export class JobService {
         employment_type_id,
         job_id: createdJob.id,
       }));
-      console.log("employment", jobEmploymentTypesData);
       const jobLevelsData = level_ids.map((level_id) => ({ level_id, job_id: createdJob.id }));
-      console.log("jobLevelsData", jobLevelsData);
       await Promise.all([
         categoryRepo.bulkCreateJobCategories({ jobCategoriesData }),
         skillRepo.bulkCreateJobSkills({ jobSkillsData }),

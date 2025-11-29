@@ -54,7 +54,9 @@
  *           items:
  *             type: string
  *         benefit:
- *           type: object
+ *           type: array
+ *           items:
+ *             type: string
  *         working_time:
  *           type: string
  *         description:
@@ -129,7 +131,9 @@
  *           items:
  *             type: string
  *         benefit:
- *           type: object
+ *           type: array
+ *           items:
+ *             type: string
  *         working_time:
  *           type: string
  *         description:
