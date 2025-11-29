@@ -1,5 +1,5 @@
 import { supabase } from "@/config/supabase";
-import { JobSkillInsert, SkillInsert, SkillQueryParams, SkillUpdate } from "@/types/common";
+import { JobSkillInsert, JobSkillQueryParams, SkillInsert, SkillQueryParams, SkillUpdate } from "@/types/common";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
 export class SkillRepository {
@@ -86,6 +86,32 @@ export class SkillRepository {
     }
 
     return data;
+  }
+
+  async findAllJobSkills<T>(input: JobSkillQueryParams) {
+    const { page, limit, job_ids = [], skill_ids = [] } = input;
+    const hasPagination = page && limit;
+
+    let dbQuery = this.db.from("job_skills").select("*", { count: "exact" });
+
+    if (skill_ids.length > 0) dbQuery = dbQuery.in("skill_id", skill_ids);
+    if (job_ids.length > 0) dbQuery = dbQuery.in("job_id", job_ids);
+
+    const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
+
+    const { data, error, count } = await executeQuery;
+
+    if (error) throw error;
+
+    return {
+      data: data as T[],
+      pagination: hasPagination && {
+        page,
+        limit,
+        total: count || 0,
+        total_pages: count ? Math.ceil(count / limit) : 0,
+      },
+    };
   }
 
   async bulkCreateJobSkills(input: { jobSkillsData: JobSkillInsert[] }) {
