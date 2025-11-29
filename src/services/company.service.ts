@@ -8,7 +8,6 @@ import { UpdateCompanyDto } from "@/dtos/company/UpdateCompany.dto";
 import CompanyTypeService from "@/services/company_type.service";
 
 export class CompanyService {
-
   async findAll(input: CompanyQueryParams) {
     const data = await companyRepository.findAll(input);
 
@@ -33,14 +32,15 @@ export class CompanyService {
     const companyTypeIds: number[] = _.get(companyData, "company_types", []);
 
     if (companyTypeIds.length > 0) {
-      const { data: companyTypes} = await CompanyTypeService.findAll({ company_type_ids: companyTypeIds });
+      const { data: companyTypes } = await CompanyTypeService.findAll({ company_type_ids: companyTypeIds });
 
       if (companyTypes.length !== companyTypeIds.length) {
-        throw new BadRequestError({ message: 'Company type not found.' });
+        throw new BadRequestError({ message: "Company type not found." });
       }
     }
 
-    const newCompany = await companyRepository.create({ companyData: {
+    const newCompany = await companyRepository.create({
+      companyData: {
         name: companyData.name,
         background: companyData.background || null,
         description: companyData.description || null,
@@ -52,8 +52,9 @@ export class CompanyService {
         tech_stack: companyData.tech_stack || [],
         logo: companyData.logo || null,
         phone: companyData.phone || null,
-        socials: companyData.socials || []
-    }});
+        socials: companyData.socials || [],
+      },
+    });
 
     // TODO/BUG: HANDLE WITH TRANSACTION
     if (companyTypeIds) {
@@ -61,7 +62,7 @@ export class CompanyService {
         companyCompanyTypesData: companyTypeIds.map((company_type_id) => ({
           company_id: newCompany.id,
           company_type_id: company_type_id,
-        }))
+        })),
       });
     }
 
@@ -97,7 +98,7 @@ export class CompanyService {
     const deletedCompany = await companyRepository.delete(companyId);
 
     if (!deletedCompany) {
-    throw new NotFoundError({ message: `Company with ID ${companyId} not found` });
+      throw new NotFoundError({ message: `Company with ID ${companyId} not found` });
     }
 
     return deletedCompany;

@@ -10,10 +10,26 @@ import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
 import { Company, Job, JobCategory, JobEmploymentType, JobLevel, JobQueryParams, JobSkill } from "@/types/common";
 import companyRepo from "@/repositories/company.repository";
 import companyBranchesRepo from "@/repositories/company_branches.repository";
+import { toCamelCaseKeys } from "@/utils/casing";
+import { toTopCvFormat } from "@/utils/topCVFormat";
 
 export class JobService {
   async list(input: JobQueryParams) {
     const { data: jobs, pagination } = await jobRepository.findAll<Job>(input);
+
+    const { data: companies } = await companyRepo.findAll<Company>({
+      company_ids: _.uniq(jobs.map((job) => job.company_id).filter((id) => id !== null)),
+    });
+
+    const companyMap = _.keyBy(companies, "id");
+
+    const jobsWithCompany = jobs.map((job) => {
+      const company = job.company_id ? companyMap[job.company_id] : null;
+      return {
+        ...toTopCvFormat(job),
+        company: company ? toCamelCaseKeys(company) : null,
+      };
+    });
 
     return {
       data: await this.joinData({ jobs }),
@@ -29,6 +45,15 @@ export class JobService {
       throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
     }
 
+    const company = job.company_id ? await companyRepo.findOne({ company_id: job.company_id }) : null;
+
+    if (job.company_id && !company) {
+      throw new NotFoundError({ message: `Company with ID ${job.company_id} not found` });
+    }
+    const jobCamel = toTopCvFormat(job);
+    const companyCamel = company ? toCamelCaseKeys(company) : null;
+
+    return { ...jobCamel, company: companyCamel };
     const joinedJob = await this.joinData({ jobs: [job] });
 
     return joinedJob[0];
@@ -38,11 +63,13 @@ export class JobService {
     const { jobs } = input;
 
     const [companiesRes, jobCategoriesRes, jobSkillRes, jobEmploymentTypeRes, jobLevelRes] = await Promise.all([
-      companyRepo.findAll<Company>({ company_ids: _.uniq(jobs.map((job) => job.company_id).filter((id) => id !== null))}),
-      categoryRepo.findAllJobCategories<JobCategory>({ job_ids: jobs.map((job) => job.id)}),
-      skillRepo.findAllJobSkills<JobSkill>({ job_ids: jobs.map((job) => job.id)}),
-      employmentTypeRepo.findAllJobEmploymentTypes<JobEmploymentType>({ job_ids: jobs.map((job) => job.id)}),
-      levelRepo.findAllJobLevels<JobLevel>({ job_ids: jobs.map((job) => job.id)}),
+      companyRepo.findAll<Company>({
+        company_ids: _.uniq(jobs.map((job) => job.company_id).filter((id) => id !== null)),
+      }),
+      categoryRepo.findAllJobCategories<JobCategory>({ job_ids: jobs.map((job) => job.id) }),
+      skillRepo.findAllJobSkills<JobSkill>({ job_ids: jobs.map((job) => job.id) }),
+      employmentTypeRepo.findAllJobEmploymentTypes<JobEmploymentType>({ job_ids: jobs.map((job) => job.id) }),
+      levelRepo.findAllJobLevels<JobLevel>({ job_ids: jobs.map((job) => job.id) }),
     ]);
 
     const companies = companiesRes.data;
@@ -50,13 +77,12 @@ export class JobService {
     const job_skills = jobSkillRes.data;
     const job_employment_types = jobEmploymentTypeRes.data;
     const job_levels = jobLevelRes.data;
-    
 
     const [categoriesRes, skillsRes, employmentTypesRes, levelsRes] = await Promise.all([
-      categoryRepo.findAll({ ids: _.uniq(job_categories.map((jc) => jc.category_id))}),
-      skillRepo.findAll({ ids: _.uniq(job_skills.map((js) => js.skill_id))}),
-      employmentTypeRepo.findAll({ ids: _.uniq(job_employment_types.map((js) => js.employment_type_id))}),
-      levelRepo.findAll({ ids: _.uniq(job_levels.map((js) => js.level_id))}),
+      categoryRepo.findAll({ ids: _.uniq(job_categories.map((jc) => jc.category_id)) }),
+      skillRepo.findAll({ ids: _.uniq(job_skills.map((js) => js.skill_id)) }),
+      employmentTypeRepo.findAll({ ids: _.uniq(job_employment_types.map((js) => js.employment_type_id)) }),
+      levelRepo.findAll({ ids: _.uniq(job_levels.map((js) => js.level_id)) }),
     ]);
 
     const categories = categoriesRes.data;
@@ -68,7 +94,7 @@ export class JobService {
     const categories_map = _.keyBy(categories, "id");
     const skills_map = _.keyBy(skills, "id");
     const employment_types_map = _.keyBy(employment_types, "id");
-    const level_map = _.keyBy(levels, "id")
+    const level_map = _.keyBy(levels, "id");
 
     const jobCategoriesMap = _.groupBy(job_categories, "job_id");
     const jobSkillsMap = _.groupBy(job_skills, "job_id");
@@ -251,6 +277,27 @@ export class JobService {
 
     await jobRepository.update(jobId, jobPayloadWithUpdatedAt as any);
     return await this.findOne({ jobId });
+  }
+
+  async listByCompany(input: { companyId: number; page: number; limit: number }) {
+    const { companyId, page, limit } = input;
+
+    const company = await companyRepo.findOne({ company_id: companyId });
+    if (!company) {
+      throw new NotFoundError({ message: `Company with ID ${companyId} not found` });
+    }
+
+    const { data: jobs, pagination } = await jobRepository.findByCompanyId(companyId, { page, limit });
+
+    const { data: companies } = await companyRepo.findAll({ company_ids: [companyId] });
+    const companyMap = { [companyId]: companies[0] };
+
+    const data = jobs.map((job) => ({
+      ...toTopCvFormat(job),
+      company: companyMap[companyId] ? toCamelCaseKeys(companyMap[companyId]) : null,
+    }));
+
+    return { data, pagination };
   }
 }
 

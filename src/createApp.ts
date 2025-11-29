@@ -65,6 +65,5 @@ export const createApp = () => {
 
   // Error handler
   app.use(errorHandler);
-
   return app;
 };

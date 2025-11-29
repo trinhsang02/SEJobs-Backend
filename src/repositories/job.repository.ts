@@ -98,6 +98,37 @@ export class JobRepository {
     }
     return data;
   }
+  async findByCompanyId(companyId: number, params: { page: number; limit: number }) {
+    const { page, limit } = params;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data: jobs, error } = await supabase
+      .from("jobs")
+      .select("*", { count: "exact" })
+      .eq("company_id", companyId)
+      // .eq("status", "active")
+      .range(from, to)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    const { count } = await supabase
+      .from("jobs")
+      .select("*", { count: "exact", head: true })
+      .eq("company_id", companyId);
+    // .eq("status", "active");
+
+    return {
+      data: jobs,
+      pagination: {
+        page,
+        limit,
+        total: count ?? 0,
+        totalPages: Math.ceil((count ?? 0) / limit),
+      },
+    };
+  }
 }
 
 export default new JobRepository();

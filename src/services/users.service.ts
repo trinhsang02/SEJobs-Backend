@@ -8,6 +8,7 @@ import { LoginDto } from "@/dtos/user/Login.dto";
 import { UserQueryParams } from "@/types/common";
 import { RegisterDto } from "@/dtos/user/Register.dto";
 import { generateToken } from "@/utils/jwt.util";
+import companyRepository from "@/repositories/company.repository";
 
 export class UserService {
   async login(input: { loginData: LoginDto }) {
@@ -41,24 +42,64 @@ export class UserService {
       token,
     };
   }
-
+  // Temporary register function
   async register(input: { registerData: RegisterDto }) {
     const { registerData } = input;
 
     if (registerData.password !== registerData.confirm_password) {
-      throw new BadRequestError({ message: `Confirm password is not correct` });
+      throw new BadRequestError({ message: "Confirm password is not correct" });
     }
 
     const hashedPassword = await bcrypt.hash(registerData.password, 10);
-    const { confirm_password, ...userData } = registerData;
+
+    const { email, first_name, last_name, role, company, confirm_password, ...rest } = registerData;
 
     const newUser = await userRepository.create({
       userData: {
-        ...userData,
-        role: registerData.role,
+        email,
+        first_name,
+        last_name,
+        role,
         password: hashedPassword,
       },
     });
+
+    // 2. If Employer, create company
+    if (newUser.role === "Employer") {
+      if (!company) {
+        throw new BadRequestError({ message: "Company profile is required for Employer accounts" });
+      }
+
+      const {
+        name,
+        logo,
+        background,
+        description,
+        phone,
+        email: companyEmail,
+        website_url,
+        images,
+        tech_stack,
+        employee_count,
+      } = company;
+
+      await companyRepository.create({
+        companyData: {
+          name,
+          user_id: newUser.user_id,
+          email: companyEmail || email,
+          logo: logo ?? null,
+          background: background ?? null,
+          description: description ?? null,
+          phone: phone ?? null,
+          website_url: website_url ?? null,
+          images: images ?? null,
+          tech_stack: tech_stack ?? null,
+          employee_count: employee_count ?? null,
+          external_id: null,
+        },
+      });
+    }
 
     return newUser;
   }

@@ -5,7 +5,7 @@ export const updateJobSchema = createJobSchema.partial().extend({
   responsibilities: z.array(z.string()).optional(),
   requirement: z.array(z.string()).optional(),
   nice_to_haves: z.array(z.string()).optional(),
-  benefit: z.any().optional(),
+  benefit: z.array(z.string()).optional(),
   working_time: z.string().optional(),
   description: z.string().optional(),
   apply_guide: z.string().optional(),

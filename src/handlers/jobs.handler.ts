@@ -6,6 +6,7 @@ import validate from "@/utils/validate";
 import { createJobSchema } from "@/dtos/job/CreateJob.dto";
 import { updateJobSchema } from "@/dtos/job/UpdateJob.dto";
 import { SORTABLE_JOB_FIELDS, SortableJobFields } from "@/types/common";
+import { companyJobQuerySchema } from "@/dtos/company/CompanyJobQuery.dto";
 
 export async function listJobs(req: Request, res: Response) {
   const page = _.toInteger(req.query.page) || 1;
@@ -83,5 +84,21 @@ export async function deleteJob(req: Request, res: Response) {
 
   res.status(200).json({
     success: true,
+  });
+}
+
+export async function listJobsByCompany(req: Request, res: Response) {
+  const companyId = _.toInteger(req.params.id);
+  if (!companyId) {
+    throw new BadRequestError({ message: "Invalid company ID" });
+  }
+
+  const { page = 1, limit = 10 } = validate.schema_validate(companyJobQuerySchema, req.query);
+
+  const result = await jobService.listByCompany({ companyId, page, limit });
+
+  res.status(200).json({
+    success: true,
+    ...result,
   });
 }
