@@ -81,6 +81,32 @@ export class CategoryRepository {
     return data;
   }
 
+  async findAllJobCategories<T>(input: JobCategoryQueryParams) {
+    const { page, limit, job_ids = [], category_ids = [] } = input;
+    const hasPagination = page && limit;
+
+    let dbQuery = this.db.from("job_categories").select("*", { count: "exact" });
+
+    if (category_ids.length > 0) dbQuery = dbQuery.in("category_id", category_ids);
+    if (job_ids.length > 0) dbQuery = dbQuery.in("job_id", job_ids);
+
+    const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
+
+    const { data, error, count } = await executeQuery;
+
+    if (error) throw error;
+
+    return {
+      data: data as T[],
+      pagination: hasPagination && {
+        page,
+        limit,
+        total: count || 0,
+        total_pages: count ? Math.ceil(count / limit) : 0,
+      },
+    };
+  }
+
   async bulkCreateJobCategories(input: { jobCategoriesData: JobCategoryInsert[] }) {
     const { jobCategoriesData } = input;
 
