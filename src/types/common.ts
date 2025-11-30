@@ -17,6 +17,22 @@ export interface UserQueryParams extends QueryParams {
   email?: string;
 }
 
+// STUDENT
+
+export type Student = Database["public"]["Tables"]["student"]["Row"];
+export type StudentInsert = Database["public"]["Tables"]["student"]["Insert"];
+export type StudentUpdate = Database["public"]["Tables"]["student"]["Update"];
+
+export interface StudentQueryAllParams extends QueryParams {
+  student_ids?: number[];
+  user_ids?: number[];
+}
+
+export interface StudentQueryParams extends QueryParams {
+  student_id?: number;
+  user_id?: number;
+}
+
 // COMPANY
 export type Company = Database["public"]["Tables"]["companies"]["Row"];
 export type CompanyInsert = Database["public"]["Tables"]["companies"]["Insert"];

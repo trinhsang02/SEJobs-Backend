@@ -1,3 +1,4 @@
+import { studentProfileSchema } from "@/dtos/user/Register.dto";
 import { z } from "zod";
 
 export const updateUserSchema = z
@@ -8,6 +9,7 @@ export const updateUserSchema = z
     email: z.string().email("Invalid email address").optional(),
     role: z.enum(["student", "company", "admin"]).optional(),
     updated_at: z.string().optional(),
+    student_info: studentProfileSchema.optional(),
   })
   .refine(
     (data) => {

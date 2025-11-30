@@ -5,10 +5,11 @@ import userRepository from "@/repositories/user.repository";
 import { CreateUserDto } from "@/dtos/user/CreateUser.dto";
 import { UpdateUserDto } from "@/dtos/user/UpdateUser.dto";
 import { LoginDto } from "@/dtos/user/Login.dto";
-import { UserQueryParams } from "@/types/common";
+import { Student, User, UserQueryParams } from "@/types/common";
 import { RegisterDto } from "@/dtos/user/Register.dto";
 import { generateToken } from "@/utils/jwt.util";
 import companyRepository from "@/repositories/company.repository";
+import studentRepository from "@/repositories/student.repository";
 
 export class UserService {
   async login(input: { loginData: LoginDto }) {
@@ -42,7 +43,7 @@ export class UserService {
       token,
     };
   }
-  // Temporary register function
+
   async register(input: { registerData: RegisterDto }) {
     const { registerData } = input;
 
@@ -52,7 +53,7 @@ export class UserService {
 
     const hashedPassword = await bcrypt.hash(registerData.password, 10);
 
-    const { email, first_name, last_name, role, company, confirm_password, ...rest } = registerData;
+    const { email, first_name, last_name, role, company, student_info, confirm_password, ...rest } = registerData;
 
     const newUser = await userRepository.create({
       userData: {
@@ -64,24 +65,12 @@ export class UserService {
       },
     });
 
-    // 2. If Employer, create company
     if (newUser.role === "Employer") {
       if (!company) {
         throw new BadRequestError({ message: "Company profile is required for Employer accounts" });
       }
 
-      const {
-        name,
-        logo,
-        background,
-        description,
-        phone,
-        email: companyEmail,
-        website_url,
-        images,
-        tech_stack,
-        employee_count,
-      } = company;
+      const { name, logo, background, description, phone, email: companyEmail, website_url, images, tech_stack, employee_count } = company;
 
       await companyRepository.create({
         companyData: {
@@ -101,12 +90,34 @@ export class UserService {
       });
     }
 
+    if (newUser.role === "Student") {
+      if (!student_info) {
+        throw new BadRequestError({ message: "Student info is required for Student accounts" });
+      }
+
+      const { about, location, skills, open_for_opportunities } = student_info;
+
+      await studentRepository.create({
+        studentData: {
+          user_id: newUser.user_id,
+          about: about || null,
+          location: location || null,
+          open_for_opportunities: open_for_opportunities || null,
+          skills: skills || null,
+        },
+      });
+    }
+
     return newUser;
   }
 
   async findAll(input: UserQueryParams) {
-    const data = await userRepository.findAll(input);
-    return data;
+    const { data: users, pagination } = await userRepository.findAll<User>(input);
+
+    return {
+      data: await this.joinData({ users: users }),
+      pagination,
+    };
   }
 
   async findOne(input: { userId: number }) {
@@ -116,7 +127,27 @@ export class UserService {
     if (!user) {
       throw new NotFoundError({ message: `User with ID ${userId} not found` });
     }
-    return user;
+
+    const joinedUser = await this.joinData({ users: [user] });
+    
+    return joinedUser[0];
+  }
+
+  async joinData(input: { users: User[] }) {
+    const { users } = input;
+
+    const user_student_ids = users.filter((user) => user.role === "Student").map((user) => user.user_id);
+
+    const { data: students } = await studentRepository.findAll<Student>({
+      user_ids: user_student_ids,
+    });
+
+    const students_map = _.keyBy(students, "user_id");
+
+    return users.map((user) => ({
+      ...user,
+      student_info: students_map[user.user_id] || null,
+    }));
   }
 
   async createUser(input: { userData: CreateUserDto }) {
@@ -142,7 +173,6 @@ export class UserService {
       throw new NotFoundError({ message: `User with ID ${input.userId} not found` });
     }
 
-    // Check email uniqueness if email is being updated
     if (userData.email) {
       const userWithEmail = await userRepository.findOne({ email: userData.email });
       if (userWithEmail && userWithEmail.user_id !== userId) {
@@ -150,14 +180,12 @@ export class UserService {
       }
     }
 
-    // Check optimistic concurrency if updated_at is provided
     if (userData.updated_at && userData.updated_at !== existingUser.updated_at) {
       throw new BadRequestError({
         message: "Record was modified by another user. Please refresh and try again.",
       });
     }
 
-    // Prepare update data
     const updateData = _.pickBy(
       {
         avatar: userData.avatar ?? null,
@@ -174,6 +202,23 @@ export class UserService {
       userId,
       userData: updateData,
     });
+
+    if (userData.student_info && updatedUser?.role === "Student") {
+      const { about, location, skills, open_for_opportunities } = userData.student_info;
+
+      await studentRepository.update({
+        userId,
+        studentData: _.pickBy(
+          {
+            about: about || null,
+            location: location || null,
+            open_for_opportunities: open_for_opportunities || null,
+            skills: skills || null,
+          },
+          (value) => value != null && value !== ""
+        ),
+      });
+    }
 
     return updatedUser;
   }

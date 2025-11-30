@@ -2,15 +2,22 @@ import { z } from "zod";
 
 const companyProfileSchema = z.object({
   name: z.string().min(1, "Company name is required"),
-  logo: z.string().url().optional(),
-  background: z.string().url().optional(),
+  logo: z.url().optional(),
+  background: z.url().optional(),
   description: z.string().optional(),
   phone: z.string().optional(),
-  email: z.string().email().optional(),
-  website_url: z.string().url().optional(),
-  images: z.array(z.string().url()).optional(),
+  email: z.email().optional(),
+  website_url: z.url().optional(),
+  images: z.array(z.url()).optional(),
   tech_stack: z.array(z.string()).optional(),
   employee_count: z.number().int().nonnegative().optional(),
+});
+
+export const studentProfileSchema = z.object({
+  about: z.string().optional(),
+  location: z.string().optional(),
+  skills: z.array(z.string()).optional(),
+  open_for_opportunities: z.boolean().optional(),
 });
 
 export const registerSchema = z
@@ -28,6 +35,7 @@ export const registerSchema = z
     confirm_password: z.string().min(8, "Confirm password must be at least 8 characters"),
     role: z.enum(["Student", "Employer", "Manager", "Admin"]),
     company: companyProfileSchema.optional(),
+    student_info: studentProfileSchema.optional(),
   })
   .refine(
     (data) => {
