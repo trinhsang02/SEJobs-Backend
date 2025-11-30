@@ -12,21 +12,25 @@ export class UserRepository {
   }
 
   // BUG: https://github.com/supabase/supabase-js/issues/1571
-  async findAll(input: UserQueryParams) {
-    const fields = _.get(input, 'fields', this.fields);
-    const page = _.get(input, 'page', 1);
-    const limit = _.get(input, 'limit', 10);
+  async findAll<T>(input: UserQueryParams) {
+    const fields = _.get(input, "fields", this.fields);
+    const page = _.get(input, "page");
+    const limit = _.get(input, "limit");
+    const hasPagination = page && limit;
 
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
+    let dbQuery = this.db.from("users").select(fields, { count: "exact" });
 
-    const { data, error, count } = await this.db.from("users").select(fields, { count: "exact" }).range(from, to);
+    const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
+
+    const { data, error, count } = await executeQuery;
 
     if (error) throw error;
 
-    return { 
-      data,
-      pagination: { page, limit,
+    return {
+      data: data as T[],
+      pagination: hasPagination && {
+        page,
+        limit,
         total: count || 0,
         total_pages: count ? Math.ceil(count / limit) : 0,
       },
@@ -36,7 +40,7 @@ export class UserRepository {
   async findOne(input: UserQueryParams) {
     const { user_id, email, fields } = input;
     const select_fields = fields || this.fields;
-    
+
     let dbQuery = this.db.from("users").select(select_fields);
 
     if (user_id) {
@@ -64,7 +68,7 @@ export class UserRepository {
     return data;
   }
 
-  async update(input: { userId: number, userData: UserUpdate }) {
+  async update(input: { userId: number; userData: UserUpdate }) {
     const { data, error } = await this.db.from("users").update(input.userData).eq("user_id", input.userId).select(this.fields).maybeSingle();
 
     if (error) {
