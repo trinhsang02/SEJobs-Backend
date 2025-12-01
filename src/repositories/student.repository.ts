@@ -47,7 +47,8 @@ export class StudentRepository {
   }
 
   async findOne(input: StudentQueryParams) {
-    const { user_id, student_id = [], fields } = input;
+    // const { user_id, student_id = [], fields } = input;
+    const { user_id, student_id, fields } = input;
     const select_fields = fields || this.fields;
 
     let dbQuery = this.db.from("student").select(select_fields);
@@ -56,7 +57,7 @@ export class StudentRepository {
       dbQuery = dbQuery.eq("user_id", user_id);
     }
 
-    if (user_id) {
+    if (student_id) {
       dbQuery = dbQuery.eq("id", student_id);
     }
 
@@ -101,14 +102,21 @@ export class StudentRepository {
           message: `Student not found with ${studentId ? `studentId ${studentId}` : `userId ${userId}`}`,
         });
       }
-      throw new Error(`Failed to update student with ${studentId ? `studentId ${studentId}` : `userId ${userId}`}: ${error.message}`);
+      throw new Error(
+        `Failed to update student with ${studentId ? `studentId ${studentId}` : `userId ${userId}`}: ${error.message}`
+      );
     }
 
     return data;
   }
 
   async delete(studentId: number) {
-    const { data, error } = await this.db.from("student").delete().eq("id", studentId).select(this.fields).maybeSingle();
+    const { data, error } = await this.db
+      .from("student")
+      .delete()
+      .eq("id", studentId)
+      .select(this.fields)
+      .maybeSingle();
 
     if (error) {
       throw error;
