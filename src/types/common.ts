@@ -196,3 +196,15 @@ export interface CompanyBranchesQuery extends QueryParams {
   company_id?: number;
   name?: string;
 }
+
+// types/common.ts
+
+// SOCIAL LINK
+export type SocialLink = Database["public"]["Tables"]["social_links"]["Row"];
+export type SocialLinkInsert = Database["public"]["Tables"]["social_links"]["Insert"];
+export type SocialLinkUpdate = Database["public"]["Tables"]["social_links"]["Update"];
+
+export interface SocialLinkQueryParams extends QueryParams {
+  student_id?: number;
+  platform?: string;
+}

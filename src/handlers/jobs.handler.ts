@@ -1,12 +1,14 @@
 import { Request, Response } from "express";
 import jobService from "@/services/jobs.service";
-import { BadRequestError } from "@/utils/errors";
+import { BadRequestError, NotFoundError } from "@/utils/errors";
 import _ from "lodash";
 import validate from "@/utils/validate";
 import { createJobSchema } from "@/dtos/job/CreateJob.dto";
 import { updateJobSchema } from "@/dtos/job/UpdateJob.dto";
 import { SORTABLE_JOB_FIELDS, SortableJobFields } from "@/types/common";
 import { companyJobQuerySchema } from "@/dtos/company/CompanyJobQuery.dto";
+import { toTopCvFormat } from "@/utils/topCVFormat";
+import { toCamelCaseKeys } from "@/utils/casing";
 
 export async function listJobs(req: Request, res: Response) {
   const page = _.toInteger(req.query.page) || 1;
@@ -16,19 +18,20 @@ export async function listJobs(req: Request, res: Response) {
     typeof req.query.sort_by === "string" && (SORTABLE_JOB_FIELDS as readonly string[]).includes(req.query.sort_by)
       ? (req.query.sort_by as SortableJobFields)
       : undefined;
-  const filters = { ...req.query };
 
   const { data: jobs, pagination } = await jobService.list({
     ...req.query,
     page,
     limit,
-    sort_by: typeof sort_by === "string" ? (sort_by as any) : undefined,
+    sort_by: sort_by as any,
     order,
   });
 
+  const formattedJobs = jobs.map((job) => toTopCvFormat(job, job.company, null));
+
   res.status(200).json({
     success: true,
-    data: jobs,
+    data: formattedJobs,
     pagination,
   });
 }
@@ -41,8 +44,11 @@ export async function getJob(req: Request, res: Response) {
   }
 
   const job = await jobService.findOne({ jobId: id });
-
-  return res.status(200).json({ success: true, data: job });
+  if (!job) {
+    throw new NotFoundError({ message: "Job not found" });
+  }
+  const formattedJob = toTopCvFormat(job, job.company, null);
+  return res.status(200).json({ success: true, formattedJob });
 }
 
 export async function createJob(req: Request, res: Response) {
