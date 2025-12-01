@@ -17,11 +17,14 @@ export class UserService {
 
     const curUser = await userRepository.findOne({
       email: loginData.email,
-      fields: userRepository.fields + ", password",
+      fields: userRepository.fields + ", password, is_active",
     });
 
     if (!curUser) {
       throw new BadRequestError({ message: `Invalid email or password` });
+    }
+    if (curUser.is_active === false) {
+      throw new BadRequestError({ message: "Account is deactivated" });
     }
 
     const isValidPassword = await bcrypt.compare(loginData.password, curUser.password);
@@ -70,7 +73,18 @@ export class UserService {
         throw new BadRequestError({ message: "Company profile is required for Employer accounts" });
       }
 
-      const { name, logo, background, description, phone, email: companyEmail, website_url, images, tech_stack, employee_count } = company;
+      const {
+        name,
+        logo,
+        background,
+        description,
+        phone,
+        email: companyEmail,
+        website_url,
+        images,
+        tech_stack,
+        employee_count,
+      } = company;
 
       await companyRepository.create({
         companyData: {
@@ -129,7 +143,7 @@ export class UserService {
     }
 
     const joinedUser = await this.joinData({ users: [user] });
-    
+
     return joinedUser[0];
   }
 
@@ -231,6 +245,78 @@ export class UserService {
     }
 
     return deletedUser;
+  }
+
+  /**
+   * Request password reset: generate token and expiry, persist on user.
+   * Note: email delivery should be handled by caller using returned token.
+   */
+  async requestPasswordReset(input: { email: string }) {
+    const { email } = input;
+    const user = await userRepository.findOne({
+      email,
+      fields: userRepository.fields + ", reset_token, reset_token_expires, is_active",
+    });
+
+    if (!user) {
+      throw new NotFoundError({ message: "User not found" });
+    }
+    if ((user as any).is_active === false) {
+      throw new BadRequestError({ message: "Account is deactivated" });
+    }
+
+    // Generate secure token and expiry (1 hour)
+    const token = require("crypto").randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    await userRepository.update({
+      userId: user.user_id,
+      userData: {
+        // casting to any to allow new columns before Supabase types update
+        ...({ reset_token: token, reset_token_expires: expires } as any),
+        updated_at: new Date().toISOString(),
+      } as any,
+    });
+
+    return { user_id: user.user_id, email: user.email, reset_token: token, reset_token_expires: expires };
+  }
+
+  /**
+   * Reset password using token. Clears token fields after successful reset.
+   */
+  async resetPassword(input: { token: string; new_password: string }) {
+    const { token, new_password } = input;
+
+    // Find user by reset_token
+    const { data: users } = await userRepository.findAll<User>({
+      fields: userRepository.fields + ", reset_token, reset_token_expires, is_active",
+    });
+    const target = users.find((u) => (u as any).reset_token === token);
+
+    if (!target) {
+      throw new BadRequestError({ message: "Invalid reset token" });
+    }
+    if ((target as any).is_active === false) {
+      throw new BadRequestError({ message: "Account is deactivated" });
+    }
+
+    const expiresAt = (target as any).reset_token_expires ? new Date((target as any).reset_token_expires).getTime() : 0;
+    if (Date.now() > expiresAt) {
+      throw new BadRequestError({ message: "Reset token expired" });
+    }
+
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+
+    await userRepository.update({
+      userId: target.user_id,
+      userData: {
+        password: hashedPassword,
+        ...({ reset_token: null, reset_token_expires: null } as any),
+        updated_at: new Date().toISOString(),
+      } as any,
+    });
+
+    return { success: true };
   }
 }
 

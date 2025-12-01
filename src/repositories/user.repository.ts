@@ -5,7 +5,8 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
 export class UserRepository {
   private readonly db: SupabaseClient;
-  public readonly fields = "user_id, email, first_name, last_name, avatar, role, is_verified, created_at, updated_at";
+  public readonly fields =
+    "user_id, email, first_name, last_name, avatar, role, is_verified, is_active, created_at, updated_at";
 
   constructor() {
     this.db = supabase;
@@ -17,8 +18,8 @@ export class UserRepository {
     const page = _.get(input, "page");
     const limit = _.get(input, "limit");
     const hasPagination = page && limit;
-
     let dbQuery = this.db.from("users").select(fields, { count: "exact" });
+    // let dbQuery = this.db.from("users").select(fields, { count: "exact" }).eq("is_active", true);
 
     const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
 
@@ -38,7 +39,7 @@ export class UserRepository {
   }
 
   async findOne(input: UserQueryParams) {
-    const { user_id, email, fields } = input;
+    const { user_id, email, reset_token, fields } = input;
     const select_fields = fields || this.fields;
 
     let dbQuery = this.db.from("users").select(select_fields);
@@ -49,6 +50,10 @@ export class UserRepository {
 
     if (email) {
       dbQuery = dbQuery.eq("email", email);
+    }
+
+    if (reset_token) {
+      dbQuery = dbQuery.eq("reset_token", reset_token);
     }
 
     const { data, error } = await dbQuery.maybeSingle<User>();
@@ -69,7 +74,12 @@ export class UserRepository {
   }
 
   async update(input: { userId: number; userData: UserUpdate }) {
-    const { data, error } = await this.db.from("users").update(input.userData).eq("user_id", input.userId).select(this.fields).maybeSingle();
+    const { data, error } = await this.db
+      .from("users")
+      .update(input.userData)
+      .eq("user_id", input.userId)
+      .select(this.fields)
+      .maybeSingle();
 
     if (error) {
       if (error.message.includes("no rows found")) {
@@ -82,7 +92,12 @@ export class UserRepository {
   }
 
   async delete(userId: number) {
-    const { data, error } = await this.db.from("users").delete().eq("user_id", userId).select(this.fields).maybeSingle();
+    const { data, error } = await this.db
+      .from("users")
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .select(this.fields)
+      .maybeSingle();
 
     if (error) {
       throw error;
