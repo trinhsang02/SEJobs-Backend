@@ -5,6 +5,7 @@ import { loginSchema } from "@/dtos/user/Login.dto";
 import UsersService from "@/services/users.service";
 import { registerSchema } from "@/dtos/user/Register.dto";
 import { generateRefreshToken, verifyToken, generateToken } from "@/utils/jwt.util";
+import { forgotPasswordSchema, resetPasswordSchema } from "@/dtos/user/Password.dto";
 
 export async function login(req: Request, res: Response) {
   const loginData = validate.schema_validate(loginSchema, req.body);
@@ -92,4 +93,21 @@ export async function refreshToken(req: Request, res: Response) {
   } catch (error) {
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
+}
+
+export async function requestPasswordReset(req: Request, res: Response) {
+  const { email } = validate.schema_validate(forgotPasswordSchema, req.body);
+
+  const { reset_token, reset_token_expires } = await UsersService.requestPasswordReset({ email });
+
+  res.status(200).json({
+    success: true,
+    data: { reset_token, reset_token_expires },
+  });
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  const { token, new_password } = validate.schema_validate(resetPasswordSchema, req.body);
+  await UsersService.resetPassword({ token, new_password });
+  res.status(200).json({ success: true });
 }
