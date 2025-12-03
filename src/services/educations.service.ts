@@ -1,0 +1,26 @@
+import { EducationRepository } from "@/repositories/educations.repository";
+import { CreateEducationDTO, UpdateEducationDTO } from "@/dtos/student/Educations.dto";
+import { NotFoundError, BadRequestError } from "@/utils/errors";
+
+export const EducationService = {
+  async getOne(id: number) {
+    const rec = await EducationRepository.findOne(id);
+    if (!rec) throw new NotFoundError({ message: "Education not found" });
+    return rec;
+  },
+
+  async create(payload: CreateEducationDTO) {
+    if (!payload.school) throw new BadRequestError({ message: "school is required" });
+    return EducationRepository.insert(payload as any);
+  },
+
+  async update(id: number, payload: UpdateEducationDTO) {
+    await this.getOne(id);
+    return EducationRepository.update(id, payload as any);
+  },
+
+  async remove(id: number) {
+    await this.getOne(id);
+    return EducationRepository.remove(id);
+  },
+};
