@@ -2,6 +2,45 @@ import { supabase } from "@/config/supabase";
 import { Education, EducationInsert, EducationUpdate } from "@/types/common";
 
 export const EducationRepository = {
+    async findAll(options: { page: number; limit: number }): Promise<{ data: Education[]; pagination: { page: number; limit: number; total: number } }> {
+        const { page, limit } = options;
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+        const { data, error, count } = await supabase
+            .from("educations")
+            .select("*", { count: "exact" })
+            .range(from, to);
+        if (error) throw error;
+        return {
+            data: data as Education[],
+            pagination: {
+                page,
+                limit,
+                total: count || 0,
+            },
+        };
+    },
+
+    async findByStudentId(studentId: number, options: { page: number; limit: number }): Promise<{ data: Education[]; pagination: { page: number; limit: number; total: number } }> {
+        const { page, limit } = options;
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+        const { data, error, count } = await supabase
+            .from("educations")
+            .select("*", { count: "exact" })
+            .eq("student_id", studentId)
+            .range(from, to);
+        if (error) throw error;
+        return {
+            data: data as Education[],
+            pagination: {
+                page,
+                limit,
+                total: count || 0,
+            },
+        };
+    },
+    
     async findOne(id: number): Promise<Education | null> {
         const { data, error } = await supabase.from("educations").select("*").eq("id", id).single();
         if (error) {

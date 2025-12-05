@@ -4,11 +4,13 @@ import {
   createEducation,
   updateEducation,
   deleteEducation,
+  getEducationByStudentId,
 } from "@/handlers/educations.handler";
 import { authenticate } from "@/middlewares/auth.middleware";
 
 const router = Router();
 
+router.get("/", authenticate, getEducationByStudentId);
 router.get("/:id", getEducation);
 router.post("/", authenticate, createEducation);
 router.put("/:id", authenticate, updateEducation);

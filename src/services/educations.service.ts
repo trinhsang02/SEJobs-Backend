@@ -3,6 +3,14 @@ import { CreateEducationDTO, UpdateEducationDTO } from "@/dtos/student/Education
 import { NotFoundError, BadRequestError } from "@/utils/errors";
 
 export const EducationService = {
+  async findAll(options: { page: number; limit: number }) {
+    return EducationRepository.findAll(options);
+  },
+
+  async findByStudentId(studentId: number, options: { page: number; limit: number }) {
+    return EducationRepository.findByStudentId(studentId, options);
+  },
+  
   async getOne(id: number) {
     const rec = await EducationRepository.findOne(id);
     if (!rec) throw new NotFoundError({ message: "Education not found" });
