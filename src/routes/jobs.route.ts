@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { listJobs, getJob, createJob, updateJob, deleteJob } from "@/handlers/jobs.handler";
+import { listJobs, getJob, createJob, updateJob, deleteJob, listJobsByCompany } from "@/handlers/jobs.handler";
 import { authenticate } from "@/middlewares/auth.middleware";
 import { authorizeRoles } from "@/middlewares/authorizeRoles";
 
@@ -13,5 +13,7 @@ router.get("/:id", getJob);
 router.post("/", authenticate, authorizeRoles("Admin", "Manager", "Employer"), createJob);
 router.put("/:id", authenticate, authorizeRoles("Admin", "Manager", "Employer"), updateJob);
 router.delete("/:id", authenticate, authorizeRoles("Admin", "Manager", "Employer"), deleteJob);
+
+router.get("/company/:id", authenticate, authorizeRoles("Admin", "Manager", "Employer"), listJobsByCompany);
 
 export default router;

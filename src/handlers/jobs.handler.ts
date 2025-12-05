@@ -99,7 +99,7 @@ export async function listJobsByCompany(req: Request, res: Response) {
     throw new BadRequestError({ message: "Invalid company ID" });
   }
 
-  const { page = 1, limit = 10 } = validate.schema_validate(companyJobQuerySchema, req.query);
+  const { page, limit } = validate.schema_validate(companyJobQuerySchema, req.query);
 
   const result = await jobService.listByCompany({ companyId, page, limit });
 

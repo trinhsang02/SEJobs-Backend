@@ -61,7 +61,7 @@ export class CompanyRepository {
     let dbQuery = this.db.from("companies").select(select_fields);
 
     if (company_id) {
-      dbQuery = dbQuery.eq("id", company_id);
+      dbQuery = dbQuery.eq("user_id", company_id);
     }
 
     if (email) {

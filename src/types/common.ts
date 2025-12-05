@@ -211,3 +211,14 @@ export interface SocialLinkQueryParams extends QueryParams {
   student_id?: number;
   platform?: string;
 }
+
+// EDUCATION
+export type Education = Database["public"]["Tables"]["educations"]["Row"];
+export type EducationInsert = Database["public"]["Tables"]["educations"]["Insert"];
+export type EducationUpdate = Database["public"]["Tables"]["educations"]["Update"];
+
+export interface EducationQueryParams extends QueryParams {
+  ids?: number[];
+  student_id?: number;
+  school?: string;
+}
