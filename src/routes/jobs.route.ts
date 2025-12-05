@@ -10,9 +10,10 @@ router.get("/", listJobs);
 router.get("/:id", getJob);
 
 // Protected CRUD
-router.post("/", authenticate, authorizeRoles("Admin", "Manager"), createJob);
-router.put("/:id", authenticate, authorizeRoles("Admin", "Manager"), updateJob);
-router.delete("/:id", authenticate, authorizeRoles("Admin", "Manager"), deleteJob);
+router.post("/", authenticate, authorizeRoles("Admin", "Manager", "Employer"), createJob);
+router.put("/:id", authenticate, authorizeRoles("Admin", "Manager", "Employer"), updateJob);
+router.delete("/:id", authenticate, authorizeRoles("Admin", "Manager", "Employer"), deleteJob);
+
 router.get("/company/:id", authenticate, authorizeRoles("Admin", "Manager", "Employer"), listJobsByCompany);
 
 export default router;

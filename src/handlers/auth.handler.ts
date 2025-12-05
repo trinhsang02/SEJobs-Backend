@@ -29,10 +29,10 @@ export async function login(req: Request, res: Response) {
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: "/",
   });
-
-  res.status(200).json({
+  const fullUser = await UsersService.findOne({ userId: user.user_id });
+  return res.status(200).json({
     success: true,
-    data: { user },
+    data: { user: fullUser },
   });
 }
 

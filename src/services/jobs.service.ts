@@ -189,7 +189,17 @@ export class JobService {
     const companyPromise = companyRepo.findOne({ company_id });
     promises.push(companyPromise);
 
-    const companyBranchesPromise = companyBranchesRepo.findOne({ id: company_branches_id, company_id });
+    let companyBranchesPromise: Promise<any>;
+
+    if (company_branches_id) {
+      companyBranchesPromise = companyBranchesRepo.findOne({
+        id: company_branches_id,
+        company_id,
+      });
+    } else {
+      companyBranchesPromise = Promise.resolve(null);
+    }
+
     promises.push(companyBranchesPromise);
 
     const categoryPromise =
@@ -219,8 +229,7 @@ export class JobService {
     if (!company) {
       error_messages.push(`company_id ${company_id} not found.`);
     }
-
-    if (!companyBranch) {
+    if (company_branches_id && !companyBranch) {
       error_messages.push(`company_branches_id ${company_branches_id} not found.`);
     }
 
