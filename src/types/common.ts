@@ -42,11 +42,13 @@ export type CompanyUpdate = Database["public"]["Tables"]["companies"]["Update"];
 export interface CompanyQueryAllParams extends QueryParams {
   company_ids?: number[];
   email?: string;
+  user_ids?: number[];
 }
 
 export interface CompanyQueryParams extends QueryParams {
   company_id?: number;
   email?: string;
+  user_id?: number;
 }
 
 // COMPANY_TYPES
