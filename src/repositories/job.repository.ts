@@ -19,23 +19,65 @@ export class JobRepository {
     const fields = _.get(input, "fields", this.fields);
     const page = _.get(input, "page");
     const limit = _.get(input, "limit");
-    const keyword = _.get(input, "title");
+    const keyword = _.get(input, "keyword");
+    const province_ids = _.get(input, "province_ids") || [];
+    const level_ids = _.get(input, "level_ids") || [];
+    const category_ids = _.get(input, "category_ids") || [];
+    const skill_ids = _.get(input, "skill_ids") || [];
+    const employment_type_ids = _.get(input, "employment_type_ids") || [];
     const sortBy = _.get(input, "sort_by", "job_posted_at");
     const order = _.get(input, "order", "desc");
     const hasPagination = page && limit && page > 0 && limit > 0;
 
-    let dbQuery = this.db.from("jobs").select(fields, { count: "exact" });
+    let selectString = fields;
+
+    selectString = `${fields}, company_branches!inner(province_id)`;
+
+    selectString = `${selectString}, company:companies!inner(id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, user_id, created_at, updated_at)`;
+
+    selectString = `${selectString}, levels!inner(id, name, created_at, updated_at)`;
+
+    selectString = `${selectString}, categories!inner(id, name, created_at, updated_at)`;
+
+    selectString = `${selectString}, skills!inner(id, name, created_at, updated_at)`;
+
+    selectString = `${selectString}, employment_types!inner(id, name, created_at, updated_at)`;
+
+    let dbQuery = this.db.from("jobs").select(selectString, { count: "exact" });
+
+    if (province_ids.length > 0) {
+      dbQuery = dbQuery.in("company_branches.province_id", province_ids);
+    }
+
+    if (level_ids.length > 0) {
+      dbQuery = dbQuery.in("levels.id", level_ids);
+    }
+
+    if (category_ids.length > 0) {
+      dbQuery = dbQuery.in("categories.id", category_ids);
+    }
+
+    if (skill_ids.length > 0) {
+      dbQuery = dbQuery.in("skills.id", skill_ids);
+    }
+
+    if (employment_type_ids.length > 0) {
+      dbQuery = dbQuery.in("employment_types.id", employment_type_ids);
+    }
 
     if (keyword) {
       dbQuery = dbQuery.ilike("title", `%${keyword}%`);
     }
+
     if ((SORTABLE_JOB_FIELDS as readonly string[]).includes(sortBy)) {
       dbQuery = dbQuery.order(sortBy, { ascending: order === "asc" });
     } else {
       dbQuery = dbQuery.order("job_posted_at", { ascending: false });
     }
 
-    const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
+    const executeQuery = hasPagination 
+      ? dbQuery.range((page - 1) * limit, page * limit - 1) 
+      : dbQuery;
 
     const { data, error, count } = await executeQuery;
 

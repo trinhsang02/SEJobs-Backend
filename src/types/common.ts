@@ -68,6 +68,9 @@ export type CompanyCompanyTypesUpdate = Database["public"]["Tables"]["company_co
 
 // JOB
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
+export type JobAfterJoined = Job & {
+  company: Company
+};
 export type JobInsert = Database["public"]["Tables"]["jobs"]["Insert"];
 export type JobUpdate = Database["public"]["Tables"]["jobs"]["Update"];
 
@@ -93,8 +96,13 @@ export const SORTABLE_JOB_FIELDS = [
 export interface JobQueryParams extends QueryParams {
   job_id?: number;
   company_id?: number;
+  province_ids?: number[];
+  level_ids?: number[];
+  category_ids?: number[];
+  skill_ids?: number[];
+  employment_type_ids?: number[];
   //keyword search in job title
-  title?: string;
+  keyword?: string;
   sort_by?: SortableJobFields;
   order?: "asc" | "desc";
 }
