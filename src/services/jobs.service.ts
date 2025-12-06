@@ -31,9 +31,7 @@ export class JobService {
       throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
     }
 
-    const joinedJob = await this.joinData({ jobs: [job] });
-
-    return joinedJob[0];
+    return job;
   }
 
   async joinData(input: { jobs: Job[] }) {

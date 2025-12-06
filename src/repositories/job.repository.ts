@@ -75,9 +75,7 @@ export class JobRepository {
       dbQuery = dbQuery.order("job_posted_at", { ascending: false });
     }
 
-    const executeQuery = hasPagination 
-      ? dbQuery.range((page - 1) * limit, page * limit - 1) 
-      : dbQuery;
+    const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
 
     const { data, error, count } = await executeQuery;
 
@@ -95,7 +93,60 @@ export class JobRepository {
   }
 
   async findOne(jobId: number) {
-    const { data: job, error: jobError } = await this.db.from("jobs").select("*").eq("id", jobId).maybeSingle();
+    const selectString = `
+      *,
+      company_branches!inner(
+        id,
+        province_id,
+        address,
+        created_at,
+        updated_at
+      ),
+      company:companies!inner(
+        id,
+        external_id,
+        name,
+        tech_stack,
+        logo,
+        background,
+        description,
+        phone,
+        email,
+        website_url,
+        socials,
+        images,
+        employee_count,
+        user_id,
+        created_at,
+        updated_at
+      ),
+      levels!inner(
+        id,
+        name,
+        created_at,
+        updated_at
+      ),
+      categories!inner(
+        id,
+        name,
+        created_at,
+        updated_at
+      ),
+      skills!inner(
+        id,
+        name,
+        created_at,
+        updated_at
+      ),
+      employment_types!inner(
+        id,
+        name,
+        created_at,
+        updated_at
+      )
+    `;
+
+    const { data: job, error: jobError } = await this.db.from("jobs").select(selectString).eq("id", jobId).maybeSingle();
 
     if (jobError) throw jobError;
 
@@ -155,10 +206,7 @@ export class JobRepository {
 
     if (error) throw error;
 
-    const { count } = await supabase
-      .from("jobs")
-      .select("*", { count: "exact", head: true })
-      .eq("company_id", companyId);
+    const { count } = await supabase.from("jobs").select("*", { count: "exact", head: true }).eq("company_id", companyId);
     // .eq("status", "active");
 
     return {
