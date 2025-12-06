@@ -7,7 +7,7 @@ import levelRepo from "@/repositories/level.repository";
 import employmentTypeRepo from "@/repositories/employment_types.repository";
 import { CreateJobDto } from "@/dtos/job/CreateJob.dto";
 import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
-import { Company, Job, JobCategory, JobEmploymentType, JobLevel, JobQueryParams, JobSkill } from "@/types/common";
+import { Company, Job, JobAfterJoined, JobCategory, JobEmploymentType, JobLevel, JobQueryParams, JobSkill } from "@/types/common";
 import companyRepo from "@/repositories/company.repository";
 import companyBranchesRepo from "@/repositories/company_branches.repository";
 import { toCamelCaseKeys } from "@/utils/casing";
@@ -15,7 +15,7 @@ import { toTopCvFormat } from "@/utils/topCVFormat";
 
 export class JobService {
   async list(input: JobQueryParams) {
-    const { data: jobs, pagination } = await jobRepository.findAll<Job>(input);
+    const { data: jobs, pagination } = await jobRepository.findAll<JobAfterJoined>(input);
 
     return {
       data: jobs,
