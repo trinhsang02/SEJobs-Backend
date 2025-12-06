@@ -20,6 +20,7 @@ export class JobRepository {
     const page = _.get(input, "page");
     const limit = _.get(input, "limit");
     const keyword = _.get(input, "keyword");
+    const company_id = _.get(input, "company_id");
     const province_ids = _.get(input, "province_ids") || [];
     const level_ids = _.get(input, "level_ids") || [];
     const category_ids = _.get(input, "category_ids") || [];
@@ -77,6 +78,10 @@ export class JobRepository {
 
     if (salary_to) {
       dbQuery = dbQuery.lte("salary_from", salary_to);
+    }
+
+    if (company_id) {
+      dbQuery = dbQuery.eq("company_id", company_id);
     }
 
     if ((SORTABLE_JOB_FIELDS as readonly string[]).includes(sortBy)) {
