@@ -101,6 +101,8 @@ export interface JobQueryParams extends QueryParams {
   category_ids?: number[];
   skill_ids?: number[];
   employment_type_ids?: number[];
+  salary_from?: number;
+  salary_to?: number;
   //keyword search in job title
   keyword?: string;
   sort_by?: SortableJobFields;
