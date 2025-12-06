@@ -9,10 +9,16 @@ import { SORTABLE_JOB_FIELDS, SortableJobFields } from "@/types/common";
 import { companyJobQuerySchema } from "@/dtos/company/CompanyJobQuery.dto";
 import { toTopCvFormat } from "@/utils/topCVFormat";
 import { toCamelCaseKeys } from "@/utils/casing";
+import convert from "@/utils/convert";
 
 export async function listJobs(req: Request, res: Response) {
   const page = _.toInteger(req.query.page) || 1;
   const limit = _.toInteger(req.query.limit) || 10;
+  const province_ids = convert.split(req.query.province_ids as string, ',', Number);
+  const level_ids = convert.split(req.query.level_ids as string, ',', Number);
+  const skill_ids = convert.split(req.query.skill_ids as string, ',', Number);
+  const employment_type_ids = convert.split(req.query.employment_type_ids as string, ',', Number);
+  const category_ids = convert.split(req.query.category_ids as string, ',', Number);
   const order = req.query.order === "asc" ? "asc" : "desc";
   const sort_by =
     typeof req.query.sort_by === "string" && (SORTABLE_JOB_FIELDS as readonly string[]).includes(req.query.sort_by)
@@ -21,6 +27,13 @@ export async function listJobs(req: Request, res: Response) {
 
   const { data: jobs, pagination } = await jobService.list({
     ...req.query,
+    province_ids,
+    level_ids,
+    category_ids,
+    employment_type_ids,
+    skill_ids,
+    salary_from: Number(req.query.salary_from),
+    salary_to: Number(req.query.salary_to),
     page,
     limit,
     sort_by: sort_by as any,
@@ -99,7 +112,7 @@ export async function listJobsByCompany(req: Request, res: Response) {
     throw new BadRequestError({ message: "Invalid company ID" });
   }
 
-  const { page = 1, limit = 10 } = validate.schema_validate(companyJobQuerySchema, req.query);
+  const { page, limit } = validate.schema_validate(companyJobQuerySchema, req.query);
 
   const result = await jobService.listByCompany({ companyId, page, limit });
 

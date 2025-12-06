@@ -4,7 +4,7 @@ export const createJobSchema = z.object({
   external_id: z.number().optional(),
   website_url: z.string().optional(),
   company_id: z.number().int().positive(),
-  company_branches_id: z.number().int().positive(),
+  company_branches_id: z.number().int().positive().nullable().optional(),
   title: z.string().min(1, "Job title is required"),
   responsibilities: z.array(z.string()).optional(),
   requirement: z.array(z.string()).optional(),

@@ -7,7 +7,7 @@ import levelRepo from "@/repositories/level.repository";
 import employmentTypeRepo from "@/repositories/employment_types.repository";
 import { CreateJobDto } from "@/dtos/job/CreateJob.dto";
 import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
-import { Company, Job, JobCategory, JobEmploymentType, JobLevel, JobQueryParams, JobSkill } from "@/types/common";
+import { Company, Job, JobAfterJoined, JobCategory, JobEmploymentType, JobLevel, JobQueryParams, JobSkill } from "@/types/common";
 import companyRepo from "@/repositories/company.repository";
 import companyBranchesRepo from "@/repositories/company_branches.repository";
 import { toCamelCaseKeys } from "@/utils/casing";
@@ -15,24 +15,10 @@ import { toTopCvFormat } from "@/utils/topCVFormat";
 
 export class JobService {
   async list(input: JobQueryParams) {
-    const { data: jobs, pagination } = await jobRepository.findAll<Job>(input);
-
-    // const { data: companies } = await companyRepo.findAll<Company>({
-    //   company_ids: _.uniq(jobs.map((job) => job.company_id).filter((id) => id !== null)),
-    // });
-
-    // const companyMap = _.keyBy(companies, "id");
-
-    // const jobsWithCompany = jobs.map((job) => {
-    //   const company = job.company_id ? companyMap[job.company_id] : null;
-    //   return {
-    //     ...toTopCvFormat(job),
-    //     company: company ? toCamelCaseKeys(company) : null,
-    //   };
-    // });
+    const { data: jobs, pagination } = await jobRepository.findAll<JobAfterJoined>(input);
 
     return {
-      data: await this.joinData({ jobs }),
+      data: jobs,
       pagination: pagination,
     };
   }
@@ -45,18 +31,7 @@ export class JobService {
       throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
     }
 
-    // const company = job.company_id ? await companyRepo.findOne({ company_id: job.company_id }) : null;
-
-    // if (job.company_id && !company) {
-    //   throw new NotFoundError({ message: `Company with ID ${job.company_id} not found` });
-    // }
-    // const jobCamel = toTopCvFormat(job);
-    // const companyCamel = company ? toCamelCaseKeys(company) : null;
-
-    // return { ...jobCamel, company: companyCamel };
-    const joinedJob = await this.joinData({ jobs: [job] });
-
-    return joinedJob[0];
+    return job;
   }
 
   async joinData(input: { jobs: Job[] }) {
@@ -189,7 +164,17 @@ export class JobService {
     const companyPromise = companyRepo.findOne({ company_id });
     promises.push(companyPromise);
 
-    const companyBranchesPromise = companyBranchesRepo.findOne({ id: company_branches_id, company_id });
+    let companyBranchesPromise: Promise<any>;
+
+    if (company_branches_id) {
+      companyBranchesPromise = companyBranchesRepo.findOne({
+        id: company_branches_id,
+        company_id,
+      });
+    } else {
+      companyBranchesPromise = Promise.resolve(null);
+    }
+
     promises.push(companyBranchesPromise);
 
     const categoryPromise =
@@ -219,8 +204,7 @@ export class JobService {
     if (!company) {
       error_messages.push(`company_id ${company_id} not found.`);
     }
-
-    if (!companyBranch) {
+    if (company_branches_id && !companyBranch) {
       error_messages.push(`company_branches_id ${company_branches_id} not found.`);
     }
 

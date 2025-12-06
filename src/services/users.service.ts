@@ -5,7 +5,7 @@ import userRepository from "@/repositories/user.repository";
 import { CreateUserDto } from "@/dtos/user/CreateUser.dto";
 import { UpdateUserDto } from "@/dtos/user/UpdateUser.dto";
 import { LoginDto } from "@/dtos/user/Login.dto";
-import { Student, User, UserQueryParams } from "@/types/common";
+import { Company, Student, User, UserQueryParams } from "@/types/common";
 import { RegisterDto } from "@/dtos/user/Register.dto";
 import { generateToken } from "@/utils/jwt.util";
 import companyRepository from "@/repositories/company.repository";
@@ -149,19 +149,33 @@ export class UserService {
 
   async joinData(input: { users: User[] }) {
     const { users } = input;
-
+    //Student
     const user_student_ids = users.filter((user) => user.role === "Student").map((user) => user.user_id);
-
     const { data: students } = await studentRepository.findAll<Student>({
       user_ids: user_student_ids,
     });
-
     const students_map = _.keyBy(students, "user_id");
 
-    return users.map((user) => ({
-      ...user,
-      student_info: students_map[user.user_id] || null,
-    }));
+    // Employers
+    const user_employer_ids = users.filter((user) => user.role === "Employer").map((user) => user.user_id);
+    const { data: companies } = await companyRepository.findAll<Company>({ user_ids: user_employer_ids });
+    const companies_map = _.keyBy(companies, "user_id");
+
+    return users.map((user) => {
+      if (user.role === "Student") {
+        return {
+          ...user,
+          student_info: students_map[user.user_id] || null,
+        };
+      } else if (user.role === "Employer") {
+        return {
+          ...user,
+          company: companies_map[user.user_id] || null,
+        };
+      } else {
+        return user;
+      }
+    });
   }
 
   async createUser(input: { userData: CreateUserDto }) {
@@ -247,10 +261,6 @@ export class UserService {
     return deletedUser;
   }
 
-  /**
-   * Request password reset: generate token and expiry, persist on user.
-   * Note: email delivery should be handled by caller using returned token.
-   */
   async requestPasswordReset(input: { email: string }) {
     const { email } = input;
     const user = await userRepository.findOne({
@@ -272,7 +282,6 @@ export class UserService {
     await userRepository.update({
       userId: user.user_id,
       userData: {
-        // casting to any to allow new columns before Supabase types update
         ...({ reset_token: token, reset_token_expires: expires } as any),
         updated_at: new Date().toISOString(),
       } as any,
@@ -281,13 +290,9 @@ export class UserService {
     return { user_id: user.user_id, email: user.email, reset_token: token, reset_token_expires: expires };
   }
 
-  /**
-   * Reset password using token. Clears token fields after successful reset.
-   */
   async resetPassword(input: { token: string; new_password: string }) {
     const { token, new_password } = input;
 
-    // Find user by reset_token
     const { data: users } = await userRepository.findAll<User>({
       fields: userRepository.fields + ", reset_token, reset_token_expires, is_active",
     });

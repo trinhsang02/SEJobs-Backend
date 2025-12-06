@@ -17,7 +17,7 @@ import _ from "lodash";
 export class CompanyRepository {
   private readonly db: SupabaseClient;
   public readonly fields =
-    "id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, created_at, updated_at";
+    "id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, user_id, created_at, updated_at";
 
   constructor() {
     this.db = supabase;
@@ -30,10 +30,12 @@ export class CompanyRepository {
     const limit = _.get(input, "limit");
     const hasPagination = page && limit;
     const company_ids = _.get(input, "company_ids") || [];
+    const user_ids = _.get(input, "user_ids") || [];
 
     let dbQuery = this.db.from("companies").select(fields, { count: "exact" });
 
     if (company_ids.length > 0) dbQuery = dbQuery.in("id", company_ids);
+    if (user_ids.length > 0) dbQuery = dbQuery.in("user_id", user_ids);
 
     const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
 
@@ -59,7 +61,7 @@ export class CompanyRepository {
     let dbQuery = this.db.from("companies").select(select_fields);
 
     if (company_id) {
-      dbQuery = dbQuery.eq("id", company_id);
+      dbQuery = dbQuery.eq("user_id", company_id);
     }
 
     if (email) {

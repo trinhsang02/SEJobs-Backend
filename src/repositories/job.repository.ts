@@ -19,16 +19,66 @@ export class JobRepository {
     const fields = _.get(input, "fields", this.fields);
     const page = _.get(input, "page");
     const limit = _.get(input, "limit");
-    const keyword = _.get(input, "title");
+    const keyword = _.get(input, "keyword");
+    const province_ids = _.get(input, "province_ids") || [];
+    const level_ids = _.get(input, "level_ids") || [];
+    const category_ids = _.get(input, "category_ids") || [];
+    const skill_ids = _.get(input, "skill_ids") || [];
+    const salary_from = _.get(input, "salary_from");
+    const salary_to = _.get(input, "salary_to");
+    const employment_type_ids = _.get(input, "employment_type_ids") || [];
     const sortBy = _.get(input, "sort_by", "job_posted_at");
     const order = _.get(input, "order", "desc");
     const hasPagination = page && limit && page > 0 && limit > 0;
 
-    let dbQuery = this.db.from("jobs").select(fields, { count: "exact" });
+    let selectString = fields;
+
+    selectString = `${fields}, company_branches!inner(province_id)`;
+
+    selectString = `${selectString}, company:companies!inner(id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, user_id, created_at, updated_at)`;
+
+    selectString = `${selectString}, levels!inner(id, name, created_at, updated_at)`;
+
+    selectString = `${selectString}, categories!inner(id, name, created_at, updated_at)`;
+
+    selectString = `${selectString}, skills!inner(id, name, created_at, updated_at)`;
+
+    selectString = `${selectString}, employment_types!inner(id, name, created_at, updated_at)`;
+
+    let dbQuery = this.db.from("jobs").select(selectString, { count: "exact" });
+
+    if (province_ids.length > 0) {
+      dbQuery = dbQuery.in("company_branches.province_id", province_ids);
+    }
+
+    if (level_ids.length > 0) {
+      dbQuery = dbQuery.in("levels.id", level_ids);
+    }
+
+    if (category_ids.length > 0) {
+      dbQuery = dbQuery.in("categories.id", category_ids);
+    }
+
+    if (skill_ids.length > 0) {
+      dbQuery = dbQuery.in("skills.id", skill_ids);
+    }
+
+    if (employment_type_ids.length > 0) {
+      dbQuery = dbQuery.in("employment_types.id", employment_type_ids);
+    }
 
     if (keyword) {
       dbQuery = dbQuery.ilike("title", `%${keyword}%`);
     }
+
+    if (salary_from) {
+      dbQuery = dbQuery.gte("salary_to", salary_from);
+    }
+
+    if (salary_to) {
+      dbQuery = dbQuery.lte("salary_from", salary_to);
+    }
+
     if ((SORTABLE_JOB_FIELDS as readonly string[]).includes(sortBy)) {
       dbQuery = dbQuery.order(sortBy, { ascending: order === "asc" });
     } else {
@@ -53,7 +103,60 @@ export class JobRepository {
   }
 
   async findOne(jobId: number) {
-    const { data: job, error: jobError } = await this.db.from("jobs").select("*").eq("id", jobId).maybeSingle();
+    const selectString = `
+      *,
+      company_branches!inner(
+        id,
+        province_id,
+        address,
+        created_at,
+        updated_at
+      ),
+      company:companies!inner(
+        id,
+        external_id,
+        name,
+        tech_stack,
+        logo,
+        background,
+        description,
+        phone,
+        email,
+        website_url,
+        socials,
+        images,
+        employee_count,
+        user_id,
+        created_at,
+        updated_at
+      ),
+      levels!inner(
+        id,
+        name,
+        created_at,
+        updated_at
+      ),
+      categories!inner(
+        id,
+        name,
+        created_at,
+        updated_at
+      ),
+      skills!inner(
+        id,
+        name,
+        created_at,
+        updated_at
+      ),
+      employment_types!inner(
+        id,
+        name,
+        created_at,
+        updated_at
+      )
+    `;
+
+    const { data: job, error: jobError } = await this.db.from("jobs").select(selectString).eq("id", jobId).maybeSingle();
 
     if (jobError) throw jobError;
 
@@ -113,10 +216,7 @@ export class JobRepository {
 
     if (error) throw error;
 
-    const { count } = await supabase
-      .from("jobs")
-      .select("*", { count: "exact", head: true })
-      .eq("company_id", companyId);
+    const { count } = await supabase.from("jobs").select("*", { count: "exact", head: true }).eq("company_id", companyId);
     // .eq("status", "active");
 
     return {
