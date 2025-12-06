@@ -32,6 +32,8 @@ export async function listJobs(req: Request, res: Response) {
     category_ids,
     employment_type_ids,
     skill_ids,
+    salary_from: Number(req.query.salary_from),
+    salary_to: Number(req.query.salary_to),
     page,
     limit,
     sort_by: sort_by as any,

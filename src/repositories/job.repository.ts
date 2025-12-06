@@ -24,6 +24,8 @@ export class JobRepository {
     const level_ids = _.get(input, "level_ids") || [];
     const category_ids = _.get(input, "category_ids") || [];
     const skill_ids = _.get(input, "skill_ids") || [];
+    const salary_from = _.get(input, "salary_from");
+    const salary_to = _.get(input, "salary_to");
     const employment_type_ids = _.get(input, "employment_type_ids") || [];
     const sortBy = _.get(input, "sort_by", "job_posted_at");
     const order = _.get(input, "order", "desc");
@@ -67,6 +69,14 @@ export class JobRepository {
 
     if (keyword) {
       dbQuery = dbQuery.ilike("title", `%${keyword}%`);
+    }
+
+    if (salary_from) {
+      dbQuery = dbQuery.gte("salary_to", salary_from);
+    }
+
+    if (salary_to) {
+      dbQuery = dbQuery.lte("salary_from", salary_to);
     }
 
     if ((SORTABLE_JOB_FIELDS as readonly string[]).includes(sortBy)) {
