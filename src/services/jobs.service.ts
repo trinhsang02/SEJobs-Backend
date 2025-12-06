@@ -17,22 +17,8 @@ export class JobService {
   async list(input: JobQueryParams) {
     const { data: jobs, pagination } = await jobRepository.findAll<Job>(input);
 
-    // const { data: companies } = await companyRepo.findAll<Company>({
-    //   company_ids: _.uniq(jobs.map((job) => job.company_id).filter((id) => id !== null)),
-    // });
-
-    // const companyMap = _.keyBy(companies, "id");
-
-    // const jobsWithCompany = jobs.map((job) => {
-    //   const company = job.company_id ? companyMap[job.company_id] : null;
-    //   return {
-    //     ...toTopCvFormat(job),
-    //     company: company ? toCamelCaseKeys(company) : null,
-    //   };
-    // });
-
     return {
-      data: await this.joinData({ jobs }),
+      data: jobs,
       pagination: pagination,
     };
   }
@@ -45,15 +31,6 @@ export class JobService {
       throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
     }
 
-    // const company = job.company_id ? await companyRepo.findOne({ company_id: job.company_id }) : null;
-
-    // if (job.company_id && !company) {
-    //   throw new NotFoundError({ message: `Company with ID ${job.company_id} not found` });
-    // }
-    // const jobCamel = toTopCvFormat(job);
-    // const companyCamel = company ? toCamelCaseKeys(company) : null;
-
-    // return { ...jobCamel, company: companyCamel };
     const joinedJob = await this.joinData({ jobs: [job] });
 
     return joinedJob[0];

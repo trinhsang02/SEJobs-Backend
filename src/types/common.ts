@@ -93,8 +93,13 @@ export const SORTABLE_JOB_FIELDS = [
 export interface JobQueryParams extends QueryParams {
   job_id?: number;
   company_id?: number;
+  province_ids?: number[];
+  level_ids?: number[];
+  category_ids?: number[];
+  skill_ids?: number[];
+  employment_type_ids?: number[];
   //keyword search in job title
-  title?: string;
+  keyword?: string;
   sort_by?: SortableJobFields;
   order?: "asc" | "desc";
 }
