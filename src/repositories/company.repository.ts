@@ -9,6 +9,7 @@ import {
   Company,
   CompanyQueryParams,
   CompanyQueryAllParams,
+  CompanyAfterJoined,
 } from "@/types/common";
 import { NotFoundError } from "@/utils/errors";
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -24,18 +25,38 @@ export class CompanyRepository {
   }
 
   // BUG: https://github.com/supabase/supabase-js/issues/1571
-  async findAll<T>(input: CompanyQueryAllParams) {
+  async findAll(input: CompanyQueryAllParams) {
     const fields = _.get(input, "fields", this.fields);
     const page = _.get(input, "page");
     const limit = _.get(input, "limit");
+    const keyword = _.get(input, "keyword");
+    const employee_count_from = _.get(input, "employee_count_from");
+    const employee_count_to = _.get(input, "employee_count_to");
     const hasPagination = page && limit;
     const company_ids = _.get(input, "company_ids") || [];
+    const company_type_ids = _.get(input, "company_type_ids") || [];
     const user_ids = _.get(input, "user_ids") || [];
+    const order = _.get(input, "order") || "created_at:desc";
 
-    let dbQuery = this.db.from("companies").select(fields, { count: "exact" });
+    let selectString = fields;
+
+    selectString = `${fields}, company_branches(id, name)`;
+
+    selectString = `${selectString}, company_types!inner(id, name)`;
+
+    let dbQuery = this.db.from("companies").select(selectString, { count: "exact" });
 
     if (company_ids.length > 0) dbQuery = dbQuery.in("id", company_ids);
+    if (company_type_ids.length > 0) dbQuery = dbQuery.in("company_types.id", company_type_ids);
     if (user_ids.length > 0) dbQuery = dbQuery.in("user_id", user_ids);
+    if (keyword) dbQuery = dbQuery.ilike("name", `%${keyword}%`);
+    if (employee_count_from) dbQuery = dbQuery.gte("employee_count", employee_count_from);
+    if (employee_count_to) dbQuery = dbQuery.lte("employee_count", employee_count_to);
+
+    let [orderBy, direction] = order.split(":");
+    const ascending = (direction || "desc") === "asc";
+
+    dbQuery = dbQuery.order(orderBy as string, { ascending });
 
     const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
 
@@ -44,7 +65,7 @@ export class CompanyRepository {
     if (error) throw error;
 
     return {
-      data: data as T[],
+      data: (data as unknown as CompanyAfterJoined[]),
       pagination: hasPagination && {
         page,
         limit,

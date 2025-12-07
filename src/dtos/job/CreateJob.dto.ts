@@ -25,10 +25,10 @@ export const createJobSchema = z.object({
   apply_reasons: z.array(z.string()).optional(),
   status: z.string().optional(),
   // Relations
-  category_ids: z.array(z.number().int().positive()).optional(),
-  required_skill_ids: z.array(z.number().int().positive()).optional(),
-  employment_type_ids: z.array(z.number().int().positive()).optional(),
-  level_ids: z.array(z.number().int().positive()).optional(),
+  category_ids: z.array(z.number().int().positive()).min(1),
+  required_skill_ids: z.array(z.number().int().positive()).min(1),
+  employment_type_ids: z.array(z.number().int().positive()).min(1),
+  level_ids: z.array(z.number().int().positive()).min(1),
 });
 
 export type CreateJobDto = z.infer<typeof createJobSchema>;

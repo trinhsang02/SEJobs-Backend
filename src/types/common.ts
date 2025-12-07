@@ -36,13 +36,21 @@ export interface StudentQueryParams extends QueryParams {
 
 // COMPANY
 export type Company = Database["public"]["Tables"]["companies"]["Row"];
+export type CompanyAfterJoined = Company & {
+  company_types: CompanyTypes[]
+};
 export type CompanyInsert = Database["public"]["Tables"]["companies"]["Insert"];
 export type CompanyUpdate = Database["public"]["Tables"]["companies"]["Update"];
 
 export interface CompanyQueryAllParams extends QueryParams {
   company_ids?: number[];
+  company_type_ids?: number[];
+  employee_count_from?: number;
+  employee_count_to?: number;
+  keyword?: string;
   email?: string;
   user_ids?: number[];
+  order?: "name:asc" | "name:desc" | "created_at:asc" | "created_at:desc";
 }
 
 export interface CompanyQueryParams extends QueryParams {
@@ -69,7 +77,8 @@ export type CompanyCompanyTypesUpdate = Database["public"]["Tables"]["company_co
 // JOB
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
 export type JobAfterJoined = Job & {
-  company: Company;
+  company: Company
+  levels: Level[]
 };
 export type JobInsert = Database["public"]["Tables"]["jobs"]["Insert"];
 export type JobUpdate = Database["public"]["Tables"]["jobs"]["Update"];

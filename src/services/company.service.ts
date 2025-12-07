@@ -3,12 +3,12 @@ import companyRepository from "@/repositories/company.repository";
 import companyTypeRepository from "@/repositories/company_types.repository";
 import { CreateCompanyDto } from "@/dtos/company/CreateCompany.dto";
 import { BadRequestError, NotFoundError } from "@/utils/errors";
-import { CompanyQueryParams } from "@/types/common";
 import { UpdateCompanyDto } from "@/dtos/company/UpdateCompany.dto";
 import CompanyTypeService from "@/services/company_type.service";
+import { CompanyQueryAllParams } from "@/types/common";
 
 export class CompanyService {
-  async findAll(input: CompanyQueryParams) {
+  async findAll(input: CompanyQueryAllParams) {
     const data = await companyRepository.findAll(input);
 
     return data;
@@ -41,18 +41,20 @@ export class CompanyService {
 
     const newCompany = await companyRepository.create({
       companyData: {
+        user_id: companyData.user_id,
         name: companyData.name,
+        email: companyData.email,
+        phone: companyData.phone,
         background: companyData.background || null,
         description: companyData.description || null,
-        email: companyData.email || null,
         employee_count: companyData.employee_count || 0,
         external_id: companyData.external_id || 0,
         website_url: companyData.website_url || null,
         images: companyData.images || [],
         tech_stack: companyData.tech_stack || [],
         logo: companyData.logo || null,
-        phone: companyData.phone || null,
         socials: companyData.socials || [],
+        is_verified: false,
       },
     });
 

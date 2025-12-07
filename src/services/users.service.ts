@@ -158,7 +158,7 @@ export class UserService {
 
     // Employers
     const user_employer_ids = users.filter((user) => user.role === "Employer").map((user) => user.user_id);
-    const { data: companies } = await companyRepository.findAll<Company>({ user_ids: user_employer_ids });
+    const { data: companies } = await companyRepository.findAll({ user_ids: user_employer_ids });
     const companies_map = _.keyBy(companies, "user_id");
 
     return users.map((user) => {

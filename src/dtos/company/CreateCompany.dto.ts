@@ -2,15 +2,16 @@ import { z } from "zod";
 
 export const createCompanySchema = z.object({
   id: z.number().optional(),
-  company_types: z.number().array().optional(),
+  user_id: z.number(),
+  company_types: z.number().array().min(1),
   external_id: z.number().nullable().optional(),
   name: z.string().min(1, "Company name is required"),
   tech_stack: z.array(z.string()).nullable().optional(),
   logo: z.url("Logo must be a valid URL").nullable().optional(),
   background: z.url("Background must be a valid URL").nullable().optional(),
   description: z.string().nullable().optional(),
-  phone: z.string().nullable().optional(),
-  email: z.email("Invalid email address").nullable().optional(),
+  phone: z.string().min(1),
+  email: z.email("Invalid email address").min(1),
   website_url: z.url("Website URL must be valid").nullable().optional(),
   socials: z
     .record(z.string(), z.any())
