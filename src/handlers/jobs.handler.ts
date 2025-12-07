@@ -40,11 +40,11 @@ export async function listJobs(req: Request, res: Response) {
     order,
   });
 
-  // const formattedJobs = jobs.map((job) => toTopCvFormat(job, job.company, null));
+  const formattedJobs = jobs.map((job) => toTopCvFormat(job, job.company, null));
 
   res.status(200).json({
     success: true,
-    data: jobs,
+    data: formattedJobs,
     pagination,
   });
 }
