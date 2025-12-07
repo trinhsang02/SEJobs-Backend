@@ -40,7 +40,7 @@ export class CompanyRepository {
 
     let selectString = fields;
 
-    selectString = `${fields}, company_branches(id, name)`;
+    selectString = `${fields}, company_branches(id, name, company_id, country_id, province_id, address, created_at, updated_at)`;
 
     selectString = `${selectString}, company_types!inner(id, name)`;
 
