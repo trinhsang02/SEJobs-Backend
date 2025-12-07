@@ -4,7 +4,6 @@ import { Request, Response } from "express";
 import validate from "@/utils/validate";
 
 import { BadRequestError } from "@/utils/errors";
-import { authenticate } from "@/middlewares/auth.middleware";
 import social_linksService from "@/services/social_links.service";
 import { createSocialLinkSchema, updateSocialLinkSchema } from "@/dtos/student/SocialLinks.dto";
 import studentRepository from "@/repositories/student.repository";

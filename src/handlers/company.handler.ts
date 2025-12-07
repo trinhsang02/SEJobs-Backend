@@ -5,13 +5,17 @@ import { createCompanySchema } from "@/dtos/company/CreateCompany.dto";
 import CompanyService from "@/services/company.service";
 import { BadRequestError, NotFoundError } from "@/utils/errors";
 import { updateCompanySchema } from "@/dtos/company/UpdateCompany.dto";
+import convert from "@/utils/convert";
 
 export async function getCompanies(req: Request, res: Response) {
   const { page, limit } = req.query;
 
   const { data: companies, pagination } = await CompanyService.findAll({
+    ...req.query,
     page: _.toInteger(page) || 1,
     limit: _.toInteger(limit) || 10,
+    company_ids: convert.split(req.query.company_ids as string, ',', Number),
+    company_type_ids: convert.split(req.query.company_type_ids as string, ',', Number),
   });
 
   res.status(200).json({
@@ -36,13 +40,22 @@ export async function getCompany(req: Request, res: Response) {
   });
 }
 
-export async function createCompany(request: Request, response: Response) {
+export async function createCompany(req: Request, res: Response) {
 
-  const companyData = validate.schema_validate(createCompanySchema, request.body);    
+  if (!req.user?.userId) {
+    throw new BadRequestError({ message: "Missing user_id." });
+  }
+
+  const data = {
+    ...req.body,
+    user_id: req.user.userId
+  }
+
+  const companyData = validate.schema_validate(createCompanySchema, data);    
 
   const newCompany = await CompanyService.createCompany({ companyData });
 
-  response.status(201).json({
+  res.status(201).json({
     success: true,
     data: newCompany
   });
