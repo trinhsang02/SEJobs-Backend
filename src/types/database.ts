@@ -829,6 +829,45 @@ export type Database = {
           },
         ]
       }
+      saved_jobs: {
+        Row: {
+          created_at: string | null
+          id: number
+          job_id: number
+          updated_at: string | null
+          user_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          job_id: number
+          updated_at?: string | null
+          user_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          job_id?: number
+          updated_at?: string | null
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_jobs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_jobs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       skills: {
         Row: {
           created_at: string | null

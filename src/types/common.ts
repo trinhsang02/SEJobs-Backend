@@ -241,3 +241,13 @@ export interface EducationQueryParams extends QueryParams {
   student_id?: number;
   school?: string;
 }
+// SAVED JOB
+export type SavedJob = Database["public"]["Tables"]["saved_jobs"]["Row"];
+export type SavedJobInsert = Database["public"]["Tables"]["saved_jobs"]["Insert"];
+export type SavedJobUpdate = Database["public"]["Tables"]["saved_jobs"]["Update"];
+
+export interface SavedJobQueryParams {
+  user_id?: number;
+  job_id?: number;
+  saved_job_id?: number;
+}
