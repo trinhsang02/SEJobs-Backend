@@ -994,6 +994,45 @@ export type Database = {
           }
         ];
       };
+      saved_jobs: {
+        Row: {
+          id: number;
+          user_id: number;
+          job_id: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: never;
+          user_id: number;
+          job_id: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: never;
+          user_id?: number;
+          job_id?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "saved_jobs_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["user_id"];
+          },
+          {
+            foreignKeyName: "saved_jobs_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

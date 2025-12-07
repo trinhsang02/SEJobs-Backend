@@ -69,7 +69,7 @@ export type CompanyCompanyTypesUpdate = Database["public"]["Tables"]["company_co
 // JOB
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
 export type JobAfterJoined = Job & {
-  company: Company
+  company: Company;
 };
 export type JobInsert = Database["public"]["Tables"]["jobs"]["Insert"];
 export type JobUpdate = Database["public"]["Tables"]["jobs"]["Update"];
@@ -231,4 +231,14 @@ export interface EducationQueryParams extends QueryParams {
   ids?: number[];
   student_id?: number;
   school?: string;
+}
+// SAVED JOB
+export type SavedJob = Database["public"]["Tables"]["saved_jobs"]["Row"];
+export type SavedJobInsert = Database["public"]["Tables"]["saved_jobs"]["Insert"];
+export type SavedJobUpdate = Database["public"]["Tables"]["saved_jobs"]["Update"];
+
+export interface SavedJobQueryParams {
+  user_id?: number;
+  job_id?: number;
+  saved_job_id?: number;
 }
