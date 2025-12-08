@@ -17,7 +17,7 @@ export class CompanyTypesRepository {
     const fields           = _.get(input, 'fields', this.fields);
     const page             = _.get(input, "page");
     const limit            = _.get(input, "limit");
-    const company_type_ids = _.get(input, 'company_type_ids', []);
+    const company_type_ids = _.get(input, 'company_type_ids') || [];
 
     let dbQuery = this.db.from("company_types").select(fields, { count: "exact" });
 
