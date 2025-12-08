@@ -34,17 +34,17 @@ export class JobRepository {
 
     let selectString = fields;
 
-    selectString = `${fields}, company_branches!inner(province_id)`;
+    selectString = `${fields}, company_branches!left(province_id)`;
 
     selectString = `${selectString}, company:companies!inner(id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, user_id, created_at, updated_at)`;
 
-    selectString = `${selectString}, levels!inner(id, name, created_at, updated_at)`;
+    selectString = `${selectString}, levels!left(id, name, created_at, updated_at)`;
 
     selectString = `${selectString}, categories!inner(id, name, created_at, updated_at)`;
 
-    selectString = `${selectString}, skills!inner(id, name, created_at, updated_at)`;
+    selectString = `${selectString}, skills!left(id, name, created_at, updated_at)`;
 
-    selectString = `${selectString}, employment_types!inner(id, name, created_at, updated_at)`;
+    selectString = `${selectString}, employment_types!left(id, name, created_at, updated_at)`;
 
     let dbQuery = this.db.from("jobs").select(selectString, { count: "exact" });
 
@@ -110,7 +110,7 @@ export class JobRepository {
   async findOne(jobId: number) {
     const selectString = `
       *,
-      company_branches!inner(
+      company_branches!left(
         id,
         province_id,
         address,
@@ -135,7 +135,7 @@ export class JobRepository {
         created_at,
         updated_at
       ),
-      levels!inner(
+      levels!left(
         id,
         name,
         created_at,
@@ -147,13 +147,13 @@ export class JobRepository {
         created_at,
         updated_at
       ),
-      skills!inner(
+      skills!left(
         id,
         name,
         created_at,
         updated_at
       ),
-      employment_types!inner(
+      employment_types!left(
         id,
         name,
         created_at,

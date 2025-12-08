@@ -70,6 +70,8 @@ export type CompanyCompanyTypesUpdate = Database["public"]["Tables"]["company_co
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
 export type JobAfterJoined = Job & {
   company: Company
+  level: Level
+  category: Category
 };
 export type JobInsert = Database["public"]["Tables"]["jobs"]["Insert"];
 export type JobUpdate = Database["public"]["Tables"]["jobs"]["Update"];
