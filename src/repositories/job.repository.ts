@@ -3,7 +3,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
 import { CreateJobDto } from "@/dtos/job/CreateJob.dto";
 import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
-import { JobQueryParams, SORTABLE_JOB_FIELDS } from "@/types/common";
+import { JobAfterJoined, JobQueryParams, SORTABLE_JOB_FIELDS } from "@/types/common";
 import { NotFoundError } from "@/utils/errors";
 
 export class JobRepository {
@@ -15,7 +15,7 @@ export class JobRepository {
     this.db = supabase;
   }
 
-  async findAll<T>(input: JobQueryParams) {
+  async findAll(input: JobQueryParams) {
     const fields = _.get(input, "fields", this.fields);
     const page = _.get(input, "page");
     const limit = _.get(input, "limit");
@@ -97,7 +97,7 @@ export class JobRepository {
     if (error) throw error;
 
     return {
-      data: data as T[],
+      data: data as unknown as JobAfterJoined[],
       pagination: hasPagination && {
         page: page,
         limit: limit,

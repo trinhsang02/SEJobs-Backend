@@ -4,6 +4,14 @@ import { createEducationSchema, updateEducationSchema } from "@/dtos/student/Edu
 import { EducationService } from "@/services/educations.service";
 import { UnauthorizedError } from "@/utils/errors";
 
+export async function listEducations(req: Request, res: Response) {
+  const { page, limit } = req.query;
+  const { data: educations, pagination } = await EducationService.findAll({
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+  res.status(200).json({ success: true, data: educations, pagination });
+}
 
 export async function getEducation(req: Request, res: Response) {
   const id = Number(req.params.id);
@@ -34,4 +42,15 @@ export async function deleteEducation(req: Request, res: Response) {
   const id = Number(req.params.id);
   await EducationService.remove(id);
   res.status(204).send();
+}
+
+export async function getEducationByStudentId(req: Request, res: Response) {
+  if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
+  const studentId = req.user.userId;
+  const { page, limit } = req.query;
+  const { data: educations, pagination } = await EducationService.findByStudentId(studentId, {
+    page: Number(page) || 1,
+    limit: Number(limit) || 10,
+  });
+  res.status(200).json({ success: true, data: educations, pagination });
 }

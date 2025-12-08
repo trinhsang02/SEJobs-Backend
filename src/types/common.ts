@@ -36,13 +36,21 @@ export interface StudentQueryParams extends QueryParams {
 
 // COMPANY
 export type Company = Database["public"]["Tables"]["companies"]["Row"];
+export type CompanyAfterJoined = Company & {
+  company_types: CompanyTypes[]
+};
 export type CompanyInsert = Database["public"]["Tables"]["companies"]["Insert"];
 export type CompanyUpdate = Database["public"]["Tables"]["companies"]["Update"];
 
 export interface CompanyQueryAllParams extends QueryParams {
   company_ids?: number[];
+  company_type_ids?: number[];
+  employee_count_from?: number;
+  employee_count_to?: number;
+  keyword?: string;
   email?: string;
   user_ids?: number[];
+  order?: "name:asc" | "name:desc" | "created_at:asc" | "created_at:desc";
 }
 
 export interface CompanyQueryParams extends QueryParams {
@@ -233,4 +241,14 @@ export interface EducationQueryParams extends QueryParams {
   ids?: number[];
   student_id?: number;
   school?: string;
+}
+// SAVED JOB
+export type SavedJob = Database["public"]["Tables"]["saved_jobs"]["Row"];
+export type SavedJobInsert = Database["public"]["Tables"]["saved_jobs"]["Insert"];
+export type SavedJobUpdate = Database["public"]["Tables"]["saved_jobs"]["Update"];
+
+export interface SavedJobQueryParams {
+  user_id?: number;
+  job_id?: number;
+  saved_job_id?: number;
 }

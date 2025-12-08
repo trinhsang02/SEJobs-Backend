@@ -15,7 +15,7 @@ import { toTopCvFormat } from "@/utils/topCVFormat";
 
 export class JobService {
   async list(input: JobQueryParams) {
-    const { data: jobs, pagination } = await jobRepository.findAll<JobAfterJoined>(input);
+    const { data: jobs, pagination } = await jobRepository.findAll(input);
 
     return {
       data: jobs,
@@ -38,7 +38,7 @@ export class JobService {
     const { jobs } = input;
 
     const [companiesRes, jobCategoriesRes, jobSkillRes, jobEmploymentTypeRes, jobLevelRes] = await Promise.all([
-      companyRepo.findAll<Company>({
+      companyRepo.findAll({
         company_ids: _.uniq(jobs.map((job) => job.company_id).filter((id) => id !== null)),
       }),
       categoryRepo.findAllJobCategories<JobCategory>({ job_ids: jobs.map((job) => job.id) }),

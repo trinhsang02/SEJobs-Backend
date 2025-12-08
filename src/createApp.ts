@@ -18,6 +18,7 @@ import topcvRoutes from "./routes/topcv.route";
 import mediaRoutes from "./routes/media.route";
 import socialLinkRoutes from "./routes/social_links.route";
 import educationsRoutes from "./routes/educations.route";
+import savedJobsRoutes from "./routes/saved_jobs.route";
 import { requestLogger, errorHandler } from "@/middlewares";
 import { specs, swaggerUi } from "./config/swagger";
 import logger from "./utils/logger";
@@ -68,6 +69,7 @@ export const createApp = () => {
   app.use("/api/media", mediaRoutes);
   app.use("/api/social-links", socialLinkRoutes);
   app.use("/api/educations", educationsRoutes);
+  app.use("/api/saved-jobs", savedJobsRoutes);
 
   // Error handler
   app.use(errorHandler);
