@@ -21,10 +21,17 @@ export async function getEducation(req: Request, res: Response) {
 
 export async function createEducation(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
+
   const payload = validate.schema_validate(createEducationSchema, req.body);
+
+  if (req.user.role === "Student") {
+    payload.student_id = req.user.userId;
+  }
+
   if (req.user.role === "Student" && payload.student_id && payload.student_id !== req.user.userId) {
     throw new UnauthorizedError({ message: "Cannot create education for another student" });
   }
+
   const created = await EducationService.create(payload);
   res.status(201).json({ success: true, data: created });
 }
