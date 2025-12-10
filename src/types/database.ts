@@ -632,6 +632,7 @@ export type Database = {
           updated_at: string | null
           website_url: string | null
           working_time: string | null
+          quantity: number | null
         }
         Insert: {
           apply_guide?: string | null
