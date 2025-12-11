@@ -19,6 +19,8 @@ import mediaRoutes from "./routes/media.route";
 import socialLinkRoutes from "./routes/social_links.route";
 import educationsRoutes from "./routes/educations.route";
 import savedJobsRoutes from "./routes/saved_jobs.route";
+import projectRoutes from "./routes/projects.route";
+import certificationRoutes from "./routes/certifications.route";
 import { requestLogger, errorHandler } from "@/middlewares";
 import { specs, swaggerUi } from "./config/swagger";
 import logger from "./utils/logger";
@@ -70,6 +72,8 @@ export const createApp = () => {
   app.use("/api/social-links", socialLinkRoutes);
   app.use("/api/educations", educationsRoutes);
   app.use("/api/saved-jobs", savedJobsRoutes);
+  app.use("/api/projects", projectRoutes);
+  app.use("/api/certifications", certificationRoutes);
 
   // Error handler
   app.use(errorHandler);

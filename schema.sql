@@ -178,3 +178,30 @@ CREATE TABLE job_levels (
   PRIMARY KEY (job_id, level_id)
 );
 
+-- Project Table
+CREATE TABLE projects (
+  id BIGSERIAL PRIMARY KEY,
+  student_id BIGINT REFERENCES student(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  is_working_on BOOLEAN DEFAULT FALSE,
+  start_date DATE,
+  end_date DATE,
+  description TEXT,
+  website_link TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Certification Table
+CREATE TABLE certifications (
+  id BIGSERIAL PRIMARY KEY,
+  student_id BIGINT REFERENCES student(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  organization TEXT NOT NULL,
+  issue_date DATE,
+  certification_url TEXT,
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
