@@ -121,7 +121,7 @@ export class CompanyTypesRepository {
     const { data, error } = await this.db
         .from("company_company_types")
         .insert(companyCompanyTypesData)
-        .select(this.fields);
+        .select('company_id, company_type_id');
 
     if (error) {
         throw new InternalServerError({ message: `Failed to create company company types: ${error.message}` });
