@@ -2,10 +2,11 @@ import { z } from "zod";
 
 const companyProfileSchema = z.object({
   name: z.string().min(1, "Company name is required"),
+  company_types: z.number().array().min(1),
   logo: z.url().optional(),
   background: z.url().optional(),
   description: z.string().optional(),
-  phone: z.string().optional(),
+  phone: z.string(),
   email: z.email().optional(),
   website_url: z.url().optional(),
   images: z.array(z.url()).optional(),
