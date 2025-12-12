@@ -10,6 +10,7 @@ import { RegisterDto } from "@/dtos/user/Register.dto";
 import { generateToken } from "@/utils/jwt.util";
 import companyRepository from "@/repositories/company.repository";
 import studentRepository from "@/repositories/student.repository";
+import companyService from "@/services/company.service";
 
 export class UserService {
   async login(input: { loginData: LoginDto }) {
@@ -84,9 +85,11 @@ export class UserService {
         images,
         tech_stack,
         employee_count,
+        company_types,
+        company_branches
       } = company;
 
-      await companyRepository.create({
+      await companyService.createCompany({
         companyData: {
           name,
           user_id: newUser.user_id,
@@ -94,12 +97,14 @@ export class UserService {
           logo: logo ?? null,
           background: background ?? null,
           description: description ?? null,
-          phone: phone ?? null,
+          phone: phone,
           website_url: website_url ?? null,
           images: images ?? null,
           tech_stack: tech_stack ?? null,
           employee_count: employee_count ?? null,
+          company_types: company_types,
           external_id: null,
+          company_branches
         },
       });
     }

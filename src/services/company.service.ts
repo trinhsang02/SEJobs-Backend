@@ -6,6 +6,7 @@ import { BadRequestError, NotFoundError } from "@/utils/errors";
 import { UpdateCompanyDto } from "@/dtos/company/UpdateCompany.dto";
 import CompanyTypeService from "@/services/company_type.service";
 import { CompanyQueryAllParams } from "@/types/common";
+import companyBranchesRepository from "@/repositories/company_branches.repository";
 
 export class CompanyService {
   async findAll(input: CompanyQueryAllParams) {
@@ -29,6 +30,7 @@ export class CompanyService {
   async createCompany(input: { companyData: CreateCompanyDto }) {
     const { companyData } = input;
 
+    const companyBranchesData = _.get(companyData, 'company_branches') || [];
     const companyTypeIds: number[] = _.get(companyData, "company_types", []);
 
     if (companyTypeIds.length > 0) {
@@ -66,6 +68,17 @@ export class CompanyService {
           company_type_id: company_type_id,
         })),
       });
+    }
+
+    if (companyBranchesData.length > 0) {
+      await companyBranchesRepository.bulkCreate({
+        branchesData: companyBranchesData.map(companyBranch => ({
+          ...companyBranch,
+          company_id: newCompany.id,
+          created_at: companyBranch.created_at || new Date().toISOString(),
+          updated_at: companyBranch.updated_at || new Date().toISOString(),
+        }))
+      })
     }
 
     return newCompany;

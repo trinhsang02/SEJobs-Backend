@@ -2,15 +2,29 @@ import { z } from "zod";
 
 const companyProfileSchema = z.object({
   name: z.string().min(1, "Company name is required"),
+  company_types: z.number().array().min(1),
   logo: z.url().optional(),
   background: z.url().optional(),
   description: z.string().optional(),
-  phone: z.string().optional(),
+  phone: z.string(),
   email: z.email().optional(),
   website_url: z.url().optional(),
   images: z.array(z.url()).optional(),
   tech_stack: z.array(z.string()).optional(),
   employee_count: z.number().int().nonnegative().optional(),
+  company_branches: z
+    .array(
+      z.object({
+        name: z.string(),
+        address: z.string(),
+        country_id: z.number(),
+        province_id: z.number(),
+        ward_id: z.number(),
+        created_at: z.string().nullable(),
+        updated_at: z.string().nullable(),
+      })
+    )
+    .min(1),
 });
 
 export const studentProfileSchema = z.object({

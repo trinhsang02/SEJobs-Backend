@@ -37,7 +37,7 @@ export interface StudentQueryParams extends QueryParams {
 // COMPANY
 export type Company = Database["public"]["Tables"]["companies"]["Row"];
 export type CompanyAfterJoined = Company & {
-  company_types: CompanyTypes[]
+  company_types: CompanyTypes[];
 };
 export type CompanyInsert = Database["public"]["Tables"]["companies"]["Insert"];
 export type CompanyUpdate = Database["public"]["Tables"]["companies"]["Update"];
@@ -77,9 +77,8 @@ export type CompanyCompanyTypesUpdate = Database["public"]["Tables"]["company_co
 // JOB
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
 export type JobAfterJoined = Job & {
-  company: Company
-  level: Level
-  category: Category
+  company: Company;
+  levels: Level[];
 };
 export type JobInsert = Database["public"]["Tables"]["jobs"]["Insert"];
 export type JobUpdate = Database["public"]["Tables"]["jobs"]["Update"];
@@ -252,6 +251,29 @@ export interface ExperienceQueryParams extends QueryParams {
   ids?: number[];
   student_id?: number;
   company?: string;
+}
+
+// PROJECT
+export type Project = Database["public"]["Tables"]["projects"]["Row"];
+export type ProjectInsert = Database["public"]["Tables"]["projects"]["Insert"];
+export type ProjectUpdate = Database["public"]["Tables"]["projects"]["Update"];
+
+export interface ProjectQueryParams extends QueryParams {
+  ids?: number[];
+  student_id?: number;
+  name?: string;
+}
+
+// CERTIFICATION
+export type Certification = Database["public"]["Tables"]["certifications"]["Row"];
+export type CertificationInsert = Database["public"]["Tables"]["certifications"]["Insert"];
+export type CertificationUpdate = Database["public"]["Tables"]["certifications"]["Update"];
+
+export interface CertificationQueryParams extends QueryParams {
+  ids?: number[];
+  student_id?: number;
+  name?: string;
+  organization?: string;
 }
 
 // SAVED JOB

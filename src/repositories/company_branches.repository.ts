@@ -73,6 +73,17 @@ export class CompanyBranchesRepository {
     return data;
   }
 
+  async bulkCreate(input: { branchesData: CompanyBranchesInsert[] }) {
+    const { data, error } = await this.db
+      .from("company_branches")
+      .insert(input.branchesData)
+      .select(this.fields);
+
+    if (error) throw error;
+
+    return data;
+  }
+
   async update(branchId: number, input: CompanyBranchesUpdate) {
     const filteredData = _.pickBy(input, (v) => v !== null && v !== undefined && v !== "");
 
