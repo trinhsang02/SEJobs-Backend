@@ -86,6 +86,7 @@ export class UserService {
         tech_stack,
         employee_count,
         company_types,
+        company_branches
       } = company;
 
       await companyService.createCompany({
@@ -103,6 +104,7 @@ export class UserService {
           employee_count: employee_count ?? null,
           company_types: company_types,
           external_id: null,
+          company_branches
         },
       });
     }
