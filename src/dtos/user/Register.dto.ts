@@ -12,6 +12,19 @@ const companyProfileSchema = z.object({
   images: z.array(z.url()).optional(),
   tech_stack: z.array(z.string()).optional(),
   employee_count: z.number().int().nonnegative().optional(),
+  company_branches: z
+    .array(
+      z.object({
+        name: z.string(),
+        address: z.string(),
+        country_id: z.number(),
+        province_id: z.number(),
+        ward_id: z.number(),
+        created_at: z.string().nullable(),
+        updated_at: z.string().nullable(),
+      })
+    )
+    .min(1),
 });
 
 export const studentProfileSchema = z.object({
