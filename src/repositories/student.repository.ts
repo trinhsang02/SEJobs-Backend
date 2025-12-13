@@ -124,6 +124,16 @@ export class StudentRepository {
 
     return data;
   }
+  async findByUserId(user_id: number) {
+    const { data, error } = await this.db
+      .from("student")
+      .select(this.fields)
+      .eq("user_id", user_id)
+      .maybeSingle<Student>();
+
+    if (error) throw error;
+    return data;
+  }
 }
 
 export default new StudentRepository();

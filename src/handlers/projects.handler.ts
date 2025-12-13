@@ -2,7 +2,8 @@ import { Request, Response } from "express";
 import validate from "@/utils/validate";
 import { createProjectSchema, updateProjectSchema } from "@/dtos/student/ProjectsCertifications.dto";
 import { projectsService } from "@/services/projects.service";
-import { UnauthorizedError } from "@/utils/errors";
+import { BadRequestError, UnauthorizedError } from "@/utils/errors";
+import studentRepository from "@/repositories/student.repository";
 
 export async function listProjects(req: Request, res: Response) {
   const { page, limit } = req.query;
@@ -22,17 +23,23 @@ export async function getProject(req: Request, res: Response) {
 export async function createProject(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
 
+  if (req.user.role !== "Student") {
+    throw new UnauthorizedError({ message: "Only students can create projects" });
+  }
+
   const payload = validate.schema_validate(createProjectSchema, req.body);
 
-  if (req.user.role === "Student") {
-    payload.student_id = req.user.userId;
+  const student = await studentRepository.findByUserId(req.user.userId);
+  if (!student) {
+    throw new BadRequestError({ message: "Student profile not found" });
   }
 
-  if (req.user.role === "Student" && payload.student_id && payload.student_id !== req.user.userId) {
-    throw new UnauthorizedError({ message: "Cannot create project for another student" });
-  }
+  const finalPayload = {
+    ...payload,
+    student_id: student.id,
+  };
 
-  const created = await projectsService.create(payload);
+  const created = await projectsService.create(finalPayload);
   res.status(201).json({ success: true, data: created });
 }
 
@@ -53,9 +60,17 @@ export async function deleteProject(req: Request, res: Response) {
 
 export async function getProjectsByStudentId(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
-  const studentId = req.user.userId;
+  if (req.user.role !== "Student") {
+    throw new UnauthorizedError({ message: "Only students have projects" });
+  }
+
+  const student = await studentRepository.findByUserId(req.user.userId);
+  if (!student) {
+    return res.status(200).json({ success: true, data: [], pagination: { page: 1, limit: 10, total: 0 } });
+  }
+
   const { page, limit } = req.query;
-  const { data: projects, pagination } = await projectsService.findByStudentId(studentId, {
+  const { data: projects, pagination } = await projectsService.findByStudentId(student.id, {
     page: Number(page) || 1,
     limit: Number(limit) || 10,
   });
