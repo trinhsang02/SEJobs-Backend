@@ -60,5 +60,10 @@ export function toTopCvFormat(job: any, company: any = null, branch: any = null)
     createdAt: job.created_at,
     company_branches_id: job.company_branches_id,
     companyId: job.company_id,
+
+    categories: job.categories || [],
+    skills: job.skills || [],
+    levels: job.levels || [],
+    employment_types: job.employment_types || [],
   };
 }

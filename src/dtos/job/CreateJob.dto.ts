@@ -24,6 +24,7 @@ export const createJobSchema = z.object({
   job_deadline: z.string().optional(),
   apply_reasons: z.array(z.string()).optional(),
   status: z.string().optional(),
+  quantity: z.number().int().positive().optional(),
   // Relations
   category_ids: z.array(z.number().int().positive()).min(1),
   required_skill_ids: z.array(z.number().int().positive()).min(1),

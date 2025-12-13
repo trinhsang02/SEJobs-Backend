@@ -19,6 +19,7 @@ import mediaRoutes from "./routes/media.route";
 import socialLinkRoutes from "./routes/social_links.route";
 import educationsRoutes from "./routes/educations.route";
 import savedJobsRoutes from "./routes/saved_jobs.route";
+import experiencesRoutes from "./routes/experiences.route";
 import projectRoutes from "./routes/projects.route";
 import certificationRoutes from "./routes/certifications.route";
 import { requestLogger, errorHandler } from "@/middlewares";
@@ -72,6 +73,7 @@ export const createApp = () => {
   app.use("/api/social-links", socialLinkRoutes);
   app.use("/api/educations", educationsRoutes);
   app.use("/api/saved-jobs", savedJobsRoutes);
+  app.use("/api/experiences", experiencesRoutes);
   app.use("/api/projects", projectRoutes);
   app.use("/api/certifications", certificationRoutes);
 
