@@ -12,6 +12,11 @@ import companyRepository from "@/repositories/company.repository";
 import studentRepository from "@/repositories/student.repository";
 import companyService from "@/services/company.service";
 
+import educationsRepository from "@/repositories/educations.repository";
+import certificationsRepository from "@/repositories/certifications.repository";
+import socialLinksRepository from "@/repositories/social_links.repository";
+import experiencesRepository from "@/repositories/experiences.repository";
+import projectsRepository from "@/repositories/projects.repository";
 export class UserService {
   async login(input: { loginData: LoginDto }) {
     const { loginData } = input;
@@ -86,7 +91,7 @@ export class UserService {
         tech_stack,
         employee_count,
         company_types,
-        company_branches
+        company_branches,
       } = company;
 
       await companyService.createCompany({
@@ -104,7 +109,7 @@ export class UserService {
           employee_count: employee_count ?? null,
           company_types: company_types,
           external_id: null,
-          company_branches
+          company_branches,
         },
       });
     }
@@ -161,6 +166,34 @@ export class UserService {
     });
     const students_map = _.keyBy(students, "user_id");
 
+    const educationMap: Record<number, any[]> = {};
+    const certificationMap: Record<number, any[]> = {};
+    const socialLinksMap: Record<number, any[]> = {};
+    const experienceMap: Record<number, any[]> = {};
+    const projectMap: Record<number, any[]> = {};
+
+    await Promise.all(
+      user_student_ids.map(async (user_id) => {
+        const student = students_map[user_id];
+        if (!student) return;
+        const studentId = student.id;
+
+        const eduRes = await educationsRepository.findByStudentId(studentId, { page: 1, limit: 100 });
+        educationMap[studentId] = eduRes.data;
+        const certRes = await certificationsRepository.findByStudentId(studentId, { page: 1, limit: 100 });
+        certificationMap[studentId] = certRes.data;
+
+        const socialRes = await socialLinksRepository.findAll({ student_id: studentId });
+        socialLinksMap[studentId] = socialRes.data;
+
+        const expRes = await experiencesRepository.findByStudentId(studentId, { page: 1, limit: 100 });
+        experienceMap[studentId] = expRes.data;
+
+        const projRes = await projectsRepository.findByStudentId(studentId, { page: 1, limit: 100 });
+        projectMap[studentId] = projRes.data;
+      })
+    );
+
     // Employers
     const user_employer_ids = users.filter((user) => user.role === "Employer").map((user) => user.user_id);
     const { data: companies } = await companyRepository.findAll({ user_ids: user_employer_ids });
@@ -168,9 +201,19 @@ export class UserService {
 
     return users.map((user) => {
       if (user.role === "Student") {
+        const studentInfo = students_map[user.user_id] || null;
+        if (!studentInfo) return { ...user, student_info: null };
+        const studentId = studentInfo.id;
         return {
           ...user,
-          student_info: students_map[user.user_id] || null,
+          student_info: {
+            ...studentInfo,
+            education: educationMap[studentId] || [],
+            certification: certificationMap[studentId] || [],
+            social_links: socialLinksMap[studentId] || [],
+            experience: experienceMap[studentId] || [],
+            project: projectMap[studentId] || [],
+          },
         };
       } else if (user.role === "Employer") {
         return {
