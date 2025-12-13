@@ -59,11 +59,23 @@ export async function deleteEducation(req: Request, res: Response) {
 
 export async function getEducationByStudentId(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
-  const studentId = req.user.userId;
+  if (req.user.role !== "Student") {
+    throw new UnauthorizedError({ message: "Only students have education records" });
+  }
+
+  const student = await studentRepository.findByUserId(req.user.userId);
+  if (!student) {
+    return res.status(200).json({
+      success: true,
+      data: [],
+      pagination: { page: 1, limit: 10, total: 0, total_pages: 0 },
+    });
+  }
+
   const { page, limit } = req.query;
-  const { data: educations, pagination } = await EducationService.findByStudentId(studentId, {
+  const { data: educations, pagination } = await EducationService.findByStudentId(student.id, {
     page: Number(page) || 1,
     limit: Number(limit) || 10,
   });
-  res.status(200).json({ success: true, data: educations, pagination });
+  res.status(200).json({ success: true, educations, pagination });
 }
