@@ -40,7 +40,7 @@ export class CompanyRepository {
 
     let selectString = fields;
 
-    selectString = `${fields}, company_branches(id, name, company_id, country_id, province_id, address, created_at, updated_at)`;
+    selectString = `${fields}, company_branches(id, name, company_id, country_id, province_id, address, created_at, updated_at, countries(id, name), provinces(id, name))`;
 
     selectString = `${selectString}, company_types!inner(id, name)`;
 
@@ -77,9 +77,10 @@ export class CompanyRepository {
 
   async findOne(input: CompanyQueryParams) {
     const { company_id, email, fields } = input;
-    const select_fields = fields || this.fields;
+    const baseFields = fields || this.fields;
 
-    let dbQuery = this.db.from("companies").select(select_fields);
+    const selectString = `${baseFields}, company_branches(id, name, company_id, country_id, province_id, address, created_at, updated_at, countries(id, name), provinces(id, name)), company_types(id, name)`;
+    let dbQuery = this.db.from("companies").select(selectString);
 
     if (company_id) {
       dbQuery = dbQuery.eq("id", company_id);
@@ -89,7 +90,7 @@ export class CompanyRepository {
       dbQuery = dbQuery.eq("email", email);
     }
 
-    const { data, error } = await dbQuery.maybeSingle<Company>();
+    const { data, error } = await dbQuery.maybeSingle<CompanyAfterJoined>();
 
     if (error) throw error;
 
