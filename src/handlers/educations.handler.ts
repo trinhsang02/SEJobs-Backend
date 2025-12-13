@@ -3,6 +3,7 @@ import validate from "@/utils/validate";
 import { createEducationSchema, updateEducationSchema } from "@/dtos/student/Educations.dto";
 import { EducationService } from "@/services/educations.service";
 import { UnauthorizedError } from "@/utils/errors";
+import studentRepository from "@/repositories/student.repository";
 
 export async function listEducations(req: Request, res: Response) {
   const { page, limit } = req.query;
@@ -21,19 +22,24 @@ export async function getEducation(req: Request, res: Response) {
 
 export async function createEducation(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
+  if (req.user.role !== "Student") {
+    throw new UnauthorizedError({ message: "Only students can add education" });
+  }
 
   const payload = validate.schema_validate(createEducationSchema, req.body);
 
-  if (req.user.role === "Student") {
-    payload.student_id = req.user.userId;
+  const student = await studentRepository.findByUserId(req.user.userId);
+  if (!student) {
+    throw new UnauthorizedError({ message: "Student profile not found" });
   }
 
-  if (req.user.role === "Student" && payload.student_id && payload.student_id !== req.user.userId) {
-    throw new UnauthorizedError({ message: "Cannot create education for another student" });
-  }
+  const finalPayload = {
+    ...payload,
+    student_id: student.id,
+  };
 
-  const created = await EducationService.create(payload);
-  res.status(201).json({ success: true, data: created });
+  const created = await EducationService.create(finalPayload);
+  res.status(201).json({ success: true, created });
 }
 
 export async function updateEducation(req: Request, res: Response) {

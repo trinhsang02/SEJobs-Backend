@@ -2,7 +2,8 @@ import { Request, Response } from "express";
 import validate from "@/utils/validate";
 import { createCertificationSchema, updateCertificationSchema } from "@/dtos/student/ProjectsCertifications.dto";
 import { certificationsService } from "@/services/certifications.service";
-import { UnauthorizedError } from "@/utils/errors";
+import { BadRequestError, UnauthorizedError } from "@/utils/errors";
+import studentRepository from "@/repositories/student.repository";
 
 export async function listCertifications(req: Request, res: Response) {
   const { page, limit } = req.query;
@@ -21,18 +22,23 @@ export async function getCertification(req: Request, res: Response) {
 
 export async function createCertification(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
+  if (req.user.role !== "Student") {
+    throw new UnauthorizedError({ message: "Only students can create certifications" });
+  }
 
   const payload = validate.schema_validate(createCertificationSchema, req.body);
 
-  if (req.user.role === "Student") {
-    payload.student_id = req.user.userId;
+  const student = await studentRepository.findByUserId(req.user.userId);
+  if (!student) {
+    throw new BadRequestError({ message: "Student profile not found" });
   }
 
-  if (req.user.role === "Student" && payload.student_id && payload.student_id !== req.user.userId) {
-    throw new UnauthorizedError({ message: "Cannot create certification for another student" });
-  }
+  const finalPayload = {
+    ...payload,
+    student_id: student.id,
+  };
 
-  const created = await certificationsService.create(payload);
+  const created = await certificationsService.create(finalPayload);
   res.status(201).json({ success: true, data: created });
 }
 
@@ -53,9 +59,17 @@ export async function deleteCertification(req: Request, res: Response) {
 
 export async function getCertificationsByStudentId(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
-  const studentId = req.user.userId;
+  if (req.user.role !== "Student") {
+    throw new UnauthorizedError({ message: "Only students have certifications" });
+  }
+
+  const student = await studentRepository.findByUserId(req.user.userId);
+  if (!student) {
+    return res.status(200).json({ success: true, data: [], pagination: { page: 1, limit: 10, total: 0 } });
+  }
+
   const { page, limit } = req.query;
-  const { data: certifications, pagination } = await certificationsService.findByStudentId(studentId, {
+  const { data: certifications, pagination } = await certificationsService.findByStudentId(student.id, {
     page: Number(page) || 1,
     limit: Number(limit) || 10,
   });
