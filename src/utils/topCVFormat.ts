@@ -1,3 +1,5 @@
+import _ from "lodash";
+
 // utils/toTopCvFormat.ts
 export function toTopCvFormat(job: any, company: any = null, branch: any = null) {
   return {
@@ -59,6 +61,14 @@ export function toTopCvFormat(job: any, company: any = null, branch: any = null)
     status: job.status,
     createdAt: job.created_at,
     company_branches_id: job.company_branches_id,
+    company_branches: {
+      name: _.get(job, 'company_branches.name'),
+      ward: _.get(job, 'company_branches.ward.name'),
+      province: _.get(job, 'company_branches.province.name'),
+      country: _.get(job, 'company_branches.country.name'),
+      address: _.get(job, 'company_branches.address'),
+      province_id: _.get(job, 'company_branches.province.id')
+    },
     companyId: job.company_id,
   };
 }
