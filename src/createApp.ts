@@ -8,6 +8,7 @@ import userRoutes from "./routes/users.route";
 import addressRoutes from "./routes/address.route";
 import companyRoutes from "./routes/companies.route";
 import companyTypeRoutes from "./routes/company_types.route";
+import companyBranchesRoutes from "./routes/company_branches.route";
 import authRoutes from "./routes/auth.route";
 import jobRoutes from "./routes/jobs.route";
 import categoryRoutes from "./routes/categories.route";
@@ -63,6 +64,7 @@ export const createApp = () => {
   app.use("/api/address", addressRoutes);
   app.use("/api/companies", companyRoutes);
   app.use("/api/company_types", companyTypeRoutes);
+  app.use("/api/company-branches", companyBranchesRoutes);
   app.use("/api/jobs", jobRoutes);
   app.use("/api/categories", categoryRoutes);
   app.use("/api/skills", skillRoutes);
