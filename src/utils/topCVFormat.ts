@@ -11,6 +11,12 @@ export function toTopCvFormat(job: any, company: any = null, branch: any = null)
         : Array.isArray(job.requirement)
         ? job.requirement.join("<br />")
         : "",
+    nice_to_haves:
+      typeof job.nice_to_haves === "string"
+        ? job.nice_to_haves
+        : Array.isArray(job.nice_to_haves)
+        ? job.nice_to_haves.join("<br />")
+        : "",
     benefit:
       typeof job.benefit === "string"
         ? job.benefit
