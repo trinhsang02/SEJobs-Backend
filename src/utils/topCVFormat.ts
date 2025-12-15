@@ -17,14 +17,7 @@ export function toTopCvFormat(job: any, company: any = null, branch: any = null)
         : Array.isArray(job.nice_to_haves)
         ? job.nice_to_haves.join("<br />")
         : "",
-    benefit:
-      typeof job.benefit === "string"
-        ? job.benefit
-        : Array.isArray(job.benefit)
-        ? job.benefit.join("<br />")
-        : typeof job.benefit === "object" && job.benefit !== null
-        ? "" // or JSON.stringify if needed, but TopCV uses HTML
-        : "",
+    benefit: job.benefit,
     company: company
       ? {
           name: company.name || "",
@@ -54,7 +47,7 @@ export function toTopCvFormat(job: any, company: any = null, branch: any = null)
     deadline: job.job_deadline ? job.job_deadline.split("T")[0] : null, // ISO date → YYYY-MM-DD
     updatedAt: job.updated_at || "",
     type: "", // ← map from employment_types if needed
-    quantity: "1 người", // default
+    quantity: job.quantity || null, // default
     gender: "Không yêu cầu",
     experience: "", // ← map from levels
     position: "Nhân viên",

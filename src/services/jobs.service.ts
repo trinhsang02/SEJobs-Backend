@@ -145,7 +145,7 @@ export class JobService {
   async validateCreate(jobData: CreateJobDto) {
     let {
       company_id,
-      company_branches_id,
+      company_branches_id = [],
       category_ids = [],
       required_skill_ids = [],
       employment_type_ids = [],
@@ -154,6 +154,7 @@ export class JobService {
 
     const error_messages: string[] = [];
 
+    company_branches_id = _.uniq(company_branches_id);
     category_ids = _.uniq(category_ids);
     required_skill_ids = _.uniq(required_skill_ids);
     employment_type_ids = _.uniq(employment_type_ids);
@@ -164,17 +165,10 @@ export class JobService {
     const companyPromise = companyRepo.findOne({ company_id });
     promises.push(companyPromise);
 
-    let companyBranchesPromise: Promise<any>;
-
-    if (company_branches_id) {
-      companyBranchesPromise = companyBranchesRepo.findOne({
-        id: company_branches_id,
-        company_id,
-      });
-    } else {
-      companyBranchesPromise = Promise.resolve(null);
-    }
-
+    const companyBranchesPromise =
+      company_branches_id.length > 0
+        ? companyBranchesRepo.findAll({ ids: company_branches_id, company_id })
+        : Promise.resolve({ data: [] });
     promises.push(companyBranchesPromise);
 
     const categoryPromise =
@@ -204,9 +198,13 @@ export class JobService {
     if (!company) {
       error_messages.push(`company_id ${company_id} not found.`);
     }
-    if (company_branches_id && !companyBranch) {
-      error_messages.push(`company_branches_id ${company_branches_id} not found.`);
-    }
+
+    const companyBranchesMap = _.keyBy(companyBranch.data, "id");
+    company_branches_id.forEach((id) => {
+      if (!companyBranchesMap[id]) {
+        error_messages.push(`company_branches_id ${id} not found for company_id ${company_id}.`);
+      }
+    });
 
     const categoriesMap = _.keyBy(categoriesResult.data, "id");
     category_ids.forEach((id) => {
@@ -255,12 +253,199 @@ export class JobService {
       throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
     }
 
-    const { category_ids, required_skill_ids, employment_type_ids, level_ids, ...jobPayload } = jobData;
+    const { category_ids, required_skill_ids, employment_type_ids, level_ids, company_branches_id, ...jobPayload } = jobData;
 
-    const jobPayloadWithUpdatedAt = { ...jobPayload, updated_at: new Date().toISOString() };
+    // Validate relationships if provided
+    if (category_ids || required_skill_ids || employment_type_ids || level_ids || company_branches_id) {
+      const { error } = await this.validateUpdate({
+        company_id: existing.job.company_id!,
+        company_branches_id,
+        category_ids,
+        required_skill_ids,
+        employment_type_ids,
+        level_ids,
+      });
+      if (error) throw error;
+    }
 
+    const jobPayloadWithUpdatedAt = { company_branches_id, ...jobPayload, updated_at: new Date().toISOString() };
+
+    // Update job basic info
     await jobRepository.update(jobId, jobPayloadWithUpdatedAt as any);
+
+    // Update relationships if provided
+    const relationshipPromises: Promise<any>[] = [];
+
+    if (category_ids && category_ids.length > 0) {
+      const uniqueCategoryIds = _.uniq(category_ids);
+      relationshipPromises.push(
+        categoryRepo.bulkDeleteJobCategories(jobId).then(() => {
+          const jobCategoriesData = uniqueCategoryIds.map((category_id) => ({ category_id, job_id: jobId }));
+          return categoryRepo.bulkCreateJobCategories({ jobCategoriesData });
+        })
+      );
+    }
+
+    if (required_skill_ids && required_skill_ids.length > 0) {
+      const uniqueSkillIds = _.uniq(required_skill_ids);
+      relationshipPromises.push(
+        skillRepo.bulkDeleteJobSkills(jobId).then(() => {
+          const jobSkillsData = uniqueSkillIds.map((skill_id) => ({ skill_id, job_id: jobId }));
+          return skillRepo.bulkCreateJobSkills({ jobSkillsData });
+        })
+      );
+    }
+
+    if (employment_type_ids && employment_type_ids.length > 0) {
+      const uniqueEmploymentTypeIds = _.uniq(employment_type_ids);
+      relationshipPromises.push(
+        employmentTypeRepo.bulkDeleteJobEmploymentTypes(jobId).then(() => {
+          const jobEmploymentTypesData = uniqueEmploymentTypeIds.map((employment_type_id) => ({
+            employment_type_id,
+            job_id: jobId,
+          }));
+          return employmentTypeRepo.bulkCreateJobEmploymentTypes({ jobEmploymentTypesData });
+        })
+      );
+    }
+
+    if (level_ids && level_ids.length > 0) {
+      const uniqueLevelIds = _.uniq(level_ids);
+      relationshipPromises.push(
+        levelRepo.bulkDeleteJobLevels(jobId).then(() => {
+          const jobLevelsData = uniqueLevelIds.map((level_id) => ({ level_id, job_id: jobId }));
+          return levelRepo.bulkCreateJobLevels({ jobLevelsData });
+        })
+      );
+    }
+
+    if (relationshipPromises.length > 0) {
+      await Promise.all(relationshipPromises);
+    }
+
     return await this.findOne({ jobId });
+  }
+
+  async validateUpdate(jobData: {
+    company_id: number;
+    company_branches_id?: number[] | null | undefined;
+    category_ids?: number[] | undefined;
+    required_skill_ids?: number[] | undefined;
+    employment_type_ids?: number[] | undefined;
+    level_ids?: number[] | undefined;
+  }) {
+    const {
+      company_id,
+      company_branches_id = [],
+      category_ids = [],
+      required_skill_ids = [],
+      employment_type_ids = [],
+      level_ids = [],
+    } = jobData;
+
+    const error_messages: string[] = [];
+
+    const uniqueBranchIds = _.uniq(company_branches_id);
+    const uniqueCategoryIds = _.uniq(category_ids);
+    const uniqueSkillIds = _.uniq(required_skill_ids);
+    const uniqueEmploymentTypeIds = _.uniq(employment_type_ids);
+    const uniqueLevelIds = _.uniq(level_ids);
+
+    const promises: Promise<any>[] = [];
+
+    // Validate company_branches_id if provided
+    if (uniqueBranchIds.length > 0) {
+      promises.push(companyBranchesRepo.findAll({ ids: uniqueBranchIds, company_id }));
+    } else {
+      promises.push(Promise.resolve({ data: [] }));
+    }
+
+    // Validate category_ids if provided
+    if (uniqueCategoryIds.length > 0) {
+      promises.push(categoryRepo.findAll({ ids: uniqueCategoryIds }));
+    } else {
+      promises.push(Promise.resolve({ data: [] }));
+    }
+
+    // Validate required_skill_ids if provided
+    if (uniqueSkillIds.length > 0) {
+      promises.push(skillRepo.findAll({ ids: uniqueSkillIds }));
+    } else {
+      promises.push(Promise.resolve({ data: [] }));
+    }
+
+    // Validate employment_type_ids if provided
+    if (uniqueEmploymentTypeIds.length > 0) {
+      promises.push(employmentTypeRepo.findAll({ ids: uniqueEmploymentTypeIds }));
+    } else {
+      promises.push(Promise.resolve({ data: [] }));
+    }
+
+    // Validate level_ids if provided
+    if (uniqueLevelIds.length > 0) {
+      promises.push(levelRepo.findAll({ ids: uniqueLevelIds }));
+    } else {
+      promises.push(Promise.resolve({ data: [] }));
+    }
+
+    const [companyBranchesResult, categoriesResult, skillsResult, employmentTypesResult, levelsResult] =
+      await Promise.all(promises);
+
+    // Validate company_branches_id
+    if (uniqueBranchIds.length > 0) {
+      const branchesMap = _.keyBy(companyBranchesResult.data, "id");
+      uniqueBranchIds.forEach((id) => {
+        if (!branchesMap[id]) {
+          error_messages.push(`company_branches_id ${id} not found for company_id ${company_id}.`);
+        }
+      });
+    }
+
+    // Validate category_ids
+    if (uniqueCategoryIds.length > 0) {
+      const categoriesMap = _.keyBy(categoriesResult.data, "id");
+      uniqueCategoryIds.forEach((id) => {
+        if (!categoriesMap[id]) {
+          error_messages.push(`category_id ${id} not found.`);
+        }
+      });
+    }
+
+    // Validate required_skill_ids
+    if (uniqueSkillIds.length > 0) {
+      const skillsMap = _.keyBy(skillsResult.data, "id");
+      uniqueSkillIds.forEach((id) => {
+        if (!skillsMap[id]) {
+          error_messages.push(`required_skill_id ${id} not found.`);
+        }
+      });
+    }
+
+    // Validate employment_type_ids
+    if (uniqueEmploymentTypeIds.length > 0) {
+      const employmentTypesMap = _.keyBy(employmentTypesResult.data, "id");
+      uniqueEmploymentTypeIds.forEach((id) => {
+        if (!employmentTypesMap[id]) {
+          error_messages.push(`employment_type_id ${id} not found.`);
+        }
+      });
+    }
+
+    // Validate level_ids
+    if (uniqueLevelIds.length > 0) {
+      const levelsMap = _.keyBy(levelsResult.data, "id");
+      uniqueLevelIds.forEach((id) => {
+        if (!levelsMap[id]) {
+          error_messages.push(`level_id ${id} not found.`);
+        }
+      });
+    }
+
+    if (error_messages.length > 0) {
+      return { error: new BadRequestError({ message: error_messages.join("|") }) };
+    }
+
+    return { error: null };
   }
 
   async listByCompany(input: { companyId: number; page: number; limit: number }) {

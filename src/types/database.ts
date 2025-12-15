@@ -603,7 +603,7 @@ export type Database = {
           apply_guide: string | null;
           apply_reasons: string[] | null;
           benefit: Json | null;
-          company_branches_id: number | null;
+          company_branches_id: number[] | null;
           company_id: number | null;
           created_at: string | null;
           description: string | null;
@@ -632,7 +632,7 @@ export type Database = {
           apply_guide?: string | null;
           apply_reasons?: string[] | null;
           benefit?: Json | null;
-          company_branches_id?: number | null;
+          company_branches_id?: number[] | null;
           company_id?: number | null;
           created_at?: string | null;
           description?: string | null;
@@ -655,12 +655,13 @@ export type Database = {
           updated_at?: string | null;
           website_url?: string | null;
           working_time?: string | null;
+          quantity?: number | null;
         };
         Update: {
           apply_guide?: string | null;
           apply_reasons?: string[] | null;
           benefit?: Json | null;
-          company_branches_id?: number | null;
+          company_branches_id?: number[] | null;
           company_id?: number | null;
           created_at?: string | null;
           description?: string | null;
@@ -683,6 +684,7 @@ export type Database = {
           updated_at?: string | null;
           website_url?: string | null;
           working_time?: string | null;
+          quantity?: number | null;
         };
         Relationships: [
           {

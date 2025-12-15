@@ -1,11 +1,19 @@
 import { z } from "zod";
 import { createJobSchema } from "./CreateJob.dto";
 
+const benefitItemSchema = z.object({
+  icon: z.string(),
+  title: z.string(),
+  description: z.string(),
+});
+
 export const updateJobSchema = createJobSchema.partial().extend({
+  company_branches_id: z.array(z.number().int().positive()).nullable().optional(),
+  title: z.string().min(1, "Job title is required").optional(),
   responsibilities: z.array(z.string()).optional(),
   requirement: z.array(z.string()).optional(),
   nice_to_haves: z.array(z.string()).optional(),
-  benefit: z.array(z.string()).optional(),
+  benefit: z.array(benefitItemSchema).optional(),
   working_time: z.string().optional(),
   description: z.string().optional(),
   apply_guide: z.string().optional(),
@@ -21,6 +29,7 @@ export const updateJobSchema = createJobSchema.partial().extend({
   apply_reasons: z.array(z.string()).optional(),
   status: z.string().optional(),
   updated_at: z.string().optional(),
+  quantity: z.number().int().positive().optional(),
 });
 
 export type UpdateJobDto = z.infer<typeof updateJobSchema>;

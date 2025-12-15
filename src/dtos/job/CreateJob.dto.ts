@@ -1,15 +1,21 @@
 import { z } from "zod";
 
+const benefitItemSchema = z.object({
+  icon: z.string(),
+  title: z.string(),
+  description: z.string(),
+});
+
 export const createJobSchema = z.object({
   external_id: z.number().optional(),
   website_url: z.string().optional(),
   company_id: z.number().int().positive(),
-  company_branches_id: z.number().int().positive().nullable().optional(),
+  company_branches_id: z.array(z.number().int().positive()).nullable().optional(),
   title: z.string().min(1, "Job title is required"),
   responsibilities: z.array(z.string()).optional(),
   requirement: z.array(z.string()).optional(),
   nice_to_haves: z.array(z.string()).optional(),
-  benefit: z.array(z.string()).optional(),
+  benefit: z.array(benefitItemSchema).optional(),
   working_time: z.string().optional(),
   description: z.string().optional(),
   apply_guide: z.string().optional(),
