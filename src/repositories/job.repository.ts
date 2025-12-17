@@ -5,11 +5,12 @@ import { CreateJobDto } from "@/dtos/job/CreateJob.dto";
 import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
 import { JobAfterJoined, JobQueryParams, SORTABLE_JOB_FIELDS } from "@/types/common";
 import { NotFoundError } from "@/utils/errors";
+import company_branchesRepository from "./company_branches.repository";
 
 export class JobRepository {
   private readonly db: SupabaseClient;
   public readonly fields =
-    "id, external_id, website_url, company_id, company_branches_id, title, responsibilities, requirement, nice_to_haves, benefit, working_time, description, apply_guide, is_diamond, is_job_flash_active, is_hot, salary_from, salary_to, salary_text, salary_currency, job_posted_at, job_deadline, apply_reasons, status, created_at, updated_at, quantity";
+    "id, external_id, website_url, company_id, company_branches_id, company_branches_ids, title, responsibilities, requirement, nice_to_haves, benefit, working_time, description, apply_guide, is_diamond, is_job_flash_active, is_hot, salary_from, salary_to, salary_text, salary_currency, job_posted_at, job_deadline, apply_reasons, status, created_at, updated_at, quantity";
 
   constructor() {
     this.db = supabase;
@@ -35,7 +36,7 @@ export class JobRepository {
     let selectString = fields;
 
     // BUG: SUPABASE CANNOT LEFTJOIN & FILTER
-    selectString = `${fields}, company_branches!inner(name, province_id, address, 
+    selectString = `${fields}, company_branches!left(name, province_id, address, 
       province:provinces!inner(
         id,
         name
@@ -54,7 +55,7 @@ export class JobRepository {
 
     selectString = `${selectString}, levels!left(id, name, created_at, updated_at)`;
 
-    selectString = `${selectString}, categories!inner(id, name, created_at, updated_at)`;
+    selectString = `${selectString}, categories!left(id, name, created_at, updated_at)`;
 
     selectString = `${selectString}, skills!left(id, name, created_at, updated_at)`;
 
@@ -110,8 +111,56 @@ export class JobRepository {
 
     if (error) throw error;
 
+    const allBranchIds = _.uniq(
+      _.flatten(
+        (data || [])
+          .map((job: any) => job.company_branches_ids)
+          .filter((ids) => ids && ids.length > 0)
+      )
+    ).map((id) => Number(id));
+
+    let branchesMap: Record<number, any> = {};
+    if (allBranchIds.length > 0) {
+      const { data: branches } = await company_branchesRepository.findAll({
+        ids: allBranchIds,
+        fields: `
+          id,
+          name,
+          province_id,
+          address,
+          province:provinces!inner(id, name),
+          ward:wards!inner(id, name),
+          country:countries!inner(id, name)
+        `,
+      });
+
+      branchesMap = _.keyBy(branches || [], "id");
+    }
+
+    // Apply province filter if needed
+    let filteredData = data;
+    if (province_ids.length > 0 && allBranchIds.length > 0) {
+      filteredData = (data || []).filter((job: any) => {
+        if (!job.company_branches_ids || job.company_branches_ids.length === 0) return false;
+        return job.company_branches_ids.some((branchId: number) => {
+          const branch = branchesMap[branchId];
+          return branch && province_ids.includes(branch.province_id);
+        });
+      });
+    }
+
+    // Map branches to jobs
+    const jobsWithBranches = (filteredData || []).map((job: any) => {
+      const branches =
+        job.company_branches_ids?.map((id: number) => branchesMap[id]).filter(Boolean) || [];
+      return {
+        ...job,
+        company_branches: branches,
+      };
+    });
+
     return {
-      data: data as unknown as JobAfterJoined[],
+      data: jobsWithBranches as unknown as JobAfterJoined[],
       pagination: hasPagination && {
         page: page,
         limit: limit,

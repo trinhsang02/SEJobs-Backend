@@ -186,7 +186,7 @@ export class UserService {
         const socialRes = await socialLinksRepository.findAll({ student_id: studentId });
         socialLinksMap[studentId] = socialRes.data;
 
-        const expRes = await experiencesRepository.findByStudentId(studentId, { page: 1, limit: 100 });
+        const expRes = await experiencesRepository.findAll({ student_id: studentId, page: 1, limit: 100 });
         experienceMap[studentId] = expRes.data;
 
         const projRes = await projectsRepository.findByStudentId(studentId, { page: 1, limit: 100 });

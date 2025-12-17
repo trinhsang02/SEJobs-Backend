@@ -145,7 +145,6 @@ export class JobService {
   async validateCreate(jobData: CreateJobDto) {
     let {
       company_id,
-      company_branches_id = [],
       category_ids = [],
       required_skill_ids = [],
       employment_type_ids = [],
@@ -154,7 +153,6 @@ export class JobService {
 
     const error_messages: string[] = [];
 
-    company_branches_id = _.uniq(company_branches_id);
     category_ids = _.uniq(category_ids);
     required_skill_ids = _.uniq(required_skill_ids);
     employment_type_ids = _.uniq(employment_type_ids);
@@ -164,12 +162,6 @@ export class JobService {
 
     const companyPromise = companyRepo.findOne({ company_id });
     promises.push(companyPromise);
-
-    const companyBranchesPromise =
-      company_branches_id.length > 0
-        ? companyBranchesRepo.findAll({ ids: company_branches_id, company_id })
-        : Promise.resolve({ data: [] });
-    promises.push(companyBranchesPromise);
 
     const categoryPromise =
       category_ids.length > 0 ? categoryRepo.findAll({ ids: category_ids }) : Promise.resolve({ data: [] });
@@ -192,19 +184,12 @@ export class JobService {
       level_ids.length > 0 ? levelRepo.findAll({ ids: level_ids }) : Promise.resolve({ data: [] });
     promises.push(jobLevelsPromise);
 
-    const [company, companyBranch, categoriesResult, skillsResult, employmentTypesResult, jobLevelsResult] =
+    const [company, categoriesResult, skillsResult, employmentTypesResult, jobLevelsResult] =
       await Promise.all(promises);
 
     if (!company) {
       error_messages.push(`company_id ${company_id} not found.`);
     }
-
-    const companyBranchesMap = _.keyBy(companyBranch.data, "id");
-    company_branches_id.forEach((id) => {
-      if (!companyBranchesMap[id]) {
-        error_messages.push(`company_branches_id ${id} not found for company_id ${company_id}.`);
-      }
-    });
 
     const categoriesMap = _.keyBy(categoriesResult.data, "id");
     category_ids.forEach((id) => {

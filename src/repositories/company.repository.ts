@@ -85,7 +85,19 @@ export class CompanyRepository {
 
     let selectString = select_fields;
 
-    selectString = `${select_fields}, company_branches(id, name, company_id, country_id, province_id, address, created_at, updated_at)`;
+    selectString = `${select_fields}, 
+      company_branches(
+        id,
+        name,
+        company_id,
+        province_id,
+        province:provinces!inner(id, name),
+        ward:wards!inner(id, name),
+        country:countries!inner(id, name),
+        address,
+        created_at,
+        updated_at
+      )`;
 
     selectString = `${selectString}, company_types!inner(id, name)`;
 
