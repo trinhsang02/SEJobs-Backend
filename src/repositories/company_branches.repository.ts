@@ -84,10 +84,10 @@ export class CompanyBranchesRepository {
     return data;
   }
 
-  async update(branchId: number, input: CompanyBranchesUpdate) {
-    const filteredData = _.pickBy(input, (v) => v !== null && v !== undefined && v !== "");
+  async update(input: { branchId: number; branchData: CompanyBranchesUpdate }) {
+    const filteredData = _.pickBy(input.branchData, (v) => v !== null && v !== undefined && v !== "");
 
-    const { data, error } = await this.db.from("company_branches").update(filteredData).eq("id", branchId).select("id").maybeSingle();
+    const { data, error } = await this.db.from("company_branches").update(filteredData).eq("id", input.branchId).select("id").maybeSingle();
 
     if (error) throw error;
 

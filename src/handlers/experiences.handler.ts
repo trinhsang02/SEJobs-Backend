@@ -1,23 +1,42 @@
-import { Request, Response } from "express";
-import validate from "@/utils/validate";
-import { createExperienceSchema, updateExperienceSchema } from "@/dtos/student/Experience.dto";
-import { experiencesService } from "@/services/experiences.service";
+import { createExperienceSchema, updateExperienceSchema } from "@/dtos/student/Experiences.dto";
+import experiencesService from "@/services/experiences.service";
 import { BadRequestError, UnauthorizedError } from "@/utils/errors";
+import validate from "@/utils/validate";
+import { Request, Response } from "express-serve-static-core";
 import studentRepository from "@/repositories/student.repository";
+import _ from "lodash";
 
-export async function listExperiences(req: Request, res: Response) {
-  const { page, limit } = req.query;
-  const { data: experiences, pagination } = await experiencesService.findAll({
-    page: Number(page) || 1,
-    limit: Number(limit) || 10,
-  });
-  res.status(200).json({ success: true, data: experiences, pagination });
+export async function getExperiences(req: Request, res: Response) {
+    const { page, limit } = req.query;
+    const { data, pagination} = await experiencesService.findAll({
+        page: _.toInteger(page) || 1,
+        limit: _.toInteger(limit) || 10,
+    });
+
+    res.status(200).json({
+        success: true,
+        data: data,
+        pagination: pagination,
+    });
 }
 
-export async function getExperience(req: Request, res: Response) {
-  const id = Number(req.params.id);
-  const data = await experiencesService.getOne(id);
-  res.status(200).json({ success: true, data });
+export async function getExperienceById(req: Request, res: Response) {
+    const id = _.toNumber(req.params.id);
+
+    if (!id) {
+      throw new BadRequestError({ message: 'Missing required param: id'});
+    }
+
+    const data = await experiencesService.findOne(id);
+
+    if (!data) {
+      throw new BadRequestError({ message: `Experience with ID ${id} not found` });
+    }
+
+    res.status(200).json({
+        success: true,
+        data: data,
+    });
 }
 
 export async function createExperience(req: Request, res: Response) {
@@ -27,35 +46,43 @@ export async function createExperience(req: Request, res: Response) {
     throw new UnauthorizedError({ message: "Only students can create experiences" });
   }
 
-  const payload = validate.schema_validate(createExperienceSchema, req.body);
-
+  const userData = validate.schema_validate(createExperienceSchema, req.body);
   const student = await studentRepository.findByUserId(req.user.userId);
   if (!student) {
     throw new BadRequestError({ message: "Student profile not found" });
   }
 
-  const finalPayload = {
-    ...payload,
-    student_id: student.id,
-  };
-
-  const created = await experiencesService.create(finalPayload);
-  res.status(201).json({ success: true, created });
+  const newExperience = await experiencesService.create(userData);
+  res.status(201).json({
+      success: true,
+      data: newExperience,
+  });
 }
 
 export async function updateExperience(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
-  const id = Number(req.params.id);
-  const payload = validate.schema_validate(updateExperienceSchema, req.body);
-  const updated = await experiencesService.update(id, payload);
-  res.status(200).json({ success: true, data: updated });
+    const id = _.toNumber(req.params.id);
+    if (!id) {
+      throw new BadRequestError({ message: 'Missing required param: id'});
+    }
+    const userData = validate.schema_validate(updateExperienceSchema, req.body);
+    const updatedExperience = await experiencesService.update({ id, data: userData });
+
+    res.status(200).json({
+        success: true,
+        data: updatedExperience,
+    });
 }
 
 export async function deleteExperience(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
-  const id = Number(req.params.id);
-  await experiencesService.remove(id);
-  res.status(204).send();
+    const id = _.toNumber(req.params.id);
+    if (!id) {
+      throw new BadRequestError({ message: 'Missing required param: id'});
+    }
+    await experiencesService.delete(id);
+
+    res.status(204).send();
 }
 
 export async function getExperiencesByStudentId(req: Request, res: Response) {
@@ -74,9 +101,10 @@ export async function getExperiencesByStudentId(req: Request, res: Response) {
   }
 
   const { page, limit } = req.query;
-  const { data: experiences, pagination } = await experiencesService.findByStudentId(student.id, {
+  const { data: experiences, pagination } = await experiencesService.findAll({
     page: Number(page) || 1,
     limit: Number(limit) || 10,
+    student_id: student.id,
   });
   res.status(200).json({ success: true, data: experiences, pagination });
 }

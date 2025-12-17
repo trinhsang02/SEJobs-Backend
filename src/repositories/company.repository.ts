@@ -44,6 +44,10 @@ export class CompanyRepository {
 
     selectString = `${selectString}, company_types!inner(id, name)`;
 
+    selectString = `${selectString}, users!inner(user_id, first_name, last_name, is_active)`;
+
+    selectString = `${selectString}, jobs(id, status)`;
+
     let dbQuery = this.db.from("companies").select(selectString, { count: "exact" });
 
     if (company_ids.length > 0) dbQuery = dbQuery.in("id", company_ids);
@@ -77,10 +81,41 @@ export class CompanyRepository {
 
   async findOne(input: CompanyQueryParams) {
     const { company_id, email, fields } = input;
-    const baseFields = fields || this.fields;
+    const select_fields = fields || this.fields;
 
-    const selectString = `${baseFields}, company_branches(id, name, company_id, country_id, province_id, address, created_at, updated_at, countries(id, name), provinces(id, name)), company_types(id, name)`;
-    let dbQuery = this.db.from("companies").select(selectString);
+    let selectString = select_fields;
+
+    selectString = `${select_fields}, 
+      company_branches(
+        id,
+        name,
+        company_id,
+        province_id,
+        province:provinces!inner(id, name),
+        ward:wards!inner(id, name),
+        country:countries!inner(id, name),
+        address,
+        created_at,
+        updated_at
+      )`;
+
+    selectString = `${selectString}, company_types!inner(id, name)`;
+
+    selectString = `${selectString}, 
+      jobs(
+        id, 
+        status, 
+        title,
+        created_at,
+        job_types:job_employment_types(
+          type:employment_types(id, name)
+        ),
+        job_levels(
+          levels(id, name)
+        )
+      )`;
+
+    let dbQuery = this.db.from("companies").select(selectString, { count: "exact" });
 
     if (company_id) {
       dbQuery = dbQuery.eq("id", company_id);

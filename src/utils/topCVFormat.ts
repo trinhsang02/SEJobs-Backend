@@ -13,14 +13,13 @@ export function toTopCvFormat(job: any, company: any = null, branch: any = null)
         : Array.isArray(job.requirement)
         ? job.requirement.join("<br />")
         : "",
-    benefit:
-      typeof job.benefit === "string"
-        ? job.benefit
-        : Array.isArray(job.benefit)
-        ? job.benefit.join("<br />")
-        : typeof job.benefit === "object" && job.benefit !== null
-        ? "" // or JSON.stringify if needed, but TopCV uses HTML
+    nice_to_haves:
+      typeof job.nice_to_haves === "string"
+        ? job.nice_to_haves
+        : Array.isArray(job.nice_to_haves)
+        ? job.nice_to_haves.join("<br />")
         : "",
+    benefit: job.benefit,
     company: company
       ? {
           name: company.name || "",
@@ -50,7 +49,7 @@ export function toTopCvFormat(job: any, company: any = null, branch: any = null)
     deadline: job.job_deadline ? job.job_deadline.split("T")[0] : null, // ISO date → YYYY-MM-DD
     updatedAt: job.updated_at || "",
     type: "", // ← map from employment_types if needed
-    quantity: "1 người", // default
+    quantity: job.quantity || null, // default
     gender: "Không yêu cầu",
     experience: "", // ← map from levels
     position: "Nhân viên",
@@ -61,14 +60,12 @@ export function toTopCvFormat(job: any, company: any = null, branch: any = null)
     status: job.status,
     createdAt: job.created_at,
     company_branches_id: job.company_branches_id,
-    company_branches: {
-      name: _.get(job, 'company_branches.name'),
-      ward: _.get(job, 'company_branches.ward.name'),
-      province: _.get(job, 'company_branches.province.name'),
-      country: _.get(job, 'company_branches.country.name'),
-      address: _.get(job, 'company_branches.address'),
-      province_id: _.get(job, 'company_branches.province.id')
-    },
+    company_branches: job.company_branches || [],
     companyId: job.company_id,
+
+    categories: job.categories || [],
+    skills: job.skills || [],
+    levels: job.levels || [],
+    employment_types: job.employment_types || [],
   };
 }

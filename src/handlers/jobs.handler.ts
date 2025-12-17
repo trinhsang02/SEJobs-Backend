@@ -10,15 +10,34 @@ import { companyJobQuerySchema } from "@/dtos/company/CompanyJobQuery.dto";
 import { toTopCvFormat } from "@/utils/topCVFormat";
 import { toCamelCaseKeys } from "@/utils/casing";
 import convert from "@/utils/convert";
+import { TOPCV_ID_TO_MY_PROVINCE_ID } from "@/utils/cityMapper";
 
 export async function listJobs(req: Request, res: Response) {
   const page = _.toInteger(req.query.page) || 1;
   const limit = _.toInteger(req.query.limit) || 10;
-  const province_ids = convert.split(req.query.province_ids as string, ',', Number);
-  const level_ids = convert.split(req.query.level_ids as string, ',', Number);
-  const skill_ids = convert.split(req.query.skill_ids as string, ',', Number);
-  const employment_type_ids = convert.split(req.query.employment_type_ids as string, ',', Number);
-  const category_ids = convert.split(req.query.category_ids as string, ',', Number);
+
+  let province_ids: number[] = [];
+
+  if (req.query.city_id) {
+    const cityIds = convert.split(req.query.city_id as string, ",", Number).filter((id) => !isNaN(id));
+    const mapped = cityIds.map((cvId) => TOPCV_ID_TO_MY_PROVINCE_ID[cvId]).filter((id): id is number => id != null);
+
+    if (cityIds.length > 0 && mapped.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        pagination: { page: 1, limit: 10, total: 0, total_pages: 0 },
+      });
+    }
+    province_ids = mapped;
+  } else if (req.query.province_id) {
+    province_ids = convert.split(req.query.province_id as string, ",", Number).filter((id) => !isNaN(id));
+  }
+
+  const level_ids = convert.split(req.query.level_ids as string, ",", Number);
+  const skill_ids = convert.split(req.query.skill_ids as string, ",", Number);
+  const employment_type_ids = convert.split(req.query.employment_type_ids as string, ",", Number);
+  const category_ids = convert.split(req.query.category_ids as string, ",", Number);
   const order = req.query.order === "asc" ? "asc" : "desc";
   const sort_by =
     typeof req.query.sort_by === "string" && (SORTABLE_JOB_FIELDS as readonly string[]).includes(req.query.sort_by)
@@ -26,7 +45,6 @@ export async function listJobs(req: Request, res: Response) {
       : undefined;
 
   const { data: jobs, pagination } = await jobService.list({
-    ...req.query,
     province_ids,
     level_ids,
     category_ids,
@@ -48,7 +66,6 @@ export async function listJobs(req: Request, res: Response) {
     pagination,
   });
 }
-
 export async function getJob(req: Request, res: Response) {
   const id = Number(req.params.id);
 

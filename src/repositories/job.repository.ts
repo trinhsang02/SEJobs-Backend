@@ -5,11 +5,12 @@ import { CreateJobDto } from "@/dtos/job/CreateJob.dto";
 import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
 import { JobAfterJoined, JobQueryParams, SORTABLE_JOB_FIELDS } from "@/types/common";
 import { NotFoundError } from "@/utils/errors";
+import company_branchesRepository from "./company_branches.repository";
 
 export class JobRepository {
   private readonly db: SupabaseClient;
   public readonly fields =
-    "id, external_id, website_url, company_id, company_branches_id, title, responsibilities, requirement, nice_to_haves, benefit, working_time, description, apply_guide, is_diamond, is_job_flash_active, is_hot, salary_from, salary_to, salary_text, salary_currency, job_posted_at, job_deadline, apply_reasons, status, created_at, updated_at";
+    "id, external_id, website_url, company_id, company_branches_id, company_branches_ids, title, responsibilities, requirement, nice_to_haves, benefit, working_time, description, apply_guide, is_diamond, is_job_flash_active, is_hot, salary_from, salary_to, salary_text, salary_currency, job_posted_at, job_deadline, apply_reasons, status, created_at, updated_at, quantity";
 
   constructor() {
     this.db = supabase;
@@ -20,6 +21,7 @@ export class JobRepository {
     const page = _.get(input, "page");
     const limit = _.get(input, "limit");
     const keyword = _.get(input, "keyword");
+    const company_id = _.get(input, "company_id");
     const province_ids = _.get(input, "province_ids") || [];
     const level_ids = _.get(input, "level_ids") || [];
     const category_ids = _.get(input, "category_ids") || [];
@@ -31,33 +33,28 @@ export class JobRepository {
     const order = _.get(input, "order", "desc");
     const hasPagination = page && limit && page > 0 && limit > 0;
 
-    let selectString = fields;
+    let selectString = `
+    ${fields},
+    company:companies!inner(id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, user_id, created_at, updated_at),
+    levels!left(id, name, created_at, updated_at),
+    categories!left(id, name, created_at, updated_at),
+    skills!left(id, name, created_at, updated_at),
+    employment_types!left(id, name, created_at, updated_at)
+  `;
 
-    // BUG: SUPABASE CANNOT LEFTJOIN & FILTER
-    selectString = `${fields}, company_branches!inner(name, province_id, address, 
-      province:provinces!inner(
-        id,
-        name
-      ),
-      ward:wards!inner(
-        id,
-        name
-      ),
-      country:countries!inner(
-        id,
-        name
-      ))
-    `;
-
-    selectString = `${selectString}, company:companies!inner(id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, user_id, created_at, updated_at)`;
-
-    selectString = `${selectString}, levels!inner(id, name, created_at, updated_at)`;
-
-    selectString = `${selectString}, categories!inner(id, name, created_at, updated_at)`;
-
-    selectString = `${selectString}, skills!inner(id, name, created_at, updated_at)`;
-
-    selectString = `${selectString}, employment_types!inner(id, name, created_at, updated_at)`;
+    if (province_ids.length > 0) {
+      selectString += `, company_branches!inner(id, name, province_id, address,
+      province:provinces!inner(id, name),
+      ward:wards!inner(id, name),
+      country:countries!inner(id, name)
+    )`;
+    } else {
+      selectString += `, company_branches!left(id, name, province_id, address,
+      province:provinces!inner(id, name),
+      ward:wards!inner(id, name),
+      country:countries!inner(id, name)
+    )`;
+    }
 
     let dbQuery = this.db.from("jobs").select(selectString, { count: "exact" });
 
@@ -68,31 +65,27 @@ export class JobRepository {
     if (level_ids.length > 0) {
       dbQuery = dbQuery.in("levels.id", level_ids);
     }
-
     if (category_ids.length > 0) {
       dbQuery = dbQuery.in("categories.id", category_ids);
     }
-
     if (skill_ids.length > 0) {
       dbQuery = dbQuery.in("skills.id", skill_ids);
     }
-
     if (employment_type_ids.length > 0) {
       dbQuery = dbQuery.in("employment_types.id", employment_type_ids);
     }
-
     if (keyword) {
       dbQuery = dbQuery.ilike("title", `%${keyword}%`);
     }
-
     if (salary_from) {
       dbQuery = dbQuery.gte("salary_to", salary_from);
     }
-
     if (salary_to) {
       dbQuery = dbQuery.lte("salary_from", salary_to);
     }
-
+    if (company_id) {
+      dbQuery = dbQuery.eq("company_id", company_id);
+    }
     if ((SORTABLE_JOB_FIELDS as readonly string[]).includes(sortBy)) {
       dbQuery = dbQuery.order(sortBy, { ascending: order === "asc" });
     } else {
@@ -100,7 +93,6 @@ export class JobRepository {
     }
 
     const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
-
     const { data, error, count } = await executeQuery;
 
     if (error) throw error;
@@ -119,7 +111,7 @@ export class JobRepository {
   async findOne(jobId: number) {
     const selectString = `
       *,
-      company_branches!inner(
+      company_branches!left(
         id,
         province_id,
         address,
@@ -144,7 +136,7 @@ export class JobRepository {
         created_at,
         updated_at
       ),
-      levels!inner(
+      levels!left(
         id,
         name,
         created_at,
@@ -156,13 +148,13 @@ export class JobRepository {
         created_at,
         updated_at
       ),
-      skills!inner(
+      skills!left(
         id,
         name,
         created_at,
         updated_at
       ),
-      employment_types!inner(
+      employment_types!left(
         id,
         name,
         created_at,
@@ -170,7 +162,11 @@ export class JobRepository {
       )
     `;
 
-    const { data: job, error: jobError } = await this.db.from("jobs").select(selectString).eq("id", jobId).maybeSingle();
+    const { data: job, error: jobError } = await this.db
+      .from("jobs")
+      .select(selectString)
+      .eq("id", jobId)
+      .maybeSingle();
 
     if (jobError) throw jobError;
 
@@ -230,7 +226,10 @@ export class JobRepository {
 
     if (error) throw error;
 
-    const { count } = await supabase.from("jobs").select("*", { count: "exact", head: true }).eq("company_id", companyId);
+    const { count } = await supabase
+      .from("jobs")
+      .select("*", { count: "exact", head: true })
+      .eq("company_id", companyId);
     // .eq("status", "active");
 
     return {

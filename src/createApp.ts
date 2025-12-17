@@ -8,6 +8,7 @@ import userRoutes from "./routes/users.route";
 import addressRoutes from "./routes/address.route";
 import companyRoutes from "./routes/companies.route";
 import companyTypeRoutes from "./routes/company_types.route";
+import companyBranchesRoutes from "./routes/company_branches.route";
 import authRoutes from "./routes/auth.route";
 import jobRoutes from "./routes/jobs.route";
 import categoryRoutes from "./routes/categories.route";
@@ -19,9 +20,9 @@ import mediaRoutes from "./routes/media.route";
 import socialLinkRoutes from "./routes/social_links.route";
 import educationsRoutes from "./routes/educations.route";
 import savedJobsRoutes from "./routes/saved_jobs.route";
+import experiencesRoutes from "./routes/experiences.route";
 import projectRoutes from "./routes/projects.route";
 import certificationRoutes from "./routes/certifications.route";
-import experiencesRoutes from "./routes/experiences.route";
 import { requestLogger, errorHandler } from "@/middlewares";
 import { specs, swaggerUi } from "./config/swagger";
 import logger from "./utils/logger";
@@ -63,6 +64,7 @@ export const createApp = () => {
   app.use("/api/address", addressRoutes);
   app.use("/api/companies", companyRoutes);
   app.use("/api/company_types", companyTypeRoutes);
+  app.use("/api/company-branches", companyBranchesRoutes);
   app.use("/api/jobs", jobRoutes);
   app.use("/api/categories", categoryRoutes);
   app.use("/api/skills", skillRoutes);
@@ -73,6 +75,7 @@ export const createApp = () => {
   app.use("/api/social-links", socialLinkRoutes);
   app.use("/api/educations", educationsRoutes);
   app.use("/api/saved-jobs", savedJobsRoutes);
+  app.use("/api/experiences", experiencesRoutes);
   app.use("/api/projects", projectRoutes);
   app.use("/api/certifications", certificationRoutes);
 
