@@ -4,7 +4,7 @@ import { supabase } from "@/config/supabase";
 import { BadRequestError } from "@/utils/errors";
 
 export async function getProvinces(req: Request, res: Response) {
-  const { data, error, count } = await supabase.from("provinces").select('id, country_id, name', { count: "exact" });
+  const { data, error, count } = await supabase.from("provinces").select("id, country_id, name", { count: "exact" });
 
   if (error) throw error;
 
@@ -12,7 +12,7 @@ export async function getProvinces(req: Request, res: Response) {
 
   res.status(200).json({
     success: true,
-    data: data
+    data: data,
   });
 }
 
@@ -21,7 +21,10 @@ export async function getWards(req: Request, res: Response) {
 
   if (!province_id) throw new BadRequestError({ message: "Missing params provinceId" });
 
-  const { data, error, count } = await supabase.from("wards").select("id, province_id, name", { count: "exact" }).eq("province_id", province_id);
+  const { data, error, count } = await supabase
+    .from("wards")
+    .select("id, province_id, name", { count: "exact" })
+    .eq("province_id", province_id);
 
   if (error) throw error;
 
@@ -29,6 +32,6 @@ export async function getWards(req: Request, res: Response) {
 
   res.status(200).json({
     success: true,
-    data: data
+    data: data,
   });
 }

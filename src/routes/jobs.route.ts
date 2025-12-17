@@ -11,6 +11,7 @@ router.get("/:id", getJob);
 
 // Protected CRUD
 router.post("/", authenticate, authorizeRoles("Admin", "Manager", "Employer"), createJob);
+// router.post("/", createJob);
 router.put("/:id", authenticate, authorizeRoles("Admin", "Manager", "Employer"), updateJob);
 router.delete("/:id", authenticate, authorizeRoles("Admin", "Manager", "Employer"), deleteJob);
 

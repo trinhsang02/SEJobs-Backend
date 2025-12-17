@@ -33,33 +33,28 @@ export class JobRepository {
     const order = _.get(input, "order", "desc");
     const hasPagination = page && limit && page > 0 && limit > 0;
 
-    let selectString = fields;
+    let selectString = `
+    ${fields},
+    company:companies!inner(id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, user_id, created_at, updated_at),
+    levels!left(id, name, created_at, updated_at),
+    categories!left(id, name, created_at, updated_at),
+    skills!left(id, name, created_at, updated_at),
+    employment_types!left(id, name, created_at, updated_at)
+  `;
 
-    // BUG: SUPABASE CANNOT LEFTJOIN & FILTER
-    selectString = `${fields}, company_branches!left(name, province_id, address, 
-      province:provinces!inner(
-        id,
-        name
-      ),
-      ward:wards!inner(
-        id,
-        name
-      ),
-      country:countries!inner(
-        id,
-        name
-      ))
-    `;
-
-    selectString = `${selectString}, company:companies!inner(id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, user_id, created_at, updated_at)`;
-
-    selectString = `${selectString}, levels!left(id, name, created_at, updated_at)`;
-
-    selectString = `${selectString}, categories!left(id, name, created_at, updated_at)`;
-
-    selectString = `${selectString}, skills!left(id, name, created_at, updated_at)`;
-
-    selectString = `${selectString}, employment_types!left(id, name, created_at, updated_at)`;
+    if (province_ids.length > 0) {
+      selectString += `, company_branches!inner(id, name, province_id, address,
+      province:provinces!inner(id, name),
+      ward:wards!inner(id, name),
+      country:countries!inner(id, name)
+    )`;
+    } else {
+      selectString += `, company_branches!left(id, name, province_id, address,
+      province:provinces!inner(id, name),
+      ward:wards!inner(id, name),
+      country:countries!inner(id, name)
+    )`;
+    }
 
     let dbQuery = this.db.from("jobs").select(selectString, { count: "exact" });
 
@@ -70,35 +65,27 @@ export class JobRepository {
     if (level_ids.length > 0) {
       dbQuery = dbQuery.in("levels.id", level_ids);
     }
-
     if (category_ids.length > 0) {
       dbQuery = dbQuery.in("categories.id", category_ids);
     }
-
     if (skill_ids.length > 0) {
       dbQuery = dbQuery.in("skills.id", skill_ids);
     }
-
     if (employment_type_ids.length > 0) {
       dbQuery = dbQuery.in("employment_types.id", employment_type_ids);
     }
-
     if (keyword) {
       dbQuery = dbQuery.ilike("title", `%${keyword}%`);
     }
-
     if (salary_from) {
       dbQuery = dbQuery.gte("salary_to", salary_from);
     }
-
     if (salary_to) {
       dbQuery = dbQuery.lte("salary_from", salary_to);
     }
-
     if (company_id) {
       dbQuery = dbQuery.eq("company_id", company_id);
     }
-
     if ((SORTABLE_JOB_FIELDS as readonly string[]).includes(sortBy)) {
       dbQuery = dbQuery.order(sortBy, { ascending: order === "asc" });
     } else {
@@ -106,61 +93,12 @@ export class JobRepository {
     }
 
     const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
-
     const { data, error, count } = await executeQuery;
 
     if (error) throw error;
 
-    const allBranchIds = _.uniq(
-      _.flatten(
-        (data || [])
-          .map((job: any) => job.company_branches_ids)
-          .filter((ids) => ids && ids.length > 0)
-      )
-    ).map((id) => Number(id));
-
-    let branchesMap: Record<number, any> = {};
-    if (allBranchIds.length > 0) {
-      const { data: branches } = await company_branchesRepository.findAll({
-        ids: allBranchIds,
-        fields: `
-          id,
-          name,
-          province_id,
-          address,
-          province:provinces!inner(id, name),
-          ward:wards!inner(id, name),
-          country:countries!inner(id, name)
-        `,
-      });
-
-      branchesMap = _.keyBy(branches || [], "id");
-    }
-
-    // Apply province filter if needed
-    let filteredData = data;
-    if (province_ids.length > 0 && allBranchIds.length > 0) {
-      filteredData = (data || []).filter((job: any) => {
-        if (!job.company_branches_ids || job.company_branches_ids.length === 0) return false;
-        return job.company_branches_ids.some((branchId: number) => {
-          const branch = branchesMap[branchId];
-          return branch && province_ids.includes(branch.province_id);
-        });
-      });
-    }
-
-    // Map branches to jobs
-    const jobsWithBranches = (filteredData || []).map((job: any) => {
-      const branches =
-        job.company_branches_ids?.map((id: number) => branchesMap[id]).filter(Boolean) || [];
-      return {
-        ...job,
-        company_branches: branches,
-      };
-    });
-
     return {
-      data: jobsWithBranches as unknown as JobAfterJoined[],
+      data: data as unknown as JobAfterJoined[],
       pagination: hasPagination && {
         page: page,
         limit: limit,
@@ -224,7 +162,11 @@ export class JobRepository {
       )
     `;
 
-    const { data: job, error: jobError } = await this.db.from("jobs").select(selectString).eq("id", jobId).maybeSingle();
+    const { data: job, error: jobError } = await this.db
+      .from("jobs")
+      .select(selectString)
+      .eq("id", jobId)
+      .maybeSingle();
 
     if (jobError) throw jobError;
 
@@ -284,7 +226,10 @@ export class JobRepository {
 
     if (error) throw error;
 
-    const { count } = await supabase.from("jobs").select("*", { count: "exact", head: true }).eq("company_id", companyId);
+    const { count } = await supabase
+      .from("jobs")
+      .select("*", { count: "exact", head: true })
+      .eq("company_id", companyId);
     // .eq("status", "active");
 
     return {
