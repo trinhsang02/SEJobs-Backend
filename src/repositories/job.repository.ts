@@ -34,7 +34,21 @@ export class JobRepository {
 
     let selectString = fields;
 
-    selectString = `${fields}, company_branches!left(province_id)`;
+    // BUG: SUPABASE CANNOT LEFTJOIN & FILTER
+    selectString = `${fields}, company_branches!inner(name, province_id, address, 
+      province:provinces!inner(
+        id,
+        name
+      ),
+      ward:wards!inner(
+        id,
+        name
+      ),
+      country:countries!inner(
+        id,
+        name
+      ))
+    `;
 
     selectString = `${selectString}, company:companies!inner(id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, user_id, created_at, updated_at)`;
 

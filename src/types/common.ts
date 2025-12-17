@@ -269,6 +269,18 @@ export type Certification = Database["public"]["Tables"]["certifications"]["Row"
 export type CertificationInsert = Database["public"]["Tables"]["certifications"]["Insert"];
 export type CertificationUpdate = Database["public"]["Tables"]["certifications"]["Update"];
 
+// EXPERIENCE
+export type Experience = Database["public"]["Tables"]["experiences"]["Row"];
+export type ExperienceInsert = Database["public"]["Tables"]["experiences"]["Insert"];
+export type ExperienceUpdate = Database["public"]["Tables"]["experiences"]["Update"];
+
+export interface ExperienceQueryParams extends QueryParams {
+  ids?: number[];
+  student_id?: number;
+  company?: string;
+  position?: string;
+}
+
 export interface CertificationQueryParams extends QueryParams {
   ids?: number[];
   student_id?: number;

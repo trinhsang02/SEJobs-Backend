@@ -1,4 +1,4 @@
-import { EducationRepository } from "@/repositories/educations.repository";
+import EducationRepository from "@/repositories/educations.repository";
 import { CreateEducationDTO, UpdateEducationDTO } from "@/dtos/student/Educations.dto";
 import { NotFoundError, BadRequestError } from "@/utils/errors";
 
@@ -10,7 +10,7 @@ export const EducationService = {
   async findByStudentId(studentId: number, options: { page: number; limit: number }) {
     return EducationRepository.findByStudentId(studentId, options);
   },
-  
+
   async getOne(id: number) {
     const rec = await EducationRepository.findOne(id);
     if (!rec) throw new NotFoundError({ message: "Education not found" });

@@ -1,16 +1,19 @@
-import { createExperience, deleteExperience, getExperienceById, getExperiences, updateExperience } from "@/handlers/experiences.handler";
+import * as experiencesHandler from "@/handlers/experiences.handler";
+import { authenticate } from "@/middlewares/auth.middleware";
 import { Router } from "express";
 
 const router = Router();
 
-router.get("/", getExperiences);
+router.get("/", experiencesHandler.getExperiences);
 
-router.get("/:id", getExperienceById);
+router.get("/:id", experiencesHandler.getExperienceById);
 
-router.post("/", createExperience);
+router.post("/", authenticate, experiencesHandler.createExperience);
 
-router.put("/:id", updateExperience);
+router.put("/:id", authenticate, experiencesHandler.updateExperience);
 
-router.delete("/:id", deleteExperience);
+router.delete("/:id", authenticate, experiencesHandler.deleteExperience);
+
+router.get("/student/me", authenticate, experiencesHandler.getExperiencesByStudentId);
 
 export default router;

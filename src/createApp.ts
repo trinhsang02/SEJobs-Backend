@@ -23,6 +23,7 @@ import savedJobsRoutes from "./routes/saved_jobs.route";
 import experiencesRoutes from "./routes/experiences.route";
 import projectRoutes from "./routes/projects.route";
 import certificationRoutes from "./routes/certifications.route";
+import experiencesRoutes from "./routes/experiences.route";
 import { requestLogger, errorHandler } from "@/middlewares";
 import { specs, swaggerUi } from "./config/swagger";
 import logger from "./utils/logger";
@@ -79,6 +80,7 @@ export const createApp = () => {
   app.use("/api/projects", projectRoutes);
   app.use("/api/certifications", certificationRoutes);
 
+  app.use("/api/experiences", experiencesRoutes);
   // Error handler
   app.use(errorHandler);
   return app;

@@ -1,5 +1,5 @@
 import { supabase } from "@/config/supabase";
-import { ExperienceInsert, ExperienceQueryParams, ExperienceUpdate } from "@/types/common";
+import { Experience, ExperienceInsert, ExperienceQueryParams, ExperienceUpdate } from "@/types/common";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
 
@@ -12,7 +12,7 @@ export class ExperiencesRepository {
         this.db = supabase;
     }
 
-    async findAll(input: ExperienceQueryParams) {
+    async findAll(input: ExperienceQueryParams): Promise<{ data: Experience[]; pagination: any }> {
         const { page, limit } = input;
         const hasPagination = page && limit;
         const fields = _.get(input, "fields", this.fields);
@@ -33,7 +33,7 @@ export class ExperiencesRepository {
         if (error) throw error;
 
         return {
-            data,
+            data: data as unknown as Experience[],
             pagination: hasPagination && {
                 page,
                 limit,
@@ -45,21 +45,24 @@ export class ExperiencesRepository {
 
     async findOne(id: number) {
         const { data, error } = await this.db.from("experiences").select(this.fields).eq("id", id).maybeSingle();
-        if (error) throw error;
+        if (error) {
+          if (error.code === "PGRST116") return null;
+          throw error;
+        }
         return data;
     }
 
-    async create(input: { experienceData: ExperienceInsert }) {
-        const { data, error } = await this.db.from("experiences").insert([input.experienceData]).select(this.fields).single();
+    async create(payload: ExperienceInsert): Promise<Experience> {
+        const { data, error } = await this.db.from("experiences").insert(payload).select(this.fields).single();
         if (error) throw error;
-        return data;
+        return data as Experience;
     }
 
-    async update(experienceId: number, input: ExperienceUpdate) {
+    async update(id: number, input: ExperienceUpdate): Promise<Experience> {
         const filteredData = _.pickBy(input, (v) => v !== null && v !== undefined && v !== "");
-        const { data, error } = await this.db.from("experiences").update(filteredData).eq("id", experienceId).select(this.fields).maybeSingle();
+        const { data, error } = await this.db.from("experiences").update(filteredData).eq("id", id).select(this.fields).maybeSingle();
         if (error) throw error;
-        return data;
+        return data as Experience;
     }
 
     async delete(id: number) {
