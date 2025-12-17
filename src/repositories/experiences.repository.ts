@@ -1,75 +1,75 @@
 import { supabase } from "@/config/supabase";
-import { Experience, ExperienceInsert, ExperienceUpdate } from "@/types/common";
+import { Experience, ExperienceInsert, ExperienceQueryParams, ExperienceUpdate } from "@/types/common";
+import { SupabaseClient } from "@supabase/supabase-js";
+import _ from "lodash";
 
-const experiencesRepository = {
-  async findAll(options: {
-    page: number;
-    limit: number;
-  }): Promise<{ data: Experience[]; pagination: { page: number; limit: number; total: number } }> {
-    const { page, limit } = options;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-    const { data, error, count } = await supabase.from("experiences").select("*", { count: "exact" }).range(from, to);
-    if (error) throw error;
-    return {
-      data: data as Experience[],
-      pagination: {
-        page,
-        limit,
-        total: count || 0,
-      },
-    };
-  },
+export class ExperiencesRepository {
+    private readonly db: SupabaseClient;
+    public readonly fields =
+        "id, student_id, company, position, location, start_date, end_date, description, is_current";
 
-  async findByStudentId(
-    student_id: number,
-    options: { page: number; limit: number }
-  ): Promise<{ data: Experience[]; pagination: { page: number; limit: number; total: number } }> {
-    const { page, limit } = options;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-    const { data, error, count } = await supabase
-      .from("experiences")
-      .select("*", { count: "exact" })
-      .eq("student_id", student_id)
-      .range(from, to);
-    if (error) throw error;
-    return {
-      data: data as Experience[],
-      pagination: {
-        page,
-        limit,
-        total: count || 0,
-      },
-    };
-  },
-
-  async findOne(id: number): Promise<Experience | null> {
-    const { data, error } = await supabase.from("experiences").select("*").eq("id", id).single();
-    if (error) {
-      if (error.code === "PGRST116") return null;
-      throw error;
+    constructor() {
+        this.db = supabase;
     }
-    return data as Experience;
-  },
 
-  async insert(payload: ExperienceInsert): Promise<Experience> {
-    const { data, error } = await supabase.from("experiences").insert(payload).select().single();
-    if (error) throw error;
-    return data as Experience;
-  },
+    async findAll(input: ExperienceQueryParams): Promise<{ data: Experience[]; pagination: any }> {
+        const { page, limit } = input;
+        const hasPagination = page && limit;
+        const fields = _.get(input, "fields", this.fields);
+        const student_id = _.get(input, "student_id");
+        const company = _.get(input, "company");
 
-  async update(id: number, payload: ExperienceUpdate): Promise<Experience> {
-    const { data, error } = await supabase.from("experiences").update(payload).eq("id", id).select().single();
-    if (error) throw error;
-    return data as Experience;
-  },
+        let dbQuery = this.db.from("experiences").select(fields, { count: "exact" });
 
-  async remove(id: number): Promise<void> {
-    const { error } = await supabase.from("experiences").delete().eq("id", id);
-    if (error) throw error;
-    return;
-  },
-};
+        if (student_id) {
+            dbQuery = dbQuery.eq("student_id", student_id);
+        }
+        if (company) {
+            dbQuery = dbQuery.eq("company", company);
+        }
+        const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
 
-export default experiencesRepository;
+        const { data, error, count } = await executeQuery;
+        if (error) throw error;
+
+        return {
+            data: data as unknown as Experience[],
+            pagination: hasPagination && {
+                page,
+                limit,
+                total: count || 0,
+                total_pages: count ? Math.ceil(count / limit) : 0,
+            },
+        };
+    }
+
+    async findOne(id: number) {
+        const { data, error } = await this.db.from("experiences").select(this.fields).eq("id", id).maybeSingle();
+        if (error) {
+          if (error.code === "PGRST116") return null;
+          throw error;
+        }
+        return data;
+    }
+
+    async create(payload: ExperienceInsert): Promise<Experience> {
+        const { data, error } = await this.db.from("experiences").insert(payload).select(this.fields).single();
+        if (error) throw error;
+        return data as Experience;
+    }
+
+    async update(id: number, input: ExperienceUpdate): Promise<Experience> {
+        const filteredData = _.pickBy(input, (v) => v !== null && v !== undefined && v !== "");
+        const { data, error } = await this.db.from("experiences").update(filteredData).eq("id", id).select(this.fields).maybeSingle();
+        if (error) throw error;
+        return data as Experience;
+    }
+
+    async delete(id: number) {
+        const { data, error } = await this.db.from("experiences").delete().eq("id", id).select("id").maybeSingle();
+        if (error) throw error;
+        return data;
+    }
+}
+
+export default new ExperiencesRepository();

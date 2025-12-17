@@ -241,6 +241,18 @@ export interface EducationQueryParams extends QueryParams {
   student_id?: number;
   school?: string;
 }
+
+// EXPERIENCE
+export type Experience = Database["public"]["Tables"]["experiences"]["Row"];
+export type ExperienceInsert = Database["public"]["Tables"]["experiences"]["Insert"];
+export type ExperienceUpdate = Database["public"]["Tables"]["experiences"]["Update"];
+
+export interface ExperienceQueryParams extends QueryParams {
+  ids?: number[];
+  student_id?: number;
+  company?: string;
+}
+
 // PROJECT
 export type Project = Database["public"]["Tables"]["projects"]["Row"];
 export type ProjectInsert = Database["public"]["Tables"]["projects"]["Insert"];

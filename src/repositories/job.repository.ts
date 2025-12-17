@@ -9,7 +9,7 @@ import { NotFoundError } from "@/utils/errors";
 export class JobRepository {
   private readonly db: SupabaseClient;
   public readonly fields =
-    "id, external_id, website_url, company_id, company_branches_id, title, responsibilities, requirement, nice_to_haves, benefit, working_time, description, apply_guide, is_diamond, is_job_flash_active, is_hot, salary_from, salary_to, salary_text, salary_currency, job_posted_at, job_deadline, apply_reasons, status, created_at, updated_at";
+    "id, external_id, website_url, company_id, company_branches_id, title, responsibilities, requirement, nice_to_haves, benefit, working_time, description, apply_guide, is_diamond, is_job_flash_active, is_hot, salary_from, salary_to, salary_text, salary_currency, job_posted_at, job_deadline, apply_reasons, status, created_at, updated_at, quantity";
 
   constructor() {
     this.db = supabase;
@@ -20,6 +20,7 @@ export class JobRepository {
     const page = _.get(input, "page");
     const limit = _.get(input, "limit");
     const keyword = _.get(input, "keyword");
+    const company_id = _.get(input, "company_id");
     const province_ids = _.get(input, "province_ids") || [];
     const level_ids = _.get(input, "level_ids") || [];
     const category_ids = _.get(input, "category_ids") || [];
@@ -51,13 +52,13 @@ export class JobRepository {
 
     selectString = `${selectString}, company:companies!inner(id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, user_id, created_at, updated_at)`;
 
-    selectString = `${selectString}, levels!inner(id, name, created_at, updated_at)`;
+    selectString = `${selectString}, levels!left(id, name, created_at, updated_at)`;
 
     selectString = `${selectString}, categories!inner(id, name, created_at, updated_at)`;
 
-    selectString = `${selectString}, skills!inner(id, name, created_at, updated_at)`;
+    selectString = `${selectString}, skills!left(id, name, created_at, updated_at)`;
 
-    selectString = `${selectString}, employment_types!inner(id, name, created_at, updated_at)`;
+    selectString = `${selectString}, employment_types!left(id, name, created_at, updated_at)`;
 
     let dbQuery = this.db.from("jobs").select(selectString, { count: "exact" });
 
@@ -93,6 +94,10 @@ export class JobRepository {
       dbQuery = dbQuery.lte("salary_from", salary_to);
     }
 
+    if (company_id) {
+      dbQuery = dbQuery.eq("company_id", company_id);
+    }
+
     if ((SORTABLE_JOB_FIELDS as readonly string[]).includes(sortBy)) {
       dbQuery = dbQuery.order(sortBy, { ascending: order === "asc" });
     } else {
@@ -119,7 +124,7 @@ export class JobRepository {
   async findOne(jobId: number) {
     const selectString = `
       *,
-      company_branches!inner(
+      company_branches!left(
         id,
         province_id,
         address,
@@ -144,7 +149,7 @@ export class JobRepository {
         created_at,
         updated_at
       ),
-      levels!inner(
+      levels!left(
         id,
         name,
         created_at,
@@ -156,13 +161,13 @@ export class JobRepository {
         created_at,
         updated_at
       ),
-      skills!inner(
+      skills!left(
         id,
         name,
         created_at,
         updated_at
       ),
-      employment_types!inner(
+      employment_types!left(
         id,
         name,
         created_at,
