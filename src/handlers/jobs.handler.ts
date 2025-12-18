@@ -54,6 +54,7 @@ export async function listJobs(req: Request, res: Response) {
     salary_to: Number(req.query.salary_to),
     page,
     limit,
+    company_id: Number(req.query.company_id),
     sort_by: sort_by as any,
     order,
   });
