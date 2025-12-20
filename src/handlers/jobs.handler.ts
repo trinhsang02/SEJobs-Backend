@@ -54,6 +54,7 @@ export async function listJobs(req: Request, res: Response) {
     salary_to: Number(req.query.salary_to),
     page,
     limit,
+    company_id: Number(req.query.company_id),
     sort_by: sort_by as any,
     order,
   });
@@ -109,9 +110,11 @@ export async function updateJob(req: Request, res: Response) {
 
   const updated_job = await jobService.update({ jobId: id, jobData });
 
+  const formattedJob = toTopCvFormat(updated_job, updated_job.company, null);
+
   res.status(200).json({
     success: true,
-    data: updated_job,
+    data: formattedJob,
   });
 }
 

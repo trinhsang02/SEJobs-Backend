@@ -1159,7 +1159,7 @@ export type Database = {
     };
     Enums: {
       applicationstatus: "Submitted" | "Viewed" | "Interview" | "Accepted" | "Rejected";
-      jobstatus: "Pending" | "Approved" | "Rejected" | "Expired";
+      jobstatus: "Pending" | "Approved" | "Rejected" | "Closed";
       jobtype: "Full-Time" | "Part-Time" | "Contract" | "Internship" | "Freelance";
       notificationtype: "System" | "Job" | "Application";
       role: "Student" | "Employer" | "Manager" | "Admin";
@@ -1284,7 +1284,7 @@ export const Constants = {
   public: {
     Enums: {
       applicationstatus: ["Submitted", "Viewed", "Interview", "Accepted", "Rejected"],
-      jobstatus: ["Pending", "Approved", "Rejected", "Expired"],
+      jobstatus: ["Pending", "Approved", "Rejected", "Closed"],
       jobtype: ["Full-Time", "Part-Time", "Contract", "Internship", "Freelance"],
       notificationtype: ["System", "Job", "Application"],
       role: ["Student", "Employer", "Manager", "Admin"],

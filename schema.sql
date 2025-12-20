@@ -110,7 +110,7 @@ CREATE TABLE categories (
 
 
 
-CREATE TYPE JobStatus AS ENUM ('Pending', 'Approved', 'Rejected', 'Expired');
+CREATE TYPE JobStatus AS ENUM ('Pending', 'Approved', 'Rejected', 'Closed');
 
 CREATE TABLE jobs (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
