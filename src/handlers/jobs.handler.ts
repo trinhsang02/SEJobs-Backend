@@ -69,7 +69,7 @@ export async function listJobs(req: Request, res: Response) {
 }
 export async function getJob(req: Request, res: Response) {
   const id = Number(req.params.id);
-  const formatTopCv = req.query.formatTopCv === 'true';
+  const formatTopCv = req.query.formatTopCv !== 'false'; 
 
   if (Number.isNaN(id)) {
     throw new BadRequestError({ message: "Invalid job id" });
