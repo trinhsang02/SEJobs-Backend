@@ -68,6 +68,7 @@ export async function listJobs(req: Request, res: Response) {
 }
 export async function getJob(req: Request, res: Response) {
   const id = Number(req.params.id);
+  const formatTopCv = req.query.formatTopCv === 'true';
 
   if (Number.isNaN(id)) {
     throw new BadRequestError({ message: "Invalid job id" });
@@ -77,8 +78,13 @@ export async function getJob(req: Request, res: Response) {
   if (!job) {
     throw new NotFoundError({ message: "Job not found" });
   }
-  const formattedJob = toTopCvFormat(job, job.company, null);
-  return res.status(200).json({ success: true, formattedJob });
+
+  let responseData = job;
+  if (formatTopCv) {
+    responseData = toTopCvFormat(job, job.company, null);
+  }
+
+  return res.status(200).json({ success: true, data: responseData });
 }
 
 export async function createJob(req: Request, res: Response) {

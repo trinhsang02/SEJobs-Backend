@@ -313,7 +313,7 @@ export class JobService {
 
   async validateUpdate(jobData: {
     company_id: number;
-    company_branches_id?: number[] | null | undefined;
+    company_branches_id?: number | null | undefined;
     category_ids?: number[] | undefined;
     required_skill_ids?: number[] | undefined;
     employment_type_ids?: number[] | undefined;
@@ -321,7 +321,7 @@ export class JobService {
   }) {
     const {
       company_id,
-      company_branches_id = [],
+      company_branches_id,
       category_ids = [],
       required_skill_ids = [],
       employment_type_ids = [],
@@ -330,7 +330,6 @@ export class JobService {
 
     const error_messages: string[] = [];
 
-    const uniqueBranchIds = _.uniq(company_branches_id);
     const uniqueCategoryIds = _.uniq(category_ids);
     const uniqueSkillIds = _.uniq(required_skill_ids);
     const uniqueEmploymentTypeIds = _.uniq(employment_type_ids);
@@ -339,8 +338,8 @@ export class JobService {
     const promises: Promise<any>[] = [];
 
     // Validate company_branches_id if provided
-    if (uniqueBranchIds.length > 0) {
-      promises.push(companyBranchesRepo.findAll({ ids: uniqueBranchIds, company_id }));
+    if (company_branches_id) {
+      promises.push(companyBranchesRepo.findAll({ ids: [company_branches_id], company_id }));
     } else {
       promises.push(Promise.resolve({ data: [] }));
     }
@@ -377,13 +376,11 @@ export class JobService {
       await Promise.all(promises);
 
     // Validate company_branches_id
-    if (uniqueBranchIds.length > 0) {
+    if (company_branches_id) {
       const branchesMap = _.keyBy(companyBranchesResult.data, "id");
-      uniqueBranchIds.forEach((id) => {
-        if (!branchesMap[id]) {
-          error_messages.push(`company_branches_id ${id} not found for company_id ${company_id}.`);
-        }
-      });
+      if (!branchesMap[company_branches_id]) {
+        error_messages.push(`company_branches_id ${company_branches_id} not found for company_id ${company_id}.`);
+      }
     }
 
     // Validate category_ids
