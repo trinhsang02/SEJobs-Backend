@@ -219,6 +219,21 @@ export interface CompanyBranchesQuery extends QueryParams {
   name?: string;
 }
 
+// NOTIFICATIONS
+export enum NotificationType { 
+  UserCreated = "user_created",
+  UserUpdated = "user_updated", 
+};
+
+export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
+export type NotificationInsert = Database["public"]["Tables"]["notifications"]["Insert"];
+export type NotificationUpdate = Database["public"]["Tables"]["notifications"]["Update"];
+
+export interface NotificationQueryAll extends QueryParams {
+  ids?: number[];
+  receiver_id?: number;
+}
+
 // types/common.ts
 
 // SOCIAL LINK
