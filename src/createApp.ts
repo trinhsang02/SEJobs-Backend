@@ -22,6 +22,7 @@ import educationsRoutes from "./routes/educations.route";
 import savedJobsRoutes from "./routes/saved_jobs.route";
 import experiencesRoutes from "./routes/experiences.route";
 import projectRoutes from "./routes/projects.route";
+import notificationRoutes from './routes/notifications.route';
 import certificationRoutes from "./routes/certifications.route";
 import { requestLogger, errorHandler } from "@/middlewares";
 import { specs, swaggerUi } from "./config/swagger";
@@ -78,8 +79,9 @@ export const createApp = () => {
   app.use("/api/experiences", experiencesRoutes);
   app.use("/api/projects", projectRoutes);
   app.use("/api/certifications", certificationRoutes);
+  app.use("/api/notifications", notificationRoutes);
 
-  app.use("/api/experiences", experiencesRoutes);
+  // app.use("/api/experiences", experiencesRoutes);
   // Error handler
   app.use(errorHandler);
   return app;
