@@ -12,8 +12,8 @@ export class LevelRepository {
   }
 
   async findAll(input: LevelQueryParams) {
-    const { page, limit, name } = input;
-    const hasPagination = page && limit;
+    const { page, limit, name, pagination } = input;
+    const hasPagination = pagination && page && limit;
     const fields = _.get(input, "fields", this.fields);
     const job_level_ids = _.get(input, "ids", []);
 

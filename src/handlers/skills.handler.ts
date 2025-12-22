@@ -9,11 +9,12 @@ import { updateSkillSchema } from "@/dtos/job/UpdateSkill.dto";
 import convert from "@/utils/convert";
 
 export async function getSkills(req: Request, res: Response) {
-  const { page, limit, ids } = req.query;
+  const { page, limit, ids, hasPagination } = req.query;
 
   const { data: skills, pagination } = await SkillService.findAll({
     page: _.toInteger(page) || 1,
     limit: _.toInteger(limit) || 10,
+    pagination: hasPagination !== "false",
     ids: convert.split(ids as string, ",", Number),
   });
 

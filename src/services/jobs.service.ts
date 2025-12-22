@@ -103,10 +103,19 @@ export class JobService {
       const {
         category_ids = [],
         required_skill_ids = [],
+        required_skills = [],
         employment_type_ids = [],
         level_ids = [],
         ...jobPayload
       } = jobData;
+
+      await Promise.all(required_skills.map((skill) => {
+        if (!skill.id) {
+          skillRepo.create({ skillData: { name: skill.name } }).then((createdSkill) => {
+            required_skill_ids.push(createdSkill.id);
+          });
+        }
+      }));
 
       const { error } = await this.validateCreate(jobData);
 
@@ -238,7 +247,23 @@ export class JobService {
       throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
     }
 
-    const { category_ids, required_skill_ids, employment_type_ids, level_ids, company_branches_id, ...jobPayload } = jobData;
+    const {
+      category_ids,
+      required_skill_ids = [],
+      required_skills = [],
+      employment_type_ids,
+      level_ids,
+      company_branches_id,
+      ...jobPayload
+    } = jobData;
+
+    await Promise.all(required_skills.map((skill) => {
+      if (!skill.id) {
+        skillRepo.create({ skillData: { name: skill.name } }).then((createdSkill) => {
+          required_skill_ids.push(createdSkill.id);
+        });
+      }
+    }));
 
     // Validate relationships if provided
     if (category_ids || required_skill_ids || employment_type_ids || level_ids || company_branches_id) {

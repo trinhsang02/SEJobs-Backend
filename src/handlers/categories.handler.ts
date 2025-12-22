@@ -8,11 +8,12 @@ import { createCategorySchema } from "@/dtos/job/CreateCategory.dto";
 import convert from "@/utils/convert";
 
 export async function getCategories(req: Request, res: Response) {
-  const { page, limit, ids } = req.query;
+  const { page, limit, ids, hasPagination } = req.query;
 
   const { data: categories, pagination } = await CategoryService.findAll({
     page: _.toInteger(page) || 1,
     limit: _.toInteger(limit) || 10,
+    pagination: hasPagination !== "false",
     ids: convert.split(ids as string, ",", Number),
   });
 

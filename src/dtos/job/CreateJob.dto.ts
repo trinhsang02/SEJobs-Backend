@@ -1,9 +1,15 @@
 import { z } from "zod";
+import { required } from "zod/v4/core/util.cjs";
 
 const benefitItemSchema = z.object({
   icon: z.string(),
   title: z.string(),
   description: z.string(),
+});
+
+const requiredSkillSchema = z.object({
+  id: z.number().int().positive().nullable().optional(),
+  name: z.string(),
 });
 
 export const createJobSchema = z.object({
@@ -34,7 +40,8 @@ export const createJobSchema = z.object({
   quantity: z.number().int().positive().optional(),
   // Relations
   category_ids: z.array(z.number().int().positive()).min(1),
-  required_skill_ids: z.array(z.number().int().positive()).min(1),
+  required_skill_ids: z.array(z.number().int().positive()).optional(),
+  required_skills: z.array(requiredSkillSchema).min(1),
   employment_type_ids: z.array(z.number().int().positive()).min(1),
   level_ids: z.array(z.number().int().positive()).min(1),
 });
