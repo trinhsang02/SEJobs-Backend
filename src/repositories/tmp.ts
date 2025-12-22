@@ -94,11 +94,55 @@
 
 //     const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
 //     const { data, error, count } = await executeQuery;
+//     console.log("job repository findAll data:", data);
 
 //     if (error) throw error;
+//     const allBranchIds = _.uniq(
+//       _.flatten((data || []).map((job: any) => job.company_branches_ids).filter((ids) => ids && ids.length > 0))
+//     ).map((id) => Number(id));
+
+//     let branchesMap: Record<number, any> = {};
+//     if (allBranchIds.length > 0) {
+//       const { data: branches } = await company_branchesRepository.findAll({
+//         ids: allBranchIds,
+//         fields: `
+//           id,
+//           name,
+//           province_ids,
+//           address,
+//           province:provinces!inner(id, name),
+//           ward:wards!inner(id, name),
+//           country:countries!inner(id, name)
+//         `,
+//       });
+
+//       branchesMap = _.keyBy(branches || [], "id");
+//     }
+
+//     // Apply province filter if needed
+//     let filteredData = data;
+//     if (province_ids.length > 0 && allBranchIds.length > 0) {
+//       filteredData = (data || []).filter((job: any) => {
+//         if (!job.company_branches_ids || job.company_branches_ids.length === 0) return false;
+//         return job.company_branches_ids.some((branchId: number) => {
+//           const branch = branchesMap[branchId];
+//           console.log("branch", branch);
+//           return branch && province_ids.includes(branch.province_id);
+//         });
+//       });
+//     }
+
+//     // Map branches to jobs
+//     const jobsWithBranches = (filteredData || []).map((job: any) => {
+//       const branches = job.company_branches_ids?.map((id: number) => branchesMap[id]).filter(Boolean) || [];
+//       return {
+//         ...job,
+//         company_branches: branches,
+//       };
+//     });
 
 //     return {
-//       data: data as unknown as JobAfterJoined[],
+//       data: jobsWithBranches as unknown as JobAfterJoined[],
 //       pagination: hasPagination && {
 //         page: page,
 //         limit: limit,

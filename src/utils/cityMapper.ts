@@ -142,7 +142,16 @@ for (const [normName, topCity] of topCVMap) {
   }
 }
 
-// 🔄 Hàm map: your province → TopCV city
+// 🔄 Map: your province_id → TopCV city_id
+export const MY_PROVINCE_ID_TO_TOPCV_ID: Record<number, number> = {};
+for (const [normName, myProv] of myProvinceMap) {
+  const topCity = topCVMap.get(normName);
+  if (topCity) {
+    MY_PROVINCE_ID_TO_TOPCV_ID[myProv.id] = topCity.id;
+  }
+}
+
+// 🔄 Hàm map: your province → TopCV city (dự phòng)
 export function mapMyProvinceToTopCV(province: { name: string }): { id: number; name: string } | null {
   const norm = normalizeCityName(province.name);
   return topCVMap.get(norm) || null;
