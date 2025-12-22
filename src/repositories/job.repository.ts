@@ -40,7 +40,7 @@ export class JobRepository {
       phone, email, website_url, socials, images, employee_count,
       user_id, created_at, updated_at
     ),
-    company_branches!inner(
+    company_branches!left(
       id, name, province_id, address,
       province:provinces!inner(id, name),
       ward:wards!inner(id, name),
