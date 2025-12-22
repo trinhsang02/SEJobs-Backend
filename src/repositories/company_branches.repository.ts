@@ -17,7 +17,9 @@ export class CompanyBranchesRepository {
     const fields = _.get(input, "fields", this.fields);
     const branch_ids = _.get(input, "ids", []);
 
-    let dbQuery = this.db.from("company_branches").select(fields, { count: "exact" });
+    let selectString = `${fields}, province:provinces!inner(id, name), ward:wards!inner(id, name), country:countries!inner(id, name)`;
+
+    let dbQuery = this.db.from("company_branches").select(selectString, { count: "exact" });
 
     if (branch_ids.length > 0) dbQuery = dbQuery.in("id", branch_ids);
     if (name) dbQuery = dbQuery.eq("name", name);

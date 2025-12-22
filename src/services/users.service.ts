@@ -81,7 +81,20 @@ export class UserService {
         throw new BadRequestError({ message: "Company profile is required for Employer accounts" });
       }
 
-      const { name, logo, background, description, phone, email: companyEmail, website_url, images, tech_stack, employee_count, company_types, company_branches } = company;
+      const {
+        name,
+        logo,
+        background,
+        description,
+        phone,
+        email: companyEmail,
+        website_url,
+        images,
+        tech_stack,
+        employee_count,
+        company_types,
+        company_branches,
+      } = company;
 
       await companyService.createCompany({
         companyData: {
@@ -121,14 +134,17 @@ export class UserService {
       });
     }
 
-    await NotificationsService.create({ data: {
-      title: "Welcome to SEJobs!",
-      content: "Welcome to SEJobs! 🎉 Your account has been successfully created. Complete your profile and start exploring job opportunities that match your skills.",
-      type: NotificationType.UserCreated,
-      status: 'sent',
-      receiver_id: newUser.user_id,
-      sender_id: 1,
-    }})
+    await NotificationsService.create({
+      data: {
+        title: "Welcome to SEJobs!",
+        content:
+          "Welcome to SEJobs! 🎉 Your account has been successfully created. Complete your profile and start exploring job opportunities that match your skills.",
+        type: NotificationType.UserCreated,
+        status: "sent",
+        receiver_id: newUser.user_id,
+        sender_id: 1,
+      },
+    });
 
     return newUser;
   }
@@ -185,6 +201,9 @@ export class UserService {
         ),
         social_links:social_links(
           id, student_id, platform, url
+        ),
+        cv:cv( 
+          cvid, studentid, title, filepath, createdat
         )
       )
     `,
@@ -301,14 +320,17 @@ export class UserService {
       });
     }
 
-    await NotificationsService.create({ data: {
-      title: "Your profile has been updated!",
-      content: "Your profile has been updated successfully. Make sure your information is accurate to get the best job recommendations.",
-      type: NotificationType.UserCreated,
-      status: 'sent',
-      receiver_id: updatedUser?.user_id,
-      sender_id: 1,
-    }})
+    await NotificationsService.create({
+      data: {
+        title: "Your profile has been updated!",
+        content:
+          "Your profile has been updated successfully. Make sure your information is accurate to get the best job recommendations.",
+        type: NotificationType.UserCreated,
+        status: "sent",
+        receiver_id: updatedUser?.user_id,
+        sender_id: 1,
+      },
+    });
 
     return updatedUser;
   }

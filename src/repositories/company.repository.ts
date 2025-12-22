@@ -40,7 +40,7 @@ export class CompanyRepository {
 
     let selectString = fields;
 
-    selectString = `${fields}, company_branches(id, name, company_id, country_id, province_id, address, created_at, updated_at)`;
+    selectString = `${fields}, company_branches(id, name, company_id, country_id, province_id, address, created_at, updated_at, countries(id, name), provinces(id, name))`;
 
     selectString = `${selectString}, company_types!inner(id, name)`;
 
@@ -125,7 +125,7 @@ export class CompanyRepository {
       dbQuery = dbQuery.eq("email", email);
     }
 
-    const { data, error } = await dbQuery.maybeSingle<Company>();
+    const { data, error } = await dbQuery.maybeSingle<CompanyAfterJoined>();
 
     if (error) throw error;
 
