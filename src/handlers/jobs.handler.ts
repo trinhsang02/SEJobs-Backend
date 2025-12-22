@@ -31,8 +31,8 @@ export async function listJobs(req: Request, res: Response) {
       });
     }
     province_ids = mapped;
-  } else if (req.query.province_id) {
-    province_ids = convert.split(req.query.province_id as string, ",", Number).filter((id) => !isNaN(id));
+  } else if (req.query.province_ids) {
+    province_ids = convert.split(req.query.province_ids as string, ",", Number).filter((id) => !isNaN(id));
   }
 
   const level_ids = convert.split(req.query.level_ids as string, ",", Number);
@@ -71,7 +71,7 @@ export async function listJobs(req: Request, res: Response) {
 }
 export async function getJob(req: Request, res: Response) {
   const id = Number(req.params.id);
-  const formatTopCv = req.query.formatTopCv !== 'false'; 
+  const formatTopCv = req.query.formatTopCv !== "false";
 
   if (Number.isNaN(id)) {
     throw new BadRequestError({ message: "Invalid job id" });
