@@ -126,6 +126,7 @@ export type CategoryUpdate = Database["public"]["Tables"]["categories"]["Update"
 export interface CategoryQueryParams extends QueryParams {
   ids?: number[];
   name?: string;
+  pagination?: boolean;
 }
 
 // JOB_CATEGORY
@@ -147,6 +148,7 @@ export type EmploymentTypeUpdate = Database["public"]["Tables"]["employment_type
 export interface EmploymentTypeQueryParams extends QueryParams {
   ids?: number[];
   name?: string;
+  pagination?: boolean;
 }
 
 // JOB_EMPLOYMENT_TYPE
@@ -168,6 +170,7 @@ export type SkillUpdate = Database["public"]["Tables"]["skills"]["Update"];
 export interface SkillQueryParams extends QueryParams {
   ids?: number[];
   name?: string;
+  pagination?: boolean;
 }
 
 // JOB_SKILL
@@ -189,6 +192,7 @@ export type LevelUpdate = Database["public"]["Tables"]["levels"]["Update"];
 export interface LevelQueryParams extends QueryParams {
   ids?: number[];
   name?: string;
+  pagination?: boolean;
 }
 
 // JOB_LEVEL_JOBS

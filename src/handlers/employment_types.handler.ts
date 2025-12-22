@@ -9,12 +9,13 @@ import { createEmploymentTypeSchema } from "@/dtos/job/CreateEmploymentType.dto"
 import { updateEmploymentTypeSchema } from "@/dtos/job/UpdateEmploymentType.dto";
 
 export async function getEmploymentTypes(req: Request, res: Response) {
-  const { page, limit, ids } = req.query;
+  const { page, limit, ids, hasPagination } = req.query;
 
   const { data: employment_types, pagination } = await EmploymentTypeService.findAll({
     page: _.toInteger(page) || 1,
     limit: _.toInteger(limit) || 10,
     ids: convert.split(ids as string, ",", Number),
+    pagination: hasPagination !== "false",
   });
 
   res.status(200).json({

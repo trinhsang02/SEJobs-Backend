@@ -18,8 +18,8 @@ export class EmploymentTypeRepository {
   }
 
   async findAll(input: EmploymentTypeQueryParams) {
-    const { page, limit, name } = input;
-    const hasPagination = page && limit;
+    const { page, limit, name, pagination } = input;
+    const hasPagination = pagination && page && limit;
     const fields = _.get(input, "fields", this.fields);
     const employment_type_ids = _.get(input, "ids", []);
 

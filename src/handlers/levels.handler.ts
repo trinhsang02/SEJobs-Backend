@@ -8,12 +8,13 @@ import { createLevelSchema } from "@/dtos/job/CreateLevel.dto";
 import convert from "@/utils/convert";
 
 export async function getLevels(req: Request, res: Response) {
-  const { page, limit, ids } = req.query;
+  const { page, limit, ids, hasPagination } = req.query;
 
   const { data: levels, pagination } = await LevelService.findAll({
     page: _.toInteger(page) || 1,
     limit: _.toInteger(limit) || 10,
     ids: convert.split(ids as string, ",", Number),
+    pagination: hasPagination !== "false",
   });
 
   res.status(200).json({

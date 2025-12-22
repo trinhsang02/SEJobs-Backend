@@ -18,10 +18,10 @@ export class CategoryRepository {
   }
 
   async findAll(input: CategoryQueryParams) {
-    const { page, limit, name } = input;
+    const { page, limit, name, pagination } = input;
     const fields = _.get(input, "fields", this.fields);
     const category_ids = _.get(input, "ids", []);
-    const hasPagination = page && limit;
+    const hasPagination = pagination && page && limit;
 
     let dbQuery = this.db.from("categories").select(fields, { count: "exact" });
 
