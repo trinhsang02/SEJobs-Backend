@@ -3,7 +3,7 @@ name: Deploy Node.js to VPS
 on:
   push:
     branches:
-      - main
+      - prod
 
 jobs:
   deploy:
