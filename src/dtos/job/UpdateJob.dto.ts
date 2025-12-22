@@ -8,7 +8,12 @@ const benefitItemSchema = z.object({
 });
 
 export const updateJobSchema = createJobSchema.partial().extend({
-  company_branches_id: z.array(z.number().int().positive()).nullable().optional(),
+  company_branches_id: z.number().int().positive().nullable().optional(),
+  company_branches_ids: z.array(z.number().int().positive()).nullable().optional(),
+  category_ids: z.array(z.number().int().positive()).optional(),
+  required_skill_ids: z.array(z.number().int().positive()).optional(),
+  employment_type_ids: z.array(z.number().int().positive()).optional(),
+  level_ids: z.array(z.number().int().positive()).optional(),
   title: z.string().min(1, "Job title is required").optional(),
   responsibilities: z.array(z.string()).optional(),
   requirement: z.array(z.string()).optional(),

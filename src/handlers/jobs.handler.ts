@@ -15,6 +15,7 @@ import { TOPCV_ID_TO_MY_PROVINCE_ID } from "@/utils/cityMapper";
 export async function listJobs(req: Request, res: Response) {
   const page = _.toInteger(req.query.page) || 1;
   const limit = _.toInteger(req.query.limit) || 10;
+  const keyword = typeof req.query.keyword === "string" ? req.query.keyword : "";
 
   let province_ids: number[] = [];
 
@@ -54,6 +55,8 @@ export async function listJobs(req: Request, res: Response) {
     salary_to: Number(req.query.salary_to),
     page,
     limit,
+    keyword,
+    company_id: Number(req.query.company_id),
     sort_by: sort_by as any,
     order,
   });
@@ -68,6 +71,7 @@ export async function listJobs(req: Request, res: Response) {
 }
 export async function getJob(req: Request, res: Response) {
   const id = Number(req.params.id);
+  const formatTopCv = req.query.formatTopCv !== 'false'; 
 
   if (Number.isNaN(id)) {
     throw new BadRequestError({ message: "Invalid job id" });
@@ -77,8 +81,13 @@ export async function getJob(req: Request, res: Response) {
   if (!job) {
     throw new NotFoundError({ message: "Job not found" });
   }
-  const formattedJob = toTopCvFormat(job, job.company, null);
-  return res.status(200).json({ success: true, formattedJob });
+
+  let responseData = job;
+  if (formatTopCv) {
+    responseData = toTopCvFormat(job, job.company, null);
+  }
+
+  return res.status(200).json({ success: true, data: responseData });
 }
 
 export async function createJob(req: Request, res: Response) {
@@ -103,9 +112,11 @@ export async function updateJob(req: Request, res: Response) {
 
   const updated_job = await jobService.update({ jobId: id, jobData });
 
+  const formattedJob = toTopCvFormat(updated_job, updated_job.company, null);
+
   res.status(200).json({
     success: true,
-    data: updated_job,
+    data: formattedJob,
   });
 }
 

@@ -1230,7 +1230,7 @@ export type Database = {
         | "Interview"
         | "Accepted"
         | "Rejected"
-      jobstatus: "Pending" | "Approved" | "Rejected" | "Expired"
+      jobstatus: "Pending" | "Approved" | "Rejected" | "Closed"
       jobtype:
         | "Full-Time"
         | "Part-Time"
@@ -1374,7 +1374,7 @@ export const Constants = {
         "Accepted",
         "Rejected",
       ],
-      jobstatus: ["Pending", "Approved", "Rejected", "Expired"],
+      jobstatus: ["Pending", "Approved", "Rejected", "Closed"],
       jobtype: [
         "Full-Time",
         "Part-Time",

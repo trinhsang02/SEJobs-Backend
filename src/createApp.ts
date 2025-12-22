@@ -31,7 +31,7 @@ import logger from "./utils/logger";
 export const createApp = () => {
   const app = express();
 
-  const allowedOrigins = ["http://localhost:5173"];
+  const allowedOrigins = ["http://localhost:5173", "https://sejobs.vercel.app"];
 
   // Middlewares
   app.use(
