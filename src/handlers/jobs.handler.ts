@@ -8,7 +8,6 @@ import { updateJobSchema } from "@/dtos/job/UpdateJob.dto";
 import { SORTABLE_JOB_FIELDS, SortableJobFields } from "@/types/common";
 import { companyJobQuerySchema } from "@/dtos/company/CompanyJobQuery.dto";
 import { toTopCvFormat } from "@/utils/topCVFormat";
-import { toCamelCaseKeys } from "@/utils/casing";
 import convert from "@/utils/convert";
 import { TOPCV_ID_TO_MY_PROVINCE_ID } from "@/utils/cityMapper";
 
@@ -35,31 +34,43 @@ export async function listJobs(req: Request, res: Response) {
     province_ids = convert.split(req.query.province_ids as string, ",", Number).filter((id) => !isNaN(id));
   }
 
-  const level_ids = convert.split(req.query.level_ids as string, ",", Number);
-  const skill_ids = convert.split(req.query.skill_ids as string, ",", Number);
-  const employment_type_ids = convert.split(req.query.employment_type_ids as string, ",", Number);
-  const category_ids = convert.split(req.query.category_ids as string, ",", Number);
+  const level_ids = convert.split(req.query.level_ids as string, ",", Number).filter((id) => !isNaN(id));
+  const skill_ids = convert.split(req.query.skill_ids as string, ",", Number).filter((id) => !isNaN(id));
+  const employment_type_ids = convert.split(req.query.employment_type_ids as string, ",", Number).filter((id) => !isNaN(id));
+  const category_ids = convert.split(req.query.category_ids as string, ",", Number).filter((id) => !isNaN(id));
   const order = req.query.order === "asc" ? "asc" : "desc";
   const sort_by =
     typeof req.query.sort_by === "string" && (SORTABLE_JOB_FIELDS as readonly string[]).includes(req.query.sort_by)
       ? (req.query.sort_by as SortableJobFields)
       : undefined;
 
-  const { data: jobs, pagination } = await jobService.list({
+  const queryParams: any = {
     province_ids,
     level_ids,
     category_ids,
     employment_type_ids,
     skill_ids,
-    salary_from: Number(req.query.salary_from),
-    salary_to: Number(req.query.salary_to),
     page,
     limit,
     keyword,
-    company_id: Number(req.query.company_id),
-    sort_by: sort_by as any,
+    sort_by,
     order,
-  });
+  };
+
+  if (req.query.salary_from) {
+    const val = Number(req.query.salary_from);
+    if (!isNaN(val)) queryParams.salary_from = val;
+  }
+  if (req.query.salary_to) {
+    const val = Number(req.query.salary_to);
+    if (!isNaN(val)) queryParams.salary_to = val;
+  }
+  if (req.query.company_id) {
+    const val = Number(req.query.company_id);
+    if (!isNaN(val)) queryParams.company_id = val;
+  }
+
+  const { data: jobs, pagination } = await jobService.list(queryParams);
 
   const formattedJobs = jobs.map((job) => toTopCvFormat(job, job.company, null));
 
