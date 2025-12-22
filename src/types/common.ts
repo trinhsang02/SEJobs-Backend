@@ -220,10 +220,10 @@ export interface CompanyBranchesQuery extends QueryParams {
 }
 
 // NOTIFICATIONS
-export enum NotificationType { 
+export enum NotificationType {
   UserCreated = "user_created",
-  UserUpdated = "user_updated", 
-};
+  UserUpdated = "user_updated",
+}
 
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 export type NotificationInsert = Database["public"]["Tables"]["notifications"]["Insert"];
@@ -301,4 +301,14 @@ export interface SavedJobQueryParams {
   user_id?: number;
   job_id?: number;
   saved_job_id?: number;
+}
+
+// CV
+export type CV = Database["public"]["Tables"]["cv"]["Row"];
+export type CVInsert = Database["public"]["Tables"]["cv"]["Insert"];
+export type CVUpdate = Database["public"]["Tables"]["cv"]["Update"];
+
+export interface CVQueryParams extends QueryParams {
+  cv_id?: number;
+  student_id?: number;
 }
