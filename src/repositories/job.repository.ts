@@ -35,26 +35,22 @@ export class JobRepository {
 
     let selectString = `
     ${fields},
-    company:companies!inner(id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, user_id, created_at, updated_at),
-    levels!left(id, name, created_at, updated_at),
-    categories!left(id, name, created_at, updated_at),
-    skills!left(id, name, created_at, updated_at),
-    employment_types!left(id, name, created_at, updated_at)
+    company:companies!inner(
+      id, external_id, name, tech_stack, logo, background, description,
+      phone, email, website_url, socials, images, employee_count,
+      user_id, created_at, updated_at
+    ),
+    company_branches!inner(
+      id, name, province_id, address,
+      province:provinces!inner(id, name),
+      ward:wards!inner(id, name),
+      country:countries!inner(id, name)
+    ),
+    levels!inner(id, name, created_at, updated_at),
+    categories!inner(id, name, created_at, updated_at),
+    skills!inner(id, name, created_at, updated_at),
+    employment_types!inner(id, name, created_at, updated_at)
   `;
-
-    if (province_ids.length > 0) {
-      selectString += `, company_branches!inner(id, name, province_id, address,
-      province:provinces!inner(id, name),
-      ward:wards!inner(id, name),
-      country:countries!inner(id, name)
-    )`;
-    } else {
-      selectString += `, company_branches!left(id, name, province_id, address,
-      province:provinces!inner(id, name),
-      ward:wards!inner(id, name),
-      country:countries!inner(id, name)
-    )`;
-    }
 
     let dbQuery = this.db.from("jobs").select(selectString, { count: "exact" });
 
