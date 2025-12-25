@@ -33,30 +33,7 @@ export class JobRepository {
     const order = _.get(input, "order", "desc");
     const hasPagination = page && limit && page > 0 && limit > 0;
 
-    let validBranchIds: number[] = [];
-    if (province_ids.length > 0) {
-      const { data: branches, error: branchError } = await this.db
-        .from("company_branches")
-        .select("id")
-        .in("province_id", province_ids);
-
-      if (branchError) throw branchError;
-      validBranchIds = branches?.map((b) => b.id) || [];
-
-      if (validBranchIds.length === 0) {
-        return {
-          data: [],
-          pagination: hasPagination && {
-            page: page,
-            limit: limit,
-            total: 0,
-            total_pages: 0,
-          },
-        };
-      }
-    }
-
-    let selectString = `
+    const selectString = `
     ${fields},
     company:companies!inner(
       id, external_id, name, tech_stack, logo, background, description,
@@ -73,25 +50,11 @@ export class JobRepository {
     categories!inner(id, name, created_at, updated_at),
     skills!left(id, name, created_at, updated_at),
     employment_types!inner(id, name, created_at, updated_at)
-    `;
+  `;
+
     let dbQuery = this.db.from("jobs").select(selectString, { count: "exact" });
 
-    // if (province_ids.length > 0) {
-    //   dbQuery = dbQuery.in("company_branches.province_id", province_ids);
-    // }
-
-    if (level_ids.length > 0) {
-      dbQuery = dbQuery.in("levels.id", level_ids);
-    }
-    if (category_ids.length > 0) {
-      dbQuery = dbQuery.in("categories.id", category_ids);
-    }
-    if (skill_ids.length > 0) {
-      dbQuery = dbQuery.in("skills.id", skill_ids);
-    }
-    if (employment_type_ids.length > 0) {
-      dbQuery = dbQuery.in("employment_types.id", employment_type_ids);
-    }
+    // Apply basic filters
     if (keyword) {
       dbQuery = dbQuery.ilike("title", `%${keyword}%`);
     }
@@ -104,34 +67,87 @@ export class JobRepository {
     if (company_id) {
       dbQuery = dbQuery.eq("company_id", company_id);
     }
-    if ((SORTABLE_JOB_FIELDS as readonly string[]).includes(sortBy)) {
-      dbQuery = dbQuery.order(sortBy, { ascending: order === "asc" });
-    } else {
-      dbQuery = dbQuery.order("job_posted_at", { ascending: false });
-    }
 
-    const { data: jobs, error, count } = await dbQuery;
+    let { data: jobs, error } = await dbQuery;
 
     if (error) throw error;
+
     let filteredJobs = jobs || [];
-    if (province_ids.length > 0 && validBranchIds.length > 0) {
-      filteredJobs = filteredJobs.filter((job: any) => {
-        //Cover 3 cases: company_branches_id, company_branches_ids, company_branches
-        if (job.company_branches_id && validBranchIds.includes(job.company_branches_id)) {
-          return true;
-        }
-        if (job.company_branches_ids && Array.isArray(job.company_branches_ids)) {
-          const hasMatchingBranch = job.company_branches_ids.some((id: number) => validBranchIds.includes(id));
-          if (hasMatchingBranch) return true;
-        }
 
-        if (job.company_branches && Array.isArray(job.company_branches)) {
-          const hasMatchingBranch = job.company_branches.some((cb: any) => cb.id && validBranchIds.includes(cb.id));
-          if (hasMatchingBranch) return true;
-        }
+    if (level_ids.length > 0) {
+      filteredJobs = filteredJobs.filter(
+        (job: any) => job.levels && Array.isArray(job.levels) && job.levels.some((l: any) => level_ids.includes(l.id))
+      );
+    }
 
-        return false;
+    if (category_ids.length > 0) {
+      filteredJobs = filteredJobs.filter(
+        (job: any) =>
+          job.categories &&
+          Array.isArray(job.categories) &&
+          job.categories.some((c: any) => category_ids.includes(c.id))
+      );
+    }
+
+    if (employment_type_ids.length > 0) {
+      filteredJobs = filteredJobs.filter(
+        (job: any) =>
+          job.employment_types &&
+          Array.isArray(job.employment_types) &&
+          job.employment_types.some((et: any) => employment_type_ids.includes(et.id))
+      );
+    }
+
+    if (skill_ids.length > 0) {
+      filteredJobs = filteredJobs.filter(
+        (job: any) => job.skills && Array.isArray(job.skills) && job.skills.some((s: any) => skill_ids.includes(s.id))
+      );
+    }
+
+    if (province_ids.length > 0) {
+      const { data: branches, error: branchError } = await this.db
+        .from("company_branches")
+        .select("id")
+        .in("province_id", province_ids);
+
+      if (branchError) throw branchError;
+      const validBranchIds = branches?.map((b) => b.id) || [];
+
+      if (validBranchIds.length > 0) {
+        filteredJobs = filteredJobs.filter((job: any) => {
+          // Cover 3 cases
+          // Case 1: Check company_branches_id field
+          if (job.company_branches_id && validBranchIds.includes(job.company_branches_id)) {
+            return true;
+          }
+
+          // Case 2: Check company_branches_ids array field
+          if (job.company_branches_ids && Array.isArray(job.company_branches_ids)) {
+            const hasMatchingBranch = job.company_branches_ids.some((id: number) => validBranchIds.includes(id));
+            if (hasMatchingBranch) return true;
+          }
+
+          // Case 3: Check company_branches relationship
+          if (job.company_branches && Array.isArray(job.company_branches)) {
+            const hasMatchingBranch = job.company_branches.some((cb: any) => cb.id && validBranchIds.includes(cb.id));
+            if (hasMatchingBranch) return true;
+          }
+
+          return false;
+        });
+      } else {
+        filteredJobs = [];
+      }
+    }
+
+    if ((SORTABLE_JOB_FIELDS as readonly string[]).includes(sortBy)) {
+      filteredJobs.sort((a: any, b: any) => {
+        const aVal = _.get(a, sortBy);
+        const bVal = _.get(b, sortBy);
+        return order === "asc" ? (aVal > bVal ? 1 : -1) : aVal < bVal ? 1 : -1;
       });
+    } else {
+      filteredJobs.sort((a: any, b: any) => new Date(b.job_posted_at).getTime() - new Date(a.job_posted_at).getTime());
     }
 
     const totalFiltered = filteredJobs.length;
@@ -142,7 +158,7 @@ export class JobRepository {
       pagination: hasPagination && {
         page: page,
         limit: limit,
-        total: totalFiltered || 0,
+        total: totalFiltered,
         total_pages: Math.ceil(totalFiltered / limit),
       },
     };
@@ -226,6 +242,7 @@ export class JobRepository {
   async update(jobId: number, input: Partial<UpdateJobDto>) {
     const filteredData = _.pickBy(input, (v) => v !== null && v !== undefined && v !== "");
     const { data, error } = await this.db.from("jobs").update(filteredData).eq("id", jobId).select("id").maybeSingle();
+
     if (error) {
       if (error.message.includes("no rows found")) {
         throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
@@ -240,6 +257,7 @@ export class JobRepository {
 
   async delete(jobId: number) {
     const { data, error } = await this.db.from("jobs").delete().eq("id", jobId).select("id").maybeSingle();
+
     if (error) {
       if (error.message.includes("no rows found")) {
         throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
@@ -251,6 +269,7 @@ export class JobRepository {
     }
     return data;
   }
+
   async findByCompanyId(companyId: number, params: { page: number; limit: number }) {
     const { page, limit } = params;
     const from = (page - 1) * limit;
@@ -260,7 +279,6 @@ export class JobRepository {
       .from("jobs")
       .select("*", { count: "exact" })
       .eq("company_id", companyId)
-      // .eq("status", "active")
       .range(from, to)
       .order("created_at", { ascending: false });
 
@@ -270,7 +288,6 @@ export class JobRepository {
       .from("jobs")
       .select("*", { count: "exact", head: true })
       .eq("company_id", companyId);
-    // .eq("status", "active");
 
     return {
       data: jobs,
