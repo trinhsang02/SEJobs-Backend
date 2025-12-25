@@ -48,7 +48,7 @@ export class JobRepository {
     ),
     levels!inner(id, name, created_at, updated_at),
     categories!inner(id, name, created_at, updated_at),
-    skills!inner(id, name, created_at, updated_at),
+    skills!left(id, name, created_at, updated_at),
     employment_types!inner(id, name, created_at, updated_at)
   `;
 
@@ -68,12 +68,10 @@ export class JobRepository {
       dbQuery = dbQuery.eq("company_id", company_id);
     }
 
-    // Get initial results without relationship filters first
-    let { data: jobs, error, count } = await dbQuery;
+    let { data: jobs, error } = await dbQuery;
 
     if (error) throw error;
 
-    // Filter by relationships in application code for accurate AND logic
     let filteredJobs = jobs || [];
 
     if (level_ids.length > 0) {
@@ -84,13 +82,19 @@ export class JobRepository {
 
     if (category_ids.length > 0) {
       filteredJobs = filteredJobs.filter(
-        (job: any) => job.categories && Array.isArray(job.categories) && job.categories.some((c: any) => category_ids.includes(c.id))
+        (job: any) =>
+          job.categories &&
+          Array.isArray(job.categories) &&
+          job.categories.some((c: any) => category_ids.includes(c.id))
       );
     }
 
     if (employment_type_ids.length > 0) {
       filteredJobs = filteredJobs.filter(
-        (job: any) => job.employment_types && Array.isArray(job.employment_types) && job.employment_types.some((et: any) => employment_type_ids.includes(et.id))
+        (job: any) =>
+          job.employment_types &&
+          Array.isArray(job.employment_types) &&
+          job.employment_types.some((et: any) => employment_type_ids.includes(et.id))
       );
     }
 
@@ -101,29 +105,53 @@ export class JobRepository {
     }
 
     if (province_ids.length > 0) {
-      filteredJobs = filteredJobs.filter(
-        (job: any) => job.company_branches && Array.isArray(job.company_branches) && job.company_branches.some((cb: any) => province_ids.includes(cb.province_id))
-      );
+      const { data: branches, error: branchError } = await this.db
+        .from("company_branches")
+        .select("id")
+        .in("province_id", province_ids);
+
+      if (branchError) throw branchError;
+      const validBranchIds = branches?.map((b) => b.id) || [];
+
+      if (validBranchIds.length > 0) {
+        filteredJobs = filteredJobs.filter((job: any) => {
+          // Cover 3 cases
+          // Case 1: Check company_branches_id field
+          if (job.company_branches_id && validBranchIds.includes(job.company_branches_id)) {
+            return true;
+          }
+
+          // Case 2: Check company_branches_ids array field
+          if (job.company_branches_ids && Array.isArray(job.company_branches_ids)) {
+            const hasMatchingBranch = job.company_branches_ids.some((id: number) => validBranchIds.includes(id));
+            if (hasMatchingBranch) return true;
+          }
+
+          // Case 3: Check company_branches relationship
+          if (job.company_branches && Array.isArray(job.company_branches)) {
+            const hasMatchingBranch = job.company_branches.some((cb: any) => cb.id && validBranchIds.includes(cb.id));
+            if (hasMatchingBranch) return true;
+          }
+
+          return false;
+        });
+      } else {
+        filteredJobs = [];
+      }
     }
 
-    // Sort filtered results
     if ((SORTABLE_JOB_FIELDS as readonly string[]).includes(sortBy)) {
       filteredJobs.sort((a: any, b: any) => {
         const aVal = _.get(a, sortBy);
         const bVal = _.get(b, sortBy);
-        return order === "asc" ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
+        return order === "asc" ? (aVal > bVal ? 1 : -1) : aVal < bVal ? 1 : -1;
       });
     } else {
-      filteredJobs.sort((a: any, b: any) =>
-        new Date(b.job_posted_at).getTime() - new Date(a.job_posted_at).getTime()
-      );
+      filteredJobs.sort((a: any, b: any) => new Date(b.job_posted_at).getTime() - new Date(a.job_posted_at).getTime());
     }
 
-    // Apply pagination to filtered results
     const totalFiltered = filteredJobs.length;
-    const paginatedJobs = hasPagination
-      ? filteredJobs.slice((page - 1) * limit, page * limit)
-      : filteredJobs;
+    const paginatedJobs = hasPagination ? filteredJobs.slice((page - 1) * limit, page * limit) : filteredJobs;
 
     return {
       data: paginatedJobs as unknown as JobAfterJoined[],
@@ -214,6 +242,7 @@ export class JobRepository {
   async update(jobId: number, input: Partial<UpdateJobDto>) {
     const filteredData = _.pickBy(input, (v) => v !== null && v !== undefined && v !== "");
     const { data, error } = await this.db.from("jobs").update(filteredData).eq("id", jobId).select("id").maybeSingle();
+
     if (error) {
       if (error.message.includes("no rows found")) {
         throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
@@ -228,6 +257,7 @@ export class JobRepository {
 
   async delete(jobId: number) {
     const { data, error } = await this.db.from("jobs").delete().eq("id", jobId).select("id").maybeSingle();
+
     if (error) {
       if (error.message.includes("no rows found")) {
         throw new NotFoundError({ message: `Job with ID ${jobId} not found` });
@@ -239,6 +269,7 @@ export class JobRepository {
     }
     return data;
   }
+
   async findByCompanyId(companyId: number, params: { page: number; limit: number }) {
     const { page, limit } = params;
     const from = (page - 1) * limit;
@@ -248,7 +279,6 @@ export class JobRepository {
       .from("jobs")
       .select("*", { count: "exact" })
       .eq("company_id", companyId)
-      // .eq("status", "active")
       .range(from, to)
       .order("created_at", { ascending: false });
 
@@ -258,7 +288,6 @@ export class JobRepository {
       .from("jobs")
       .select("*", { count: "exact", head: true })
       .eq("company_id", companyId);
-    // .eq("status", "active");
 
     return {
       data: jobs,

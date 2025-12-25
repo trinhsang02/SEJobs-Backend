@@ -33,34 +33,52 @@
 //     const order = _.get(input, "order", "desc");
 //     const hasPagination = page && limit && page > 0 && limit > 0;
 
+//     let validBranchIds: number[] = [];
+//     if (province_ids.length > 0) {
+//       const { data: branches, error: branchError } = await this.db
+//         .from("company_branches")
+//         .select("id")
+//         .in("province_id", province_ids);
+
+//       if (branchError) throw branchError;
+//       validBranchIds = branches?.map((b) => b.id) || [];
+
+//       if (validBranchIds.length === 0) {
+//         return {
+//           data: [],
+//           pagination: hasPagination && {
+//             page: page,
+//             limit: limit,
+//             total: 0,
+//             total_pages: 0,
+//           },
+//         };
+//       }
+//     }
+
 //     let selectString = `
 //     ${fields},
-//     company:companies!inner(id, external_id, name, tech_stack, logo, background, description, phone, email, website_url, socials, images, employee_count, user_id, created_at, updated_at),
-//     levels!left(id, name, created_at, updated_at),
-//     categories!left(id, name, created_at, updated_at),
+//     company:companies!inner(
+//       id, external_id, name, tech_stack, logo, background, description,
+//       phone, email, website_url, socials, images, employee_count,
+//       user_id, created_at, updated_at
+//     ),
+//     company_branches!left(
+//       id, name, province_id, address,
+//       province:provinces!inner(id, name),
+//       ward:wards!inner(id, name),
+//       country:countries!inner(id, name)
+//     ),
+//     levels!inner(id, name, created_at, updated_at),
+//     categories!inner(id, name, created_at, updated_at),
 //     skills!left(id, name, created_at, updated_at),
-//     employment_types!left(id, name, created_at, updated_at)
-//   `;
-
-//     if (province_ids.length > 0) {
-//       selectString += `, company_branches!inner(id, name, province_id, address,
-//       province:provinces!inner(id, name),
-//       ward:wards!inner(id, name),
-//       country:countries!inner(id, name)
-//     )`;
-//     } else {
-//       selectString += `, company_branches!left(id, name, province_id, address,
-//       province:provinces!inner(id, name),
-//       ward:wards!inner(id, name),
-//       country:countries!inner(id, name)
-//     )`;
-//     }
-
+//     employment_types!inner(id, name, created_at, updated_at)
+//     `;
 //     let dbQuery = this.db.from("jobs").select(selectString, { count: "exact" });
 
-//     if (province_ids.length > 0) {
-//       dbQuery = dbQuery.in("company_branches.province_id", province_ids);
-//     }
+//     // if (province_ids.length > 0) {
+//     //   dbQuery = dbQuery.in("company_branches.province_id", province_ids);
+//     // }
 
 //     if (level_ids.length > 0) {
 //       dbQuery = dbQuery.in("levels.id", level_ids);
@@ -92,62 +110,40 @@
 //       dbQuery = dbQuery.order("job_posted_at", { ascending: false });
 //     }
 
-//     const executeQuery = hasPagination ? dbQuery.range((page - 1) * limit, page * limit - 1) : dbQuery;
-//     const { data, error, count } = await executeQuery;
-//     console.log("job repository findAll data:", data);
+//     const { data: jobs, error, count } = await dbQuery;
 
 //     if (error) throw error;
-//     const allBranchIds = _.uniq(
-//       _.flatten((data || []).map((job: any) => job.company_branches_ids).filter((ids) => ids && ids.length > 0))
-//     ).map((id) => Number(id));
+//     let filteredJobs = jobs || [];
+//     if (province_ids.length > 0 && validBranchIds.length > 0) {
+//       filteredJobs = filteredJobs.filter((job: any) => {
+//         //Cover 3 cases: company_branches_id, company_branches_ids, company_branches
+//         if (job.company_branches_id && validBranchIds.includes(job.company_branches_id)) {
+//           return true;
+//         }
+//         if (job.company_branches_ids && Array.isArray(job.company_branches_ids)) {
+//           const hasMatchingBranch = job.company_branches_ids.some((id: number) => validBranchIds.includes(id));
+//           if (hasMatchingBranch) return true;
+//         }
 
-//     let branchesMap: Record<number, any> = {};
-//     if (allBranchIds.length > 0) {
-//       const { data: branches } = await company_branchesRepository.findAll({
-//         ids: allBranchIds,
-//         fields: `
-//           id,
-//           name,
-//           province_ids,
-//           address,
-//           province:provinces!inner(id, name),
-//           ward:wards!inner(id, name),
-//           country:countries!inner(id, name)
-//         `,
-//       });
+//         if (job.company_branches && Array.isArray(job.company_branches)) {
+//           const hasMatchingBranch = job.company_branches.some((cb: any) => cb.id && validBranchIds.includes(cb.id));
+//           if (hasMatchingBranch) return true;
+//         }
 
-//       branchesMap = _.keyBy(branches || [], "id");
-//     }
-
-//     // Apply province filter if needed
-//     let filteredData = data;
-//     if (province_ids.length > 0 && allBranchIds.length > 0) {
-//       filteredData = (data || []).filter((job: any) => {
-//         if (!job.company_branches_ids || job.company_branches_ids.length === 0) return false;
-//         return job.company_branches_ids.some((branchId: number) => {
-//           const branch = branchesMap[branchId];
-//           console.log("branch", branch);
-//           return branch && province_ids.includes(branch.province_id);
-//         });
+//         return false;
 //       });
 //     }
 
-//     // Map branches to jobs
-//     const jobsWithBranches = (filteredData || []).map((job: any) => {
-//       const branches = job.company_branches_ids?.map((id: number) => branchesMap[id]).filter(Boolean) || [];
-//       return {
-//         ...job,
-//         company_branches: branches,
-//       };
-//     });
+//     const totalFiltered = filteredJobs.length;
+//     const paginatedJobs = hasPagination ? filteredJobs.slice((page - 1) * limit, page * limit) : filteredJobs;
 
 //     return {
-//       data: jobsWithBranches as unknown as JobAfterJoined[],
+//       data: paginatedJobs as unknown as JobAfterJoined[],
 //       pagination: hasPagination && {
 //         page: page,
 //         limit: limit,
-//         total: count || 0,
-//         total_pages: count ? Math.ceil(count / limit) : 0,
+//         total: totalFiltered || 0,
+//         total_pages: Math.ceil(totalFiltered / limit),
 //       },
 //     };
 //   }
