@@ -25,17 +25,23 @@ export async function listTopCVJobs(req: Request, res: Response) {
   // Category
   let finalCategoryId: string | undefined;
 
-  const myCatIds = (category_ids as string)
-    .split(",")
-    .map((id) => parseInt(id.trim(), 10))
-    .filter((id) => !isNaN(id));
+  if (category_ids) {
+    const categoryIdsStr = String(category_ids).trim();
 
-  if (myCatIds.length >= 1) {
-    const firstId = myCatIds[0];
-    if (firstId !== undefined) {
-      const primaryCat = getPrimaryTopCVCategory(firstId);
-      if (primaryCat) {
-        finalCategoryId = primaryCat.id.toString();
+    if (categoryIdsStr) {
+      const myCatIds = categoryIdsStr
+        .split(",")
+        .map((id) => parseInt(id.trim(), 10))
+        .filter((id) => !isNaN(id));
+
+      if (myCatIds.length >= 1) {
+        const firstId = myCatIds[0];
+        if (firstId !== undefined) {
+          const primaryCat = getPrimaryTopCVCategory(firstId);
+          if (primaryCat) {
+            finalCategoryId = primaryCat.id.toString();
+          }
+        }
       }
     }
   }
