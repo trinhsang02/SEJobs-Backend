@@ -9,6 +9,8 @@ const convert = {
       .filter((item) => item.length > 0)
       .map(formatFn);
   },
+  normalizeArray: (v?: any[]) =>
+    Array.isArray(v) && v.length > 0 ? v : null
 };
 
 export default convert;
