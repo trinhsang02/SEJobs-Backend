@@ -72,11 +72,11 @@ export async function listJobs(req: Request, res: Response) {
 
   const { data: jobs, pagination } = await jobService.list(queryParams);
 
-  // const formattedJobs = jobs.map((job) => toTopCvFormat(job, job.company, null));
+  const formattedJobs = jobs.map((job) => toTopCvFormat(job, job.company, null));
 
   res.status(200).json({
     success: true,
-    data: jobs,
+    data: formattedJobs,
     pagination,
   });
 }
