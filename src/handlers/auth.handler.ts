@@ -17,7 +17,7 @@ export async function login(req: Request, res: Response) {
   res.cookie("access_token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: parseInt(process.env.JWT_EXPIRES_IN!, 10),
     path: "/",
   });
@@ -25,7 +25,7 @@ export async function login(req: Request, res: Response) {
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: "/",
   });
@@ -84,7 +84,7 @@ export async function refreshToken(req: Request, res: Response) {
     res.cookie("access_token", newAccessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: parseInt(process.env.JWT_EXPIRES_IN!, 10),
       path: "/",
     });
