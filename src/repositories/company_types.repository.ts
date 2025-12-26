@@ -14,28 +14,29 @@ export class CompanyTypesRepository {
 
   // BUG: https://github.com/supabase/supabase-js/issues/1571
   async findAll(input: CompanyTypeQueryParams) {
-    const fields           = _.get(input, 'fields', this.fields);
-    const page             = _.get(input, "page");
-    const limit            = _.get(input, "limit");
+    const fields = _.get(input, 'fields', this.fields);
+    const page = _.get(input, "page");
+    const limit = _.get(input, "limit");
     const company_type_ids = _.get(input, 'company_type_ids') || [];
 
     let dbQuery = this.db.from("company_types").select(fields, { count: "exact" });
 
     if (company_type_ids && company_type_ids.length > 0) {
-        dbQuery = dbQuery.in("id", company_type_ids);
+      dbQuery = dbQuery.in("id", company_type_ids);
     }
 
     const executeQuery = page && limit
-    ? dbQuery.range((page - 1) * limit, page * limit - 1)
-    : dbQuery;
+      ? dbQuery.range((page - 1) * limit, page * limit - 1)
+      : dbQuery;
 
     const { data, error, count } = await executeQuery;
 
     if (error) throw error;
 
-    return { 
+    return {
       data,
-      pagination: page && limit ? { page, limit,
+      pagination: page && limit ? {
+        page, limit,
         total: count || 0,
         total_pages: count ? Math.ceil(count / limit) : 0,
       } : null,
@@ -45,7 +46,7 @@ export class CompanyTypesRepository {
   async findOne(input: CompanyTypeQueryParams) {
     const { company_type_ids, name, fields } = input;
     const select_fields = fields || this.fields;
-    
+
     let dbQuery = this.db.from("company_types").select(select_fields);
 
     if (company_type_ids) {
@@ -79,12 +80,12 @@ export class CompanyTypesRepository {
     if (!companyTypesData || companyTypesData.length === 0) return [];
 
     const { data, error } = await this.db
-        .from("company_types")
-        .insert(companyTypesData)
-        .select(this.fields);
+      .from("company_types")
+      .insert(companyTypesData)
+      .select(this.fields);
 
     if (error) {
-        throw new InternalServerError({ message: `Failed to create company types: ${error.message}` });
+      throw new InternalServerError({ message: `Failed to create company types: ${error.message}` });
     }
 
     return data;
@@ -119,15 +120,28 @@ export class CompanyTypesRepository {
     if (!companyCompanyTypesData || companyCompanyTypesData.length === 0) return [];
 
     const { data, error } = await this.db
-        .from("company_company_types")
-        .insert(companyCompanyTypesData)
-        .select('company_id, company_type_id');
+      .from("company_company_types")
+      .insert(companyCompanyTypesData)
+      .select('company_id, company_type_id');
 
     if (error) {
-        throw new InternalServerError({ message: `Failed to create company company types: ${error.message}` });
+      throw new InternalServerError({ message: `Failed to create company company types: ${error.message}` });
     }
 
     return data;
+  }
+
+  async deleteByCompanyId(companyId: number) {
+    const { error } = await this.db
+      .from("company_company_types")
+      .delete()
+      .eq("company_id", companyId);
+
+    if (error) {
+      throw new InternalServerError({ message: `Failed to delete company types for company ${companyId}: ${error.message}` });
+    }
+
+    return true;
   }
 }
 
