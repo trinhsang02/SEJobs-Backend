@@ -36,7 +36,9 @@ export async function listJobs(req: Request, res: Response) {
 
   const level_ids = convert.split(req.query.level_ids as string, ",", Number).filter((id) => !isNaN(id));
   const skill_ids = convert.split(req.query.skill_ids as string, ",", Number).filter((id) => !isNaN(id));
-  const employment_type_ids = convert.split(req.query.employment_type_ids as string, ",", Number).filter((id) => !isNaN(id));
+  const employment_type_ids = convert
+    .split(req.query.employment_type_ids as string, ",", Number)
+    .filter((id) => !isNaN(id));
   const category_ids = convert.split(req.query.category_ids as string, ",", Number).filter((id) => !isNaN(id));
   const order = req.query.order === "asc" ? "asc" : "desc";
   const sort_by =

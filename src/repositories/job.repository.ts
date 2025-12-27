@@ -21,7 +21,6 @@ export class JobRepository {
     const fields = _.get(input, "fields", this.fields);
     const page = _.get(input, "page", 1);
     const limit = _.get(input, "limit", 10);
-
     const hasPagination = page > 0 && limit > 0;
 
     const { data, error } = await supabase.rpc("search_job", {
@@ -31,9 +30,7 @@ export class JobRepository {
       q_level_ids: convert.normalizeArray(input.level_ids),
       q_category_ids: convert.normalizeArray(input.category_ids),
       q_skill_ids: convert.normalizeArray(input.skill_ids),
-      q_employment_type_ids: convert.normalizeArray(
-        input.employment_type_ids
-      ),
+      q_employment_type_ids: convert.normalizeArray(input.employment_type_ids),
       q_salary_from: input.salary_from || null,
       q_salary_to: input.salary_to || null,
       q_sort_by: _.get(input, "sort_by", "job_posted_at"),
@@ -45,14 +42,13 @@ export class JobRepository {
     if (error) throw error;
 
     const total = data?.[0]?.total || 0;
+    const selectedFields = fields.split(",").map((f) => f.trim());
 
-    const selectedFields = fields
-      .split(",")
-      .map((f) => f.trim());
+    if (!selectedFields.includes("company")) {
+      selectedFields.push("company");
+    }
 
-    const rows = (data || []).map((row: any) =>
-      _.pick(row, selectedFields)
-    );
+    const rows = (data || []).map((row: any) => _.pick(row, selectedFields));
 
     return {
       data: rows as JobAfterJoined[],
