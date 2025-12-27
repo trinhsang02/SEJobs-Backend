@@ -3,12 +3,13 @@ import axios from "axios";
 import { getTopCVAccessToken } from "@/utils/topcv-auth";
 import { MY_PROVINCE_ID_TO_TOPCV_ID } from "@/utils/cityMapper";
 import { getPrimaryTopCVCategory } from "@/utils/categoryMapper";
+import { getTopCVExpIds } from "@/utils/levelMapper";
 
 export async function listTopCVJobs(req: Request, res: Response) {
   const token = await getTopCVAccessToken();
   const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
   const per_page = Math.min(100, Math.max(1, parseInt(req.query.per_page as string, 10) || 15));
-  const { keyword, city_id, province_ids, category_ids, exp_id } = req.query;
+  const { keyword, city_id, province_ids, category_ids, level_ids, exp_id } = req.query;
 
   // City
   let finalCityId: string | undefined;
@@ -46,13 +47,37 @@ export async function listTopCVJobs(req: Request, res: Response) {
     }
   }
 
+  // Experience
+  let finalExpId: string | undefined;
+
+  if (exp_id) {
+    finalExpId = exp_id as string;
+  } else if (level_ids) {
+    const levelIdsStr = String(level_ids).trim();
+
+    if (levelIdsStr) {
+      const myLevelIds = levelIdsStr
+        .split(",")
+        .map((id) => parseInt(id.trim(), 10))
+        .filter((id) => !isNaN(id));
+
+      if (myLevelIds.length > 0) {
+        const topcvExpIds = getTopCVExpIds(myLevelIds);
+
+        if (topcvExpIds.length > 0) {
+          finalExpId = (topcvExpIds?.[0] ?? "").toString();
+        }
+      }
+    }
+  }
+
   const params = {
     page,
     per_page,
     ...(keyword && { keyword }),
     ...(finalCityId && { city_id: finalCityId }),
     ...(finalCategoryId && { category_id: finalCategoryId }),
-    ...(exp_id && { exp_id }),
+    ...(finalExpId && { exp_id: finalExpId }),
   };
 
   try {
