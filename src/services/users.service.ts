@@ -312,10 +312,10 @@ export class UserService {
           {
             about: about || null,
             location: location || null,
-            open_for_opportunities: open_for_opportunities || null,
+            open_for_opportunities: open_for_opportunities !== undefined ? open_for_opportunities : null,
             skills: skills || null,
           },
-          (value) => value != null && value !== ""
+          (value) => value !== undefined
         ),
       });
     }
