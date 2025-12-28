@@ -44,10 +44,6 @@ export class JobRepository {
     const total = data?.[0]?.total || 0;
     const selectedFields = fields.split(",").map((f) => f.trim());
 
-    if (!selectedFields.includes("company")) {
-      selectedFields.push("company");
-    }
-
     const rows = (data || []).map((row: any) => _.pick(row, selectedFields));
 
     return {
