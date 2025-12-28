@@ -11,7 +11,7 @@ import convert from "@/utils/convert";
 export class JobRepository {
   private readonly db: SupabaseClient;
   public readonly fields =
-    "id, external_id, website_url, company_id, company_branches, company_branches_id, company_branches_ids, title, responsibilities, requirement, nice_to_haves, benefit, working_time, description, apply_guide, is_diamond, is_job_flash_active, is_hot, salary_from, salary_to, salary_text, salary_currency, job_posted_at, job_deadline, apply_reasons, status, created_at, updated_at, quantity";
+    "id, external_id, website_url, company, company_id, company_branches, company_branches_id, company_branches_ids, title, responsibilities, requirement, nice_to_haves, benefit, working_time, description, apply_guide, is_diamond, is_job_flash_active, is_hot, salary_from, salary_to, salary_text, salary_currency, job_posted_at, job_deadline, apply_reasons, status, created_at, updated_at, quantity";
 
   constructor() {
     this.db = supabase;
