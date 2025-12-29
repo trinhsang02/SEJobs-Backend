@@ -4,7 +4,7 @@ import { BadRequestError, InternalServerError } from "@/utils/errors";
 import { supabase } from "@/config/supabase";
 import { env } from "@/config/env";
 
-const ALLOWED_MIME_TYPE = ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"];
+const ALLOWED_MIME_TYPE = ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm", "application/pdf"];
 
 export async function uploadMedia(req: Request, res: Response) {
   const file = req.file;
