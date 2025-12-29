@@ -14,7 +14,7 @@ import { TOPCV_ID_TO_MY_PROVINCE_ID } from "@/utils/cityMapper";
 export async function listJobs(req: Request, res: Response) {
   const page = _.toInteger(req.query.page) || 1;
   const limit = _.toInteger(req.query.limit) || 10;
-  const keyword = typeof req.query.keyword === "string" ? req.query.keyword : "";
+  const keyword = typeof req.query.keyword === "string" ? _.trim(req.query.keyword) : "";
 
   let province_ids: number[] = [];
 
