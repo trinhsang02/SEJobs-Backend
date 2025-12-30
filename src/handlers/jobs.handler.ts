@@ -10,6 +10,22 @@ import { companyJobQuerySchema } from "@/dtos/company/CompanyJobQuery.dto";
 import { toTopCvFormat } from "@/utils/topCVFormat";
 import convert from "@/utils/convert";
 import { TOPCV_ID_TO_MY_PROVINCE_ID } from "@/utils/cityMapper";
+import { verifyToken } from "@/utils/jwt.util";
+
+const getOptionalUserId = (req: Request): number | null => {
+  const authHeader = req.headers.authorization;
+  const bearer = authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : undefined;
+  const token = bearer || (req.cookies?.access_token as string | undefined);
+
+  if (!token) return null;
+
+  try {
+    const decoded = verifyToken(token);
+    return decoded.userId;
+  } catch (_err) {
+    return null;
+  }
+};
 
 export async function listJobs(req: Request, res: Response) {
   const page = _.toInteger(req.query.page) || 1;
@@ -72,7 +88,9 @@ export async function listJobs(req: Request, res: Response) {
     if (!isNaN(val)) queryParams.company_id = val;
   }
 
-  const { data: jobs, pagination } = await jobService.list(queryParams);
+  const currentUserId = getOptionalUserId(req);
+
+  const { data: jobs, pagination } = await jobService.list({ ...queryParams, current_user_id: currentUserId || undefined });
 
   const formattedJobs = jobs.map((job) => toTopCvFormat(job, job.company, null));
 
