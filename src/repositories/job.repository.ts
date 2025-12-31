@@ -17,6 +17,24 @@ export class JobRepository {
     this.db = supabase;
   }
 
+  async countFindAll(input: JobQueryParams) {
+    const { data, error } = await this.db.rpc("search_job", {
+      q_keyword: _.get(input, "keyword") || null,
+      q_company_id: _.get(input, "company_id") ?? null,
+      q_province_ids: convert.normalizeArray(input.province_ids),
+      q_level_ids: convert.normalizeArray(input.level_ids),
+      q_category_ids: convert.normalizeArray(input.category_ids),
+      q_skill_ids: convert.normalizeArray(input.skill_ids),
+      q_employment_type_ids: convert.normalizeArray(input.employment_type_ids),
+      q_salary_from: input.salary_from || null,
+      q_salary_to: input.salary_to || null,
+    });
+    if (error) throw error;
+
+    const total = data?.[0]?.total || 0;
+    return total;
+  }
+
   async findAll(input: JobQueryParams) {
     const fields = _.get(input, "fields", this.fields);
     const page = _.get(input, "page", 1);

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { listJobs, getJob, createJob, updateJob, deleteJob, listJobsByCompany } from "@/handlers/jobs.handler";
+import { listJobs, getJob, createJob, updateJob, deleteJob, listJobsByCompany, listMergedJobs } from "@/handlers/jobs.handler";
 import { authenticate } from "@/middlewares/auth.middleware";
 import { authorizeRoles } from "@/middlewares/authorizeRoles";
 
@@ -7,6 +7,7 @@ const router = Router();
 
 // Public list and get
 router.get("/", listJobs);
+router.get("/merged", listMergedJobs);
 router.get("/:id", getJob);
 router.get("/company/:id", listJobsByCompany);
 

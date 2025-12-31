@@ -10,14 +10,72 @@ import { companyJobQuerySchema } from "@/dtos/company/CompanyJobQuery.dto";
 import { toTopCvFormat } from "@/utils/topCVFormat";
 import convert from "@/utils/convert";
 import { TOPCV_ID_TO_MY_PROVINCE_ID } from "@/utils/cityMapper";
+import { getTopCVTotal, getTopCVwithOffset } from "./topcv.handler";
 
-export async function listJobs(req: Request, res: Response) {
-  const page = _.toInteger(req.query.page) || 1;
-  const limit = _.toInteger(req.query.limit) || 10;
-  const keyword = typeof req.query.keyword === "string" ? _.trim(req.query.keyword) : "";
+// Helper: Parse job query params from request
+function parseJobQueryParams(query: any, includePagination = true) {
+  const keyword = typeof query.keyword === "string" ? _.trim(query.keyword) : "";
 
   let province_ids: number[] = [];
 
+  if (query.city_id) {
+    const cityIds = convert.split(query.city_id as string, ",", Number).filter((id) => !isNaN(id));
+    const mapped = cityIds.map((cvId) => TOPCV_ID_TO_MY_PROVINCE_ID[cvId]).filter((id): id is number => id != null);
+    province_ids = mapped;
+  } else if (query.province_ids) {
+    province_ids = convert.split(query.province_ids as string, ",", Number).filter((id) => !isNaN(id));
+  }
+
+  const level_ids = convert.split(query.level_ids as string, ",", Number).filter((id) => !isNaN(id));
+  const skill_ids = convert.split(query.skill_ids as string, ",", Number).filter((id) => !isNaN(id));
+  const employment_type_ids = convert
+    .split(query.employment_type_ids as string, ",", Number)
+    .filter((id) => !isNaN(id));
+  const category_ids = convert.split(query.category_ids as string, ",", Number).filter((id) => !isNaN(id));
+
+  const queryParams: any = {
+    province_ids,
+    level_ids,
+    category_ids,
+    employment_type_ids,
+    skill_ids,
+    keyword,
+  };
+
+  // Add pagination if needed
+  if (includePagination) {
+    queryParams.page = _.toInteger(query.page) || 1;
+    queryParams.limit = _.toInteger(query.limit) || 10;
+
+    const order = query.order === "asc" ? "asc" : "desc";
+    const sort_by =
+      typeof query.sort_by === "string" && (SORTABLE_JOB_FIELDS as readonly string[]).includes(query.sort_by)
+        ? (query.sort_by as SortableJobFields)
+        : undefined;
+
+    queryParams.order = order;
+    if (sort_by) queryParams.sort_by = sort_by;
+  }
+
+  // Add optional filters
+  if (query.salary_from) {
+    const val = Number(query.salary_from);
+    if (!isNaN(val)) queryParams.salary_from = val;
+  }
+  if (query.salary_to) {
+    const val = Number(query.salary_to);
+    if (!isNaN(val)) queryParams.salary_to = val;
+  }
+  if (query.company_id) {
+    const val = Number(query.company_id);
+    if (!isNaN(val)) queryParams.company_id = val;
+  }
+
+  return queryParams;
+}
+
+export async function listJobs(req: Request, res: Response) {
+  // Check for unmapped city_ids early return
   if (req.query.city_id) {
     const cityIds = convert.split(req.query.city_id as string, ",", Number).filter((id) => !isNaN(id));
     const mapped = cityIds.map((cvId) => TOPCV_ID_TO_MY_PROVINCE_ID[cvId]).filter((id): id is number => id != null);
@@ -29,48 +87,9 @@ export async function listJobs(req: Request, res: Response) {
         pagination: { page: 1, limit: 10, total: 0, total_pages: 0 },
       });
     }
-    province_ids = mapped;
-  } else if (req.query.province_ids) {
-    province_ids = convert.split(req.query.province_ids as string, ",", Number).filter((id) => !isNaN(id));
   }
 
-  const level_ids = convert.split(req.query.level_ids as string, ",", Number).filter((id) => !isNaN(id));
-  const skill_ids = convert.split(req.query.skill_ids as string, ",", Number).filter((id) => !isNaN(id));
-  const employment_type_ids = convert
-    .split(req.query.employment_type_ids as string, ",", Number)
-    .filter((id) => !isNaN(id));
-  const category_ids = convert.split(req.query.category_ids as string, ",", Number).filter((id) => !isNaN(id));
-  const order = req.query.order === "asc" ? "asc" : "desc";
-  const sort_by =
-    typeof req.query.sort_by === "string" && (SORTABLE_JOB_FIELDS as readonly string[]).includes(req.query.sort_by)
-      ? (req.query.sort_by as SortableJobFields)
-      : undefined;
-
-  const queryParams: any = {
-    province_ids,
-    level_ids,
-    category_ids,
-    employment_type_ids,
-    skill_ids,
-    page,
-    limit,
-    keyword,
-    sort_by,
-    order,
-  };
-
-  if (req.query.salary_from) {
-    const val = Number(req.query.salary_from);
-    if (!isNaN(val)) queryParams.salary_from = val;
-  }
-  if (req.query.salary_to) {
-    const val = Number(req.query.salary_to);
-    if (!isNaN(val)) queryParams.salary_to = val;
-  }
-  if (req.query.company_id) {
-    const val = Number(req.query.company_id);
-    if (!isNaN(val)) queryParams.company_id = val;
-  }
+  const queryParams = parseJobQueryParams(req.query, true);
 
   const { data: jobs, pagination } = await jobService.list(queryParams);
 
@@ -160,5 +179,49 @@ export async function listJobsByCompany(req: Request, res: Response) {
   res.status(200).json({
     success: true,
     ...result,
+  });
+}
+
+export async function listMergedJobs(req: Request, res: Response) {
+  const page = _.toInteger(req.query.page) || 1;
+  const page_size = 12;
+  const JOBS_MAX = 6;
+  const globalOffset = (page - 1) * page_size;
+
+  const queryParams = parseJobQueryParams(req.query, false);
+
+  const totalJobs = await jobService.getTotalJobs(queryParams);
+  const totalTopCVJobs = await getTopCVTotal(queryParams);
+
+  const usedJobsBefore = Math.min(
+    totalJobs,
+    (page - 1) * JOBS_MAX
+  );
+
+  const usedTopcvBefore = Math.max(
+    0,
+    globalOffset - usedJobsBefore
+  );
+
+  const { data: jobs, pagination: jobsPagination } = await jobService.list({
+    ...queryParams,
+    page: page,
+    limit: JOBS_MAX,
+  });
+  const formattedJobs = jobs.map((job) => toTopCvFormat(job, job.company, null));
+
+  const remaining = page_size - jobs.length;
+
+  const topcvJobs = await getTopCVwithOffset(usedTopcvBefore, remaining, page_size, queryParams);
+
+  res.status(200).json({
+    success: true,
+    data: {jobs: formattedJobs, topcv: topcvJobs},
+    pagination: {
+      page,
+      limit: page_size,
+      total: totalJobs + totalTopCVJobs,
+      total_pages: Math.ceil((totalJobs + totalTopCVJobs) / page_size),
+    },
   });
 }
