@@ -5,13 +5,25 @@ import { MY_PROVINCE_ID_TO_TOPCV_ID } from "@/utils/cityMapper";
 import { getPrimaryTopCVCategory } from "@/utils/categoryMapper";
 import { getTopCVExpIds } from "@/utils/levelMapper";
 
-export async function listTopCVJobs(req: Request, res: Response) {
-  const token = await getTopCVAccessToken();
-  const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
-  const per_page = Math.min(100, Math.max(1, parseInt(req.query.per_page as string, 10) || 15));
-  const { keyword, city_id, province_ids, category_ids, level_ids, exp_id } = req.query;
+const topCVTotalCache = new Map<string, { total: number; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000;
 
-  // City
+async function fetchTopCVJobs(queryParams: {
+  page?: number;
+  per_page?: number;
+  keyword?: string;
+  city_id?: string;
+  province_ids?: string;
+  category_ids?: string;
+  level_ids?: string;
+  exp_id?: string;
+}) {
+  const token = await getTopCVAccessToken();
+  const page = queryParams.page || 1;
+  const per_page = queryParams.per_page || 15;
+  const { keyword, city_id, province_ids, category_ids, level_ids, exp_id } = queryParams;
+
+  // City mapping
   let finalCityId: string | undefined;
   if (city_id) {
     finalCityId = city_id as string;
@@ -23,18 +35,15 @@ export async function listTopCVJobs(req: Request, res: Response) {
     }
   }
 
-  // Category
+  // Category mapping
   let finalCategoryId: string | undefined;
-
   if (category_ids) {
     const categoryIdsStr = String(category_ids).trim();
-
     if (categoryIdsStr) {
       const myCatIds = categoryIdsStr
         .split(",")
         .map((id) => parseInt(id.trim(), 10))
         .filter((id) => !isNaN(id));
-
       if (myCatIds.length >= 1) {
         const firstId = myCatIds[0];
         if (firstId !== undefined) {
@@ -47,23 +56,19 @@ export async function listTopCVJobs(req: Request, res: Response) {
     }
   }
 
-  // Experience
+  // Experience mapping
   let finalExpId: string | undefined;
-
   if (exp_id) {
     finalExpId = exp_id as string;
   } else if (level_ids) {
     const levelIdsStr = String(level_ids).trim();
-
     if (levelIdsStr) {
       const myLevelIds = levelIdsStr
         .split(",")
         .map((id) => parseInt(id.trim(), 10))
         .filter((id) => !isNaN(id));
-
       if (myLevelIds.length > 0) {
         const topcvExpIds = getTopCVExpIds(myLevelIds);
-
         if (topcvExpIds.length > 0) {
           finalExpId = (topcvExpIds?.[0] ?? "").toString();
         }
@@ -80,13 +85,104 @@ export async function listTopCVJobs(req: Request, res: Response) {
     ...(finalExpId && { exp_id: finalExpId }),
   };
 
+  const response = await axios.get(`${process.env.TOPCV_JOBS_URL}`, {
+    params,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    timeout: 5000,
+  });
+
+  return response;
+}
+
+export async function getTopCVTotal(params: {
+  keyword?: string;
+  city_id?: string;
+  province_ids?: string;
+  category_id?: string;
+  level_ids?: string;
+  exp_id?: string;
+}) {
+  const cacheKey = JSON.stringify(params);
+  const cached = topCVTotalCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.total;
+  }
+
   try {
-    const response = await axios.get(`${process.env.TOPCV_JOBS_URL}`, {
-      params,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      timeout: 5000,
+    const response = await fetchTopCVJobs({
+      ...params,
+      page: 1,
+      per_page: 5,
+    });
+
+    const total = response.data?.data?.total || 0;
+
+    topCVTotalCache.set(cacheKey, { total, timestamp: Date.now() });
+
+    if (topCVTotalCache.size > 100) {
+      const now = Date.now();
+      for (const [key, value] of topCVTotalCache.entries()) {
+        if (now - value.timestamp > CACHE_TTL) {
+          topCVTotalCache.delete(key);
+        }
+      }
+    }
+
+    return total;
+  } catch (error) {
+    console.error("Error fetching TopCV total:", error);
+    return 0;
+  }
+}
+
+export async function getTopCVwithOffset(offset: number, limit: number, page_size: number, queryParams: {
+  keyword?: string;
+  city_id?: string;
+  province_ids?: string;
+  category_id?: string;
+  level_ids?: string;
+  exp_id?: string;
+}) {
+  const TOPCV_PER_PAGE = page_size * 2;
+  const result = [];
+  let remaining = limit;
+
+  let page = Math.floor(offset / TOPCV_PER_PAGE) + 1;
+  let index = offset % TOPCV_PER_PAGE;
+
+  while (remaining > 0) {
+    const res = await fetchTopCVJobs({
+      ...queryParams,
+      page,
+      per_page: TOPCV_PER_PAGE,
+    }).then((response) => response.data?.data || { data: [] });
+    const data = res.data || [];
+
+    if (!data.length) break;
+
+    const slice = data.slice(index, index + remaining);
+    result.push(...slice);
+
+    remaining -= slice.length;
+    page++;
+    index = 0;
+  }
+
+  return result;
+}
+
+export async function listTopCVJobs(req: Request, res: Response) {
+  const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+  const per_page = Math.min(100, Math.max(1, parseInt(req.query.per_page as string, 10) || 15));
+
+  try {
+    const response = await fetchTopCVJobs({
+      ...req.query,
+      page,
+      per_page,
     });
 
     const { data } = response;

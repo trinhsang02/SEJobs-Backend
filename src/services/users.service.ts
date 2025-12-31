@@ -374,24 +374,52 @@ export class UserService {
     return { user_id: user.user_id, email: user.email, reset_token: token, reset_token_expires: expires };
   }
 
-  async resetPassword(input: { token: string; new_password: string }) {
-    const { token, new_password } = input;
+  async resetPassword(input: { token?: string; old_password?: string; new_password: string; userId?: number }) {
+    const { token, old_password, new_password, userId } = input;
 
-    const { data: users } = await userRepository.findAll<User>({
-      fields: userRepository.fields + ", reset_token, reset_token_expires, is_active",
-    });
-    const target = users.find((u) => (u as any).reset_token === token);
+    let target: User | undefined;
 
-    if (!target) {
-      throw new BadRequestError({ message: "Invalid reset token" });
+    // Case 1: Reset password using token (forgot password flow)
+    if (token) {
+      const { data: users } = await userRepository.findAll<User>({
+        fields: userRepository.fields + ", reset_token, reset_token_expires, is_active",
+      });
+      target = users.find((u) => (u as any).reset_token === token);
+
+      if (!target) {
+        throw new BadRequestError({ message: "Invalid reset token" });
+      }
+      if ((target as any).is_active === false) {
+        throw new BadRequestError({ message: "Account is deactivated" });
+      }
+
+      const expiresAt = (target as any).reset_token_expires ? new Date((target as any).reset_token_expires).getTime() : 0;
+      if (Date.now() > expiresAt) {
+        throw new BadRequestError({ message: "Reset token expired" });
+      }
     }
-    if ((target as any).is_active === false) {
-      throw new BadRequestError({ message: "Account is deactivated" });
-    }
+    // Case 2: Change password using old password (change password flow)
+    else if (old_password && userId) {
+      const user = await userRepository.findOne({
+        user_id: userId,
+        fields: userRepository.fields + ", password, is_active",
+      });
 
-    const expiresAt = (target as any).reset_token_expires ? new Date((target as any).reset_token_expires).getTime() : 0;
-    if (Date.now() > expiresAt) {
-      throw new BadRequestError({ message: "Reset token expired" });
+      if (!user) {
+        throw new NotFoundError({ message: "User not found" });
+      }
+      if ((user as any).is_active === false) {
+        throw new BadRequestError({ message: "Account is deactivated" });
+      }
+
+      const isValidPassword = await bcrypt.compare(old_password, (user as any).password);
+      if (!isValidPassword) {
+        throw new BadRequestError({ message: "Old password is incorrect" });
+      }
+
+      target = user;
+    } else {
+      throw new BadRequestError({ message: "Either token or (old_password and userId) must be provided" });
     }
 
     const hashedPassword = await bcrypt.hash(new_password, 10);
@@ -400,7 +428,7 @@ export class UserService {
       userId: target.user_id,
       userData: {
         password: hashedPassword,
-        ...({ reset_token: null, reset_token_expires: null } as any),
+        ...(token ? { reset_token: null, reset_token_expires: null } : {}),
         updated_at: new Date().toISOString(),
       } as any,
     });

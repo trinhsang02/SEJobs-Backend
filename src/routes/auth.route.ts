@@ -1,7 +1,7 @@
 import { login, register, getMe, logout, refreshToken } from "@/handlers/auth.handler";
 import { Router } from "express";
 import { authenticate } from "@/middlewares/auth.middleware";
-import { requestPasswordReset, resetPassword } from "@/handlers/auth.handler";
+import { requestPasswordReset, resetPassword, changePassword } from "@/handlers/auth.handler";
 const router = Router();
 
 router.post("/login", login);
@@ -12,5 +12,6 @@ router.post("/refresh", refreshToken);
 
 router.post("/password/forgot", requestPasswordReset);
 router.post("/password/reset", resetPassword);
+router.post("/password/change", authenticate, changePassword);
 
 export default router;

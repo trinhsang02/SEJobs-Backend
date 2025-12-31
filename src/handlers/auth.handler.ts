@@ -5,7 +5,7 @@ import { loginSchema } from "@/dtos/user/Login.dto";
 import UsersService from "@/services/users.service";
 import { registerSchema } from "@/dtos/user/Register.dto";
 import { generateRefreshToken, verifyToken, generateToken } from "@/utils/jwt.util";
-import { forgotPasswordSchema, resetPasswordSchema } from "@/dtos/user/Password.dto";
+import { forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } from "@/dtos/user/Password.dto";
 
 export async function login(req: Request, res: Response) {
   const loginData = validate.schema_validate(loginSchema, req.body);
@@ -110,4 +110,11 @@ export async function resetPassword(req: Request, res: Response) {
   const { token, new_password } = validate.schema_validate(resetPasswordSchema, req.body);
   await UsersService.resetPassword({ token, new_password });
   res.status(200).json({ success: true });
+}
+
+export async function changePassword(req: Request, res: Response) {
+  const { old_password, new_password } = validate.schema_validate(changePasswordSchema, req.body);
+  const userId = req.user!.userId;
+  await UsersService.resetPassword({ old_password, new_password, userId });
+  res.status(200).json({ success: true, message: "Password changed successfully" });
 }

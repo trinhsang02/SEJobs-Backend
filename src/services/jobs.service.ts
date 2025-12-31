@@ -14,6 +14,11 @@ import { toCamelCaseKeys } from "@/utils/casing";
 import { toTopCvFormat } from "@/utils/topCVFormat";
 
 export class JobService {
+  async getTotalJobs(input: JobQueryParams) {
+    const total = await jobRepository.countFindAll(input);
+    return total;
+  }
+
   async list(input: JobQueryParams) {
     const { data: jobs, pagination } = await jobRepository.findAll(input);
 
