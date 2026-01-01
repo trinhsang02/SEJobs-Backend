@@ -224,6 +224,12 @@ export interface CompanyBranchesQuery extends QueryParams {
   name?: string;
 }
 
+// JOB_COMPANY_BRANCHES
+export type JobCompanyBranches = Database["public"]["Tables"]["job_company_branches"]["Row"];
+export type JobCompanyBranchesInsert = Database["public"]["Tables"]["job_company_branches"]["Insert"];
+export type JobCompanyBranchesUpdate = Database["public"]["Tables"]["job_company_branches"]["Update"];
+
+
 // NOTIFICATIONS
 export enum NotificationType {
   UserCreated = "user_created",

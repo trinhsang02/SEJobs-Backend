@@ -1,5 +1,5 @@
 import { supabase } from "@/config/supabase";
-import { JobSkillInsert, JobSkillQueryParams, SkillInsert, SkillQueryParams, SkillUpdate } from "@/types/common";
+import { JobSkillInsert, JobSkillQueryParams, JobSkillUpdate, SkillInsert, SkillQueryParams, SkillUpdate } from "@/types/common";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
 export class SkillRepository {
@@ -120,6 +120,18 @@ export class SkillRepository {
     if (!jobSkillsData || jobSkillsData.length === 0) return [];
 
     const { data, error } = await this.db.from("job_skills").insert(jobSkillsData).select();
+
+    if (error) throw error;
+
+    return data;
+  }
+
+  async bulkUpdateJobSkills(input: { jobSkillsData: JobSkillUpdate[] }) {
+    const { jobSkillsData } = input;
+
+    if (!jobSkillsData || jobSkillsData.length === 0) return [];
+
+    const { data, error } = await this.db.from("job_skills").update(jobSkillsData).select();
 
     if (error) throw error;
 

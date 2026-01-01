@@ -1,5 +1,5 @@
 import { supabase } from "@/config/supabase";
-import { CompanyBranchesInsert, CompanyBranchesQuery, CompanyBranchesQueryAll, CompanyBranchesUpdate, SkillInsert, SkillUpdate } from "@/types/common";
+import { CompanyBranchesInsert, CompanyBranchesQuery, CompanyBranchesQueryAll, CompanyBranchesUpdate, JobCompanyBranchesInsert, SkillInsert, SkillUpdate } from "@/types/common";
 import { BadRequestError } from "@/utils/errors";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
@@ -104,6 +104,26 @@ export class CompanyBranchesRepository {
     }
 
     return data;
+  }
+
+  async bulkCreateJobCompanyBranches(input: { jobCompanyBranchesData: JobCompanyBranchesInsert[] }) {
+    const { jobCompanyBranchesData } = input;
+
+    if (!jobCompanyBranchesData || jobCompanyBranchesData.length === 0) return [];
+
+    const { data, error } = await this.db.from("job_company_branches").insert(jobCompanyBranchesData).select();
+
+    if (error) throw error;
+
+    return data;
+  }
+
+  async bulkDeleteJobCompanyBranches(jobId: number) {
+    const { error } = await this.db.from("job_company_branches").delete().eq("job_id", jobId);
+
+    if (error) throw error;
+
+    return true;
   }
 }
 

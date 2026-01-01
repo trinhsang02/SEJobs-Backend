@@ -13,8 +13,7 @@ const requiredSkillSchema = z.object({
 });
 
 export const updateJobSchema = createJobSchema.partial().extend({
-  company_branches_id: z.number().int().positive().nullable().optional(),
-  company_branches_ids: z.array(z.number().int().positive()).nullable().optional(),
+  company_branches_ids: z.array(z.number().int().positive()).optional(),
   category_ids: z.array(z.number().int().positive()).optional(),
   required_skill_ids: z.array(z.number().int().positive()).optional(),
   required_skills: z.array(requiredSkillSchema).optional(),

@@ -16,8 +16,6 @@ export const createJobSchema = z.object({
   external_id: z.number().optional(),
   website_url: z.string().optional(),
   company_id: z.number().int().positive(),
-  company_branches_id: z.number().int().positive().nullable().optional(),
-  company_branches_ids: z.array(z.number().int().positive()).nullable().optional(),
   title: z.string().min(1, "Job title is required"),
   responsibilities: z.array(z.string()).optional(),
   requirement: z.array(z.string()).optional(),
@@ -39,6 +37,7 @@ export const createJobSchema = z.object({
   status: z.string().optional(),
   quantity: z.number().int().positive().optional(),
   // Relations
+  company_branches_ids: z.array(z.number().int().positive()).min(1),
   category_ids: z.array(z.number().int().positive()).min(1),
   required_skill_ids: z.array(z.number().int().positive()).optional(),
   required_skills: z.array(requiredSkillSchema).min(1),

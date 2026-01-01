@@ -130,6 +130,7 @@ export class JobService {
         required_skills = [],
         employment_type_ids = [],
         level_ids = [],
+        company_branches_ids = [],
         ...jobPayload
       } = jobData;
 
@@ -155,12 +156,14 @@ export class JobService {
         job_id: createdJob.id,
       }));
       const jobLevelsData = level_ids.map((level_id) => ({ level_id, job_id: createdJob.id }));
+      const jobCompanyBranchesData = company_branches_ids.map((company_branch_id) => ({ company_branch_id, job_id: createdJob.id }));
 
       await Promise.all([
         categoryRepo.bulkCreateJobCategories({ jobCategoriesData }),
         skillRepo.bulkCreateJobSkills({ jobSkillsData }),
         employmentTypeRepo.bulkCreateJobEmploymentTypes({ jobEmploymentTypesData }),
         levelRepo.bulkCreateJobLevels({ jobLevelsData }),
+        companyBranchesRepo.bulkCreateJobCompanyBranches({ jobCompanyBranchesData })
       ]);
 
       const jobId = createdJob.id;
@@ -182,6 +185,7 @@ export class JobService {
       required_skill_ids = [],
       employment_type_ids = [],
       level_ids = [],
+      company_branches_ids = [],
     } = jobData;
 
     const error_messages: string[] = [];
@@ -195,6 +199,10 @@ export class JobService {
 
     const companyPromise = companyRepo.findOne({ company_id });
     promises.push(companyPromise);
+
+    const companyBranchPromise =
+      company_branches_ids.length > 0 ? companyBranchesRepo.findAll({ ids: company_branches_ids }) : Promise.resolve({ data: [] });
+    promises.push(companyBranchPromise);
 
     const categoryPromise =
       category_ids.length > 0 ? categoryRepo.findAll({ ids: category_ids }) : Promise.resolve({ data: [] });
@@ -217,12 +225,19 @@ export class JobService {
       level_ids.length > 0 ? levelRepo.findAll({ ids: level_ids }) : Promise.resolve({ data: [] });
     promises.push(jobLevelsPromise);
 
-    const [company, categoriesResult, skillsResult, employmentTypesResult, jobLevelsResult] =
+    const [company, companyBranchResult, categoriesResult, skillsResult, employmentTypesResult, jobLevelsResult] =
       await Promise.all(promises);
 
     if (!company) {
       error_messages.push(`company_id ${company_id} not found.`);
     }
+
+    const companyBranchMap = _.keyBy(companyBranchResult.data, "id");
+    company_branches_ids.forEach((id) => {
+      if (!companyBranchMap[id]) {
+        error_messages.push(`branch ${id} not found.`);
+      }
+    });
 
     const categoriesMap = _.keyBy(categoriesResult.data, "id");
     category_ids.forEach((id) => {
@@ -277,7 +292,7 @@ export class JobService {
       required_skills = [],
       employment_type_ids,
       level_ids,
-      company_branches_id,
+      company_branches_ids = [],
       ...jobPayload
     } = jobData;
 
@@ -290,10 +305,10 @@ export class JobService {
     }));
 
     // Validate relationships if provided
-    if (category_ids || required_skill_ids || employment_type_ids || level_ids || company_branches_id) {
+    if (category_ids || required_skill_ids || employment_type_ids || level_ids || company_branches_ids) {
       const { error } = await this.validateUpdate({
         company_id: existing.job.company_id!,
-        company_branches_id,
+        company_branches_ids,
         category_ids,
         required_skill_ids,
         employment_type_ids,
@@ -302,13 +317,23 @@ export class JobService {
       if (error) throw error;
     }
 
-    const jobPayloadWithUpdatedAt = { company_branches_id, ...jobPayload, updated_at: new Date().toISOString() };
-
-    // Update job basic info
-    await jobRepository.update(jobId, jobPayloadWithUpdatedAt as any);
+    await jobRepository.update(jobId, { 
+      ...jobPayload, 
+      updated_at: new Date().toISOString() 
+    });
 
     // Update relationships if provided
     const relationshipPromises: Promise<any>[] = [];
+
+    if (company_branches_ids && company_branches_ids.length > 0) {
+      const uniqueCompanyBranchesIds = _.uniq(company_branches_ids);
+      relationshipPromises.push(
+        companyBranchesRepo.bulkDeleteJobCompanyBranches(jobId).then(() => {
+          const jobCompanyBranchesData = uniqueCompanyBranchesIds.map((company_branch_id) => ({ company_branch_id, job_id: jobId }));
+          return companyBranchesRepo.bulkCreateJobCompanyBranches({ jobCompanyBranchesData });
+        })
+      );
+    }
 
     if (category_ids && category_ids.length > 0) {
       const uniqueCategoryIds = _.uniq(category_ids);
@@ -362,7 +387,7 @@ export class JobService {
 
   async validateUpdate(jobData: {
     company_id: number;
-    company_branches_id?: number | null | undefined;
+    company_branches_ids?: number[] | undefined;
     category_ids?: number[] | undefined;
     required_skill_ids?: number[] | undefined;
     employment_type_ids?: number[] | undefined;
@@ -370,7 +395,7 @@ export class JobService {
   }) {
     const {
       company_id,
-      company_branches_id,
+      company_branches_ids = [],
       category_ids = [],
       required_skill_ids = [],
       employment_type_ids = [],
@@ -387,8 +412,8 @@ export class JobService {
     const promises: Promise<any>[] = [];
 
     // Validate company_branches_id if provided
-    if (company_branches_id) {
-      promises.push(companyBranchesRepo.findAll({ ids: [company_branches_id], company_id }));
+    if (company_branches_ids) {
+      promises.push(companyBranchesRepo.findAll({ ids: company_branches_ids, company_id }));
     } else {
       promises.push(Promise.resolve({ data: [] }));
     }
@@ -425,11 +450,13 @@ export class JobService {
       await Promise.all(promises);
 
     // Validate company_branches_id
-    if (company_branches_id) {
+    if (company_branches_ids.length > 0) {
       const branchesMap = _.keyBy(companyBranchesResult.data, "id");
-      if (!branchesMap[company_branches_id]) {
-        error_messages.push(`company_branches_id ${company_branches_id} not found for company_id ${company_id}.`);
-      }
+      uniqueCategoryIds.forEach((id) => {
+        if (!branchesMap[id]) {
+          error_messages.push(`company_branches_id ${id} not found for company_id ${company_id}.`);
+        }
+      });
     }
 
     // Validate category_ids

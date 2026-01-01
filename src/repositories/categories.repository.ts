@@ -5,6 +5,7 @@ import {
   CategoryUpdate,
   JobCategoryInsert,
   JobCategoryQueryParams,
+  JobCategoryUpdate,
 } from "@/types/common";
 import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
@@ -113,6 +114,18 @@ export class CategoryRepository {
     if (!jobCategoriesData || jobCategoriesData.length === 0) return [];
 
     const { data, error } = await this.db.from("job_categories").insert(jobCategoriesData).select();
+
+    if (error) throw error;
+
+    return data;
+  }
+
+  async bulkUpdateJobCategories(input: { jobCategoriesData: JobCategoryUpdate[] }) {
+    const { jobCategoriesData } = input;
+
+    if (!jobCategoriesData || jobCategoriesData.length === 0) return [];
+
+    const { data, error } = await this.db.from("job_categories").update(jobCategoriesData).select();
 
     if (error) throw error;
 
