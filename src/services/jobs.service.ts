@@ -404,6 +404,7 @@ export class JobService {
 
     const error_messages: string[] = [];
 
+    const uniqueCompanyBranchesId = _.uniq(company_branches_ids);
     const uniqueCategoryIds = _.uniq(category_ids);
     const uniqueSkillIds = _.uniq(required_skill_ids);
     const uniqueEmploymentTypeIds = _.uniq(employment_type_ids);
@@ -412,8 +413,8 @@ export class JobService {
     const promises: Promise<any>[] = [];
 
     // Validate company_branches_id if provided
-    if (company_branches_ids) {
-      promises.push(companyBranchesRepo.findAll({ ids: company_branches_ids, company_id }));
+    if (uniqueCompanyBranchesId.length > 0) {
+      promises.push(companyBranchesRepo.findAll({ ids: uniqueCompanyBranchesId, company_id }));
     } else {
       promises.push(Promise.resolve({ data: [] }));
     }
@@ -452,7 +453,7 @@ export class JobService {
     // Validate company_branches_id
     if (company_branches_ids.length > 0) {
       const branchesMap = _.keyBy(companyBranchesResult.data, "id");
-      uniqueCategoryIds.forEach((id) => {
+      uniqueCompanyBranchesId.forEach((id) => {
         if (!branchesMap[id]) {
           error_messages.push(`company_branches_id ${id} not found for company_id ${company_id}.`);
         }
