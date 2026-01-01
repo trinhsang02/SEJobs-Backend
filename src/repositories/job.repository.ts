@@ -78,7 +78,7 @@ export class JobRepository {
   async findOne(jobId: number) {
     const selectString = `
       *,
-      company_branches!company_branches_id(
+      company_branches!left(
         id,
         province_id,
         address,
