@@ -10,6 +10,7 @@ import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
 import { Company, Job, JobAfterJoined, JobCategory, JobEmploymentType, JobLevel, JobQueryParams, JobSkill } from "@/types/common";
 import companyRepo from "@/repositories/company.repository";
 import companyBranchesRepo from "@/repositories/company_branches.repository";
+import savedJobsRepo from "@/repositories/saved_jobs.repository";
 import { toCamelCaseKeys } from "@/utils/casing";
 import { toTopCvFormat } from "@/utils/topCVFormat";
 
@@ -19,8 +20,26 @@ export class JobService {
     return total;
   }
 
-  async list(input: JobQueryParams) {
+  async list(input: JobQueryParams & { current_user_id?: number }) {
     const { data: jobs, pagination } = await jobRepository.findAll(input);
+
+    if (input.current_user_id) {
+      const jobIds = jobs.map((job) => job.id).filter((id): id is number => typeof id === "number");
+      const saved = jobIds.length
+        ? await savedJobsRepo.findByUserAndJobIds(input.current_user_id, jobIds)
+        : [];
+      const savedSet = new Set(saved.map((item) => item.job_id));
+
+      const enrichedJobs = jobs.map((job) => ({
+        ...job,
+        isSaved: savedSet.has(job.id as number),
+      }));
+
+      return {
+        data: enrichedJobs,
+        pagination,
+      };
+    }
 
     return {
       data: jobs,
