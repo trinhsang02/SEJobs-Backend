@@ -78,6 +78,19 @@ export class SavedJobRepository {
     };
   }
 
+  async findByUserAndJobIds(user_id: number, job_ids: number[]) {
+    if (job_ids.length === 0) return [] as Pick<SavedJob, "job_id">[];
+
+    const { data, error } = await this.db
+      .from("saved_jobs")
+      .select("job_id")
+      .eq("user_id", user_id)
+      .in("job_id", job_ids);
+
+    if (error) throw error;
+    return (data || []) as Pick<SavedJob, "job_id">[];
+  }
+
   async delete({ user_id, job_id }: SavedJobQueryParams) {
     const { data, error } = await this.db
       .from("saved_jobs")

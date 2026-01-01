@@ -63,6 +63,8 @@ export function toTopCvFormat(job: any, company: any = null, branch: any = null)
     company_branches: job.company_branches || [],
     companyId: job.company_id,
 
+    isSaved: Boolean(job.isSaved),
+
     categories: job.categories || [],
     skills: job.skills || [],
     levels: job.levels || [],
