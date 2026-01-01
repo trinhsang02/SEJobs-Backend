@@ -23,6 +23,6 @@ jobs:
           script: |
             export PATH="/root/.nvm/versions/node/v22.14.0/bin:$PATH"
             cd SEJobs-Backend
-            git pull origin main
+            git pull origin prod
             npm install
             pm2 restart se-jobs
