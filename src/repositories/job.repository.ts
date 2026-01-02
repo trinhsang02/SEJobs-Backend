@@ -80,7 +80,11 @@ export class JobRepository {
       *,
       company_branches!left(
         id,
+        name,
+        company_id,
+        country_id,
         province_id,
+        ward_id,
         address,
         created_at,
         updated_at
