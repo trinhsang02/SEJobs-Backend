@@ -116,11 +116,7 @@ export class UserService {
       });
     }
 
-    if (newUser.role === "Student") {
-      if (!student_info) {
-        throw new BadRequestError({ message: "Student info is required for Student accounts" });
-      }
-
+    if (newUser.role === "Student" && student_info) {
       const { about, location, skills, open_for_opportunities } = student_info;
 
       await studentRepository.create({
