@@ -82,12 +82,12 @@ export class JobRepository {
         id,
         name,
         company_id,
-        country_id,
-        province_id,
-        ward_id,
         address,
         created_at,
-        updated_at
+        updated_at,
+        province:provinces(id, name),
+        ward:wards(id, name),
+        country:countries(id, name)
       ),
       company:companies!inner(
         id,
