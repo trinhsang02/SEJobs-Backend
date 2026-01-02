@@ -5,13 +5,12 @@ import { CreateJobDto } from "@/dtos/job/CreateJob.dto";
 import { UpdateJobDto } from "@/dtos/job/UpdateJob.dto";
 import { JobAfterJoined, JobQueryParams, SORTABLE_JOB_FIELDS } from "@/types/common";
 import { NotFoundError } from "@/utils/errors";
-import company_branchesRepository from "./company_branches.repository";
 import convert from "@/utils/convert";
 
 export class JobRepository {
   private readonly db: SupabaseClient;
   public readonly fields =
-    "id, external_id, website_url, company, company_id, company_branches, company_branches_id, company_branches_ids, title, responsibilities, requirement, nice_to_haves, benefit, working_time, description, apply_guide, is_diamond, is_job_flash_active, is_hot, salary_from, salary_to, salary_text, salary_currency, job_posted_at, job_deadline, apply_reasons, status, created_at, updated_at, quantity, categories, skills";
+    "id, external_id, website_url, company, company_id, company_branches, company_branches_id, company_branches_ids, title, responsibilities, requirement, nice_to_haves, benefit, working_time, description, apply_guide, is_diamond, is_job_flash_active, is_hot, salary_from, salary_to, salary_text, salary_currency, job_posted_at, job_deadline, apply_reasons, status, created_at, updated_at, quantity, categories, skills, levels";
 
   constructor() {
     this.db = supabase;
@@ -63,43 +62,6 @@ export class JobRepository {
     const selectedFields = fields.split(",").map((f) => f.trim());
 
     const rows = (data || []).map((row: any) => _.pick(row, selectedFields));
-
-    if (rows.length > 0 && (selectedFields.includes("categories") || selectedFields.includes("skills"))) {
-      const jobIds = rows.map((row: any) => row.id);
-      
-      const selectString = `
-        id,
-        categories!inner(
-          id,
-          name,
-          created_at,
-          updated_at
-        ),
-        skills!left(
-          id,
-          name,
-          created_at,
-          updated_at
-        )
-      `;
-
-      const { data: jobsWithRelations, error: joinError } = await this.db
-        .from("jobs")
-        .select(selectString)
-        .in("id", jobIds);
-
-      if (joinError) throw joinError;
-
-      // Merge joined data back into rows
-      const jobsMap = new Map(jobsWithRelations?.map((job: any) => [job.id, job]));
-      rows.forEach((row: any) => {
-        const jobWithRelations = jobsMap.get(row.id);
-        if (jobWithRelations) {
-          row.categories = jobWithRelations.categories;
-          row.skills = jobWithRelations.skills;
-        }
-      });
-    }
 
     return {
       data: rows as JobAfterJoined[],
