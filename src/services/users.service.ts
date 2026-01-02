@@ -11,7 +11,7 @@ import { generateToken } from "@/utils/jwt.util";
 import companyRepository from "@/repositories/company.repository";
 import studentRepository from "@/repositories/student.repository";
 import companyService from "@/services/company.service";
-
+import { EmailService } from "@/services/email.service";
 import educationsRepository from "@/repositories/educations.repository";
 import certificationsRepository from "@/repositories/certifications.repository";
 import socialLinksRepository from "@/repositories/social_links.repository";
@@ -343,88 +343,86 @@ export class UserService {
 
   async requestPasswordReset(input: { email: string }) {
     const { email } = input;
+
     const user = await userRepository.findOne({
       email,
-      fields: userRepository.fields + ", reset_token, reset_token_expires, is_active",
+      fields: "user_id, email, is_active",
     });
 
-    if (!user) {
-      throw new NotFoundError({ message: "User not found" });
-    }
-    if ((user as any).is_active === false) {
-      throw new BadRequestError({ message: "Account is deactivated" });
+    if (!user || user.is_active === false) {
+      return { success: true };
     }
 
-    // Generate secure token and expiry (1 hour)
-    const token = require("crypto").randomBytes(32).toString("hex");
-    const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 phút
 
     await userRepository.update({
       userId: user.user_id,
       userData: {
-        ...({ reset_token: token, reset_token_expires: expires } as any),
+        reset_token: otp,
+        reset_token_expires: expires,
         updated_at: new Date().toISOString(),
       } as any,
     });
 
-    return { user_id: user.user_id, email: user.email, reset_token: token, reset_token_expires: expires };
+    await EmailService.sendResetOtp(email, otp);
+
+    return { success: true };
   }
 
-  async resetPassword(input: { token?: string; old_password?: string; new_password: string; userId?: number }) {
-    const { token, old_password, new_password, userId } = input;
+  async resetPassword(input: {
+    email?: string;
+    otp?: string;
+    old_password?: string;
+    new_password: string;
+    userId?: number;
+  }) {
+    const { email, otp, old_password, new_password, userId } = input;
+    let targetUserId: number;
 
-    let target: User | undefined;
-
-    // Case 1: Reset password using token (forgot password flow)
-    if (token) {
-      const { data: users } = await userRepository.findAll<User>({
-        fields: userRepository.fields + ", reset_token, reset_token_expires, is_active",
+    if (email && otp) {
+      const user = await userRepository.findOne({
+        email,
+        fields: "user_id, reset_token, reset_token_expires, is_active",
       });
-      target = users.find((u) => (u as any).reset_token === token);
 
-      if (!target) {
-        throw new BadRequestError({ message: "Invalid reset token" });
-      }
-      if ((target as any).is_active === false) {
-        throw new BadRequestError({ message: "Account is deactivated" });
+      if (!user || user.is_active === false) {
+        throw new BadRequestError({ message: "Invalid or expired OTP" });
       }
 
-      const expiresAt = (target as any).reset_token_expires ? new Date((target as any).reset_token_expires).getTime() : 0;
-      if (Date.now() > expiresAt) {
-        throw new BadRequestError({ message: "Reset token expired" });
+      const expiresAt = user.reset_token_expires ? new Date(user.reset_token_expires).getTime() : 0;
+      if (Date.now() > expiresAt || user.reset_token !== otp) {
+        throw new BadRequestError({ message: "Invalid or expired OTP" });
       }
-    }
-    // Case 2: Change password using old password (change password flow)
-    else if (old_password && userId) {
+
+      targetUserId = user.user_id;
+    } else if (old_password && userId) {
       const user = await userRepository.findOne({
         user_id: userId,
-        fields: userRepository.fields + ", password, is_active",
+        fields: "user_id, password, is_active",
       });
 
-      if (!user) {
+      if (!user || user.is_active === false) {
         throw new NotFoundError({ message: "User not found" });
       }
-      if ((user as any).is_active === false) {
-        throw new BadRequestError({ message: "Account is deactivated" });
-      }
 
-      const isValidPassword = await bcrypt.compare(old_password, (user as any).password);
-      if (!isValidPassword) {
+      const isValid = await bcrypt.compare(old_password, user.password);
+      if (!isValid) {
         throw new BadRequestError({ message: "Old password is incorrect" });
       }
 
-      target = user;
+      targetUserId = user.user_id;
     } else {
-      throw new BadRequestError({ message: "Either token or (old_password and userId) must be provided" });
+      throw new BadRequestError({ message: "Invalid parameters" });
     }
 
     const hashedPassword = await bcrypt.hash(new_password, 10);
-
     await userRepository.update({
-      userId: target.user_id,
+      userId: targetUserId,
       userData: {
         password: hashedPassword,
-        ...(token ? { reset_token: null, reset_token_expires: null } : {}),
+        reset_token: null,
+        reset_token_expires: null,
         updated_at: new Date().toISOString(),
       } as any,
     });
