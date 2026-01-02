@@ -98,18 +98,20 @@ export async function refreshToken(req: Request, res: Response) {
 export async function requestPasswordReset(req: Request, res: Response) {
   const { email } = validate.schema_validate(forgotPasswordSchema, req.body);
 
-  const { reset_token, reset_token_expires } = await UsersService.requestPasswordReset({ email });
+  await UsersService.requestPasswordReset({ email });
 
   res.status(200).json({
     success: true,
-    data: { reset_token, reset_token_expires },
+    message: "Nếu email tồn tại, bạn sẽ nhận được mã OTP trong vài giây.",
   });
 }
 
 export async function resetPassword(req: Request, res: Response) {
-  const { token, new_password } = validate.schema_validate(resetPasswordSchema, req.body);
-  await UsersService.resetPassword({ token, new_password });
-  res.status(200).json({ success: true });
+  const { email, otp, new_password } = validate.schema_validate(resetPasswordSchema, req.body);
+
+  await UsersService.resetPassword({ email, otp, new_password });
+
+  res.status(200).json({ success: true, message: "Password reset successfully" });
 }
 
 export async function changePassword(req: Request, res: Response) {
