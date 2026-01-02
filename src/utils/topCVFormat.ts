@@ -7,18 +7,9 @@ export function toTopCvFormat(job: any, company: any = null, branch: any = null)
     url: job.website_url || "",
     title: job.title,
     description: job.description || "",
-    requirement:
-      typeof job.requirement === "string"
-        ? job.requirement
-        : Array.isArray(job.requirement)
-        ? job.requirement.join("<br />")
-        : "",
-    nice_to_haves:
-      typeof job.nice_to_haves === "string"
-        ? job.nice_to_haves
-        : Array.isArray(job.nice_to_haves)
-        ? job.nice_to_haves.join("<br />")
-        : "",
+    responsibilities: job.responsibilities || [],
+    requirement: job.requirement || [],
+    nice_to_haves: job.nice_to_haves || [],
     benefit: job.benefit,
     company: company
       ? {
