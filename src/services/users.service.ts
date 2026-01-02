@@ -116,8 +116,8 @@ export class UserService {
       });
     }
 
-    if (newUser.role === "Student" && student_info) {
-      const { about, location, skills, open_for_opportunities } = student_info;
+    if (newUser.role === "Student") {
+      const { about, location, skills, open_for_opportunities } = student_info || {};
 
       await studentRepository.create({
         studentData: {
