@@ -5,7 +5,8 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import _ from "lodash";
 export class StudentRepository {
   private readonly db: SupabaseClient;
-  public readonly fields = "id, user_id, about, location, skills, open_for_opportunities, created_at, updated_at";
+  public readonly fields =
+    "id, user_id, about, location, skills, open_for_opportunities, phone_number, desired_positions, date_of_birth, gender, created_at, updated_at";
 
   constructor() {
     this.db = supabase;
@@ -62,7 +63,7 @@ export class StudentRepository {
     }
 
     const { data, error } = await dbQuery.maybeSingle<Student>();
-
+    console.log(data);
     if (error) throw error;
 
     return data;

@@ -229,7 +229,6 @@ export type JobCompanyBranches = Database["public"]["Tables"]["job_company_branc
 export type JobCompanyBranchesInsert = Database["public"]["Tables"]["job_company_branches"]["Insert"];
 export type JobCompanyBranchesUpdate = Database["public"]["Tables"]["job_company_branches"]["Update"];
 
-
 // NOTIFICATIONS
 export enum NotificationType {
   UserCreated = "user_created",
@@ -322,4 +321,15 @@ export type CVUpdate = Database["public"]["Tables"]["cv"]["Update"];
 export interface CVQueryParams extends QueryParams {
   cv_id?: number;
   student_id?: number;
+}
+
+// APPLICATION
+export type Application = Database["public"]["Tables"]["applications"]["Row"];
+export type ApplicationInsert = Database["public"]["Tables"]["applications"]["Insert"];
+export type ApplicationUpdate = Database["public"]["Tables"]["applications"]["Update"];
+
+export interface ApplicationQueryParams extends QueryParams {
+  application_id?: number;
+  student_id?: number;
+  job_id?: number;
 }
