@@ -32,6 +32,10 @@ export const studentProfileSchema = z.object({
   location: z.string().optional(),
   skills: z.array(z.string()).optional(),
   open_for_opportunities: z.boolean().optional(),
+  phone_number: z.string().optional(),
+  date_of_birth: z.string().optional(),
+  gender: z.enum(["Male", "Female", "Other"]).optional(),
+  desired_positions: z.array(z.string()).optional(),
 });
 
 export const registerSchema = z

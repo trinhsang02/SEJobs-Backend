@@ -183,6 +183,10 @@ export class UserService {
         open_for_opportunities,
         created_at,
         updated_at,
+        desired_positions,
+        gender,
+        date_of_birth,
+        phone_number,
         experiences:experiences(
           id, student_id, company, position, location, start_date, end_date, description, is_current
         ),
@@ -300,7 +304,16 @@ export class UserService {
     });
 
     if (userData.student_info && updatedUser?.role === "Student") {
-      const { about, location, skills, open_for_opportunities } = userData.student_info;
+      const {
+        about,
+        location,
+        skills,
+        open_for_opportunities,
+        phone_number,
+        desired_positions,
+        gender,
+        date_of_birth,
+      } = userData.student_info;
 
       await studentRepository.update({
         userId,
@@ -310,8 +323,12 @@ export class UserService {
             location: location || null,
             open_for_opportunities: open_for_opportunities !== undefined ? open_for_opportunities : null,
             skills: skills || null,
+            phone_number: phone_number || null,
+            desired_positions: desired_positions || null,
+            date_of_birth: date_of_birth || null,
+            gender: gender || null,
           },
-          (value) => value !== undefined
+          (value) => value !== undefined && value !== null
         ),
       });
     }

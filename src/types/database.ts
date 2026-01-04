@@ -14,48 +14,88 @@ export type Database = {
   }
   public: {
     Tables: {
-      application: {
+      applications: {
         Row: {
+          additional_information: string | null
+          company_id: number
+          created_at: string
+          email: string
           feedback: string | null
+          full_name: string
           id: number
-          jobid: number | null
-          reviewedat: string | null
-          status: Database["public"]["Enums"]["applicationstatus"] | null
-          studentid: number | null
-          submittedat: string | null
+          job_id: number
+          linkedin_url: string | null
+          phone: string
+          portfolio_url: string | null
+          previous_job: string | null
+          resume_url: string
+          reviewed_at: string | null
+          status: Database["public"]["Enums"]["applicationstatus"]
+          submitted_at: string
+          updated_at: string
+          user_id: number
         }
         Insert: {
+          additional_information?: string | null
+          company_id: number
+          created_at?: string
+          email: string
           feedback?: string | null
+          full_name: string
           id?: never
-          jobid?: number | null
-          reviewedat?: string | null
-          status?: Database["public"]["Enums"]["applicationstatus"] | null
-          studentid?: number | null
-          submittedat?: string | null
+          job_id: number
+          linkedin_url?: string | null
+          phone: string
+          portfolio_url?: string | null
+          previous_job?: string | null
+          resume_url: string
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["applicationstatus"]
+          submitted_at?: string
+          updated_at?: string
+          user_id: number
         }
         Update: {
+          additional_information?: string | null
+          company_id?: number
+          created_at?: string
+          email?: string
           feedback?: string | null
+          full_name?: string
           id?: never
-          jobid?: number | null
-          reviewedat?: string | null
-          status?: Database["public"]["Enums"]["applicationstatus"] | null
-          studentid?: number | null
-          submittedat?: string | null
+          job_id?: number
+          linkedin_url?: string | null
+          phone?: string
+          portfolio_url?: string | null
+          previous_job?: string | null
+          resume_url?: string
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["applicationstatus"]
+          submitted_at?: string
+          updated_at?: string
+          user_id?: number
         }
         Relationships: [
           {
-            foreignKeyName: "application_jobid_fkey"
-            columns: ["jobid"]
+            foreignKeyName: "application_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_job_id_fkey"
+            columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "application_studentid_fkey"
-            columns: ["studentid"]
+            foreignKeyName: "application_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "student"
-            referencedColumns: ["id"]
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1093,9 +1133,13 @@ export type Database = {
         Row: {
           about: string | null
           created_at: string | null
+          date_of_birth: string | null
+          desired_positions: string[] | null
+          gender: string | null
           id: number
           location: string | null
           open_for_opportunities: boolean | null
+          phone_number: string | null
           skills: string[] | null
           updated_at: string | null
           user_id: number | null
@@ -1103,9 +1147,13 @@ export type Database = {
         Insert: {
           about?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
+          desired_positions?: string[] | null
+          gender?: string | null
           id?: never
           location?: string | null
           open_for_opportunities?: boolean | null
+          phone_number?: string | null
           skills?: string[] | null
           updated_at?: string | null
           user_id?: number | null
@@ -1113,9 +1161,13 @@ export type Database = {
         Update: {
           about?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
+          desired_positions?: string[] | null
+          gender?: string | null
           id?: never
           location?: string | null
           open_for_opportunities?: boolean | null
+          phone_number?: string | null
           skills?: string[] | null
           updated_at?: string | null
           user_id?: number | null
