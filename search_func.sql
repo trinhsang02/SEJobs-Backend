@@ -214,7 +214,8 @@ as $$
     (q_company_id is null or j.company_id = q_company_id)
     and (
       q_keyword is null
-      or LOWER(j.title) like CONCAT('%', LOWER(q_keyword), '%')
+      OR LOWER(j.title) LIKE CONCAT('%', LOWER(TRIM(q_keyword)), '%')
+      OR LOWER(cp.name) LIKE CONCAT('%', LOWER(TRIM(q_keyword)), '%')
     )
     and (
       q_province_ids is null
