@@ -1,14 +1,22 @@
 import ApplicationRepository from "@/repositories/application.repository";
-import { CreateApplicationDTO, UpdateApplicationDTO } from "@/dtos/user/Application.dto";
-import { NotFoundError, BadRequestError, ConflictError } from "@/utils/errors";
+import { CreateApplicationDTO, UpdateApplicationStatusDTO } from "@/dtos/user/Application.dto";
+import { NotFoundError, ConflictError } from "@/utils/errors";
+
+function toDatabaseFormat<T extends Record<string, any>>(obj: T): any {
+  const result: any = {};
+  for (const key in obj) {
+    result[key] = obj[key] === undefined ? null : obj[key];
+  }
+  return result;
+}
 
 export const ApplicationService = {
-  async findAll(options: { page: number; limit: number }) {
-    return ApplicationRepository.findAll(options);
-  },
-
   async findByUserId(userId: number, options: { page: number; limit: number }) {
     return ApplicationRepository.findByUserId(userId, options);
+  },
+
+  async findByCompanyId(companyId: number, options: { page: number; limit: number; jobId?: number }) {
+    return ApplicationRepository.findByCompanyId(companyId, options);
   },
 
   async getOne(id: number) {
@@ -17,20 +25,24 @@ export const ApplicationService = {
     return app;
   },
 
-  async create(payload: CreateApplicationDTO & { user_id: number }) {
-    const { user_id, job_id } = payload;
+  async findByUserIdAndJobId(userId: number, jobId: number) {
+    return ApplicationRepository.findByUserIdAndJobId(userId, jobId);
+  },
 
-    const existing = await ApplicationRepository.findByUserIdAndJobId(user_id, job_id);
+  async create(payload: CreateApplicationDTO & { user_id: number }) {
+    const existing = await ApplicationRepository.findByUserIdAndJobId(payload.user_id, payload.job_id);
     if (existing) {
       throw new ConflictError({ message: "You have already applied to this job" });
     }
 
-    return ApplicationRepository.insert(payload as any);
+    const dbPayload = toDatabaseFormat(payload);
+    return ApplicationRepository.insert(dbPayload);
   },
 
-  async update(id: number, payload: UpdateApplicationDTO) {
+  async updateStatus(id: number, payload: UpdateApplicationStatusDTO) {
     await this.getOne(id);
-    return ApplicationRepository.update(id, payload as any);
+    const dbPayload = toDatabaseFormat(payload);
+    return ApplicationRepository.updateStatus(id, dbPayload);
   },
 
   async delete(id: number) {

@@ -1,25 +1,7 @@
 import { supabase } from "@/config/supabase";
-import { Application, ApplicationInsert, ApplicationUpdate } from "@/types/common";
+import { Application, ApplicationInsert, ApplicationStatusUpdate } from "@/types/common";
 
 const ApplicationRepository = {
-  async findAll(options: { page: number; limit: number }) {
-    const { page, limit } = options;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-
-    const { data, error, count } = await supabase
-      .from("applications")
-      .select("*", { count: "exact" })
-      .range(from, to)
-      .order("submitted_at", { ascending: false });
-
-    if (error) throw error;
-    return {
-      data: data as Application[],
-      pagination: { page, limit, total: count || 0 },
-    };
-  },
-
   async findByUserId(userId: number, options: { page: number; limit: number }) {
     const { page, limit } = options;
     const from = (page - 1) * limit;
@@ -39,9 +21,33 @@ const ApplicationRepository = {
     };
   },
 
+  async findByCompanyId(companyId: number, options: { page: number; limit: number; jobId?: number }) {
+    const { page, limit, jobId } = options;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    let query = supabase
+      .from("applications")
+      .select("*, jobs(title, company_id)", { count: "exact" })
+      .eq("jobs.company_id", companyId)
+      .range(from, to)
+      .order("submitted_at", { ascending: false });
+
+    if (jobId) {
+      query = query.eq("job_id", jobId);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) throw error;
+    return {
+      data: data as Application[],
+      pagination: { page, limit, total: count || 0 },
+    };
+  },
+
   async findOne(id: number): Promise<Application | null> {
     const { data, error } = await supabase.from("applications").select("*").eq("id", id).single();
-
     if (error) {
       if (error.code === "PGRST116") return null;
       throw error;
@@ -70,7 +76,7 @@ const ApplicationRepository = {
     return data as Application;
   },
 
-  async update(id: number, payload: ApplicationUpdate): Promise<Application> {
+  async updateStatus(id: number, payload: ApplicationStatusUpdate): Promise<Application> {
     const { data, error } = await supabase.from("applications").update(payload).eq("id", id).select().single();
     if (error) throw error;
     return data as Application;
