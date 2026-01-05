@@ -333,3 +333,14 @@ export interface ApplicationQueryParams extends QueryParams {
   student_id?: number;
   job_id?: number;
 }
+
+export enum ApplicationStatus {
+  Applied = "applied",
+  Viewed = "viewed",
+  Rejected = "rejected",
+  Shortlisted = "shortlisted",
+  Offered = "offered",
+  Hired = "hired",
+  InterviewScheduled = "interview_scheduled",
+  Cancelled = "cancelled",
+}
