@@ -79,11 +79,12 @@ export const ApplicationService = {
     return ApplicationRepository.create(dbPayload);
   },
 
-  async updateStatus(id: number, payload: UpdateApplicationStatusDTO) {
-    await this.findOne({
-      id: id
+  async update(id: number, payload: UpdateApplicationStatusDTO) {
+    const dbPayload = toDatabaseFormat({
+      ...payload,
+      updated_at: new Date()
     });
-    const dbPayload = toDatabaseFormat(payload);
+
     return ApplicationRepository.updateStatus(id, dbPayload);
   },
 

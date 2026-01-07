@@ -47,21 +47,6 @@ const ApplicationRepository = {
     return data?.[0] ?? null;
   },
 
-  async findByUserIdAndJobId(userId: number, jobId: number): Promise<Application | null> {
-    const { data, error } = await supabase
-      .from("applications")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("job_id", jobId)
-      .single();
-
-    if (error) {
-      if (error.code === "PGRST116") return null;
-      throw error;
-    }
-    return data as Application;
-  },
-
   async create(payload: ApplicationInsert): Promise<Application> {
     const { data, error } = await supabase.from("applications").insert(payload).select().single();
     if (error) throw error;

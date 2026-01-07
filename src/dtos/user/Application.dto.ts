@@ -16,8 +16,8 @@ const baseApplicationSchema = z.object({
 export const createApplicationSchema = baseApplicationSchema;
 
 export const updateApplicationStatusSchema = z.object({
-  status: z.enum(Object.values(ApplicationStatus) as [string, ...string[]]),
-  reviewed_at: z.string().datetime().optional(),
+  status: z.enum(Object.values(ApplicationStatus) as [ApplicationStatus, ...ApplicationStatus[]]),
+  reviewed_at: z.string().optional(),
   feedback: z.string().optional(),
 });
 

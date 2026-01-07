@@ -339,6 +339,24 @@ export enum ApplicationStatus {
   Cancelled = "Cancelled",
 }
 export type ApplicationStatusUpdate = Pick<Application, "status" | "reviewed_at" | "feedback">;
+export const LIST_STUDENT_ALLOWED_UPDATE_STATUS = [ApplicationStatus.Cancelled];
+export const LIST_EMPLOYER_ALLOWED_UPDATE_STATUS: Record<ApplicationStatus, readonly ApplicationStatus[]> = {
+  [ApplicationStatus.Cancelled]: [],
+  [ApplicationStatus.Applied]: [
+    ApplicationStatus.Viewed,
+    ApplicationStatus.InterviewScheduled,
+    ApplicationStatus.Hired,
+    ApplicationStatus.Rejected,
+    ApplicationStatus.Shortlisted,
+    ApplicationStatus.Offered,
+  ],
+  [ApplicationStatus.Viewed]: [ApplicationStatus.InterviewScheduled, ApplicationStatus.Hired, ApplicationStatus.Rejected, ApplicationStatus.Shortlisted, ApplicationStatus.Offered],
+  [ApplicationStatus.InterviewScheduled]: [ApplicationStatus.Hired, ApplicationStatus.Rejected, ApplicationStatus.Shortlisted, ApplicationStatus.Offered],
+  [ApplicationStatus.Hired]: [ApplicationStatus.Rejected, ApplicationStatus.Shortlisted, ApplicationStatus.Offered],
+  [ApplicationStatus.Shortlisted]: [ApplicationStatus.Rejected, ApplicationStatus.Offered],
+  [ApplicationStatus.Offered]: [ApplicationStatus.Rejected],
+  [ApplicationStatus.Rejected]: [],
+};
 
 export interface ApplicationQueryAllParams extends QueryParams {
   ids?: number[];

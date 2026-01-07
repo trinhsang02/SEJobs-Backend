@@ -4,7 +4,7 @@ import { createApplicationSchema, updateApplicationStatusSchema } from "@/dtos/u
 import { ApplicationService } from "@/services/applications.service";
 import { UnauthorizedError, NotFoundError, BadRequestError } from "@/utils/errors";
 import convert from "@/utils/convert";
-import { ApplicationStatus } from "@/types/common";
+import { ApplicationStatus, LIST_EMPLOYER_ALLOWED_UPDATE_STATUS, LIST_STUDENT_ALLOWED_UPDATE_STATUS } from "@/types/common";
 import _ from "lodash";
 import companyService from "@/services/company.service";
 
@@ -28,7 +28,7 @@ export async function getApplication(req: Request, res: Response) {
   const id = Number(req.params.id);
 
   if (_.isNaN(id)) {
-    throw new BadRequestError({ message: "Invalid param id!" });
+    throw new BadRequestError({ message: "Invalid application id!" });
   }
 
   const application = await ApplicationService.findOne({ id, user_id: req.user.userId });
@@ -36,6 +36,27 @@ export async function getApplication(req: Request, res: Response) {
   res.status(200).json({ success: true, data: application });
 }
 
+export async function updateApplication(req: Request, res: Response) {
+  if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
+
+  const id = Number(req.params.id);
+
+  if (_.isNaN(id)) {
+    throw new BadRequestError({ message: "Invalid application id!" });
+  }
+
+  const payload = validate.schema_validate(updateApplicationStatusSchema, req.body);
+
+  if (payload.status && !LIST_STUDENT_ALLOWED_UPDATE_STATUS.includes(payload.status as ApplicationStatus)) {
+    throw new BadRequestError({ message: `Invalid update status application, list allowed: ${LIST_STUDENT_ALLOWED_UPDATE_STATUS.join(',')}` })
+  }
+
+  const application = await ApplicationService.update(id, { 
+    status: payload.status
+  });
+
+  res.status(200).json({ success: true, data: application });
+}
 
 export async function createApplication(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
@@ -53,7 +74,7 @@ export async function createApplication(req: Request, res: Response) {
 
 // --- Company Routes ---
 
-export async function listCompanyApplications(req: Request, res: Response) {
+export async function companyListApplications(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
 
   const company = await companyService.findOne({
@@ -71,59 +92,49 @@ export async function listCompanyApplications(req: Request, res: Response) {
   res.status(200).json({ success: true, data, pagination });
 }
 
-// export async function getCompanyApplication(req: Request, res: Response) {
-//   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
-//   if (req.user.role !== "Employer") {
-//     throw new UnauthorizedError({ message: "Only company can view this application" });
-//   }
+export async function companyGetApplication(req: Request, res: Response) {
+  if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
 
-//   const id = Number(req.params.id);
-//   const owns = await verifyCompanyOwnsApplication(req.user.userId, id);
-//   if (!owns) {
-//     throw new UnauthorizedError({ message: "You do not own this job" });
-//   }
+  const id = Number(req.params.id);
 
-//   const app = await ApplicationService.findOne({ id });
+  if (_.isNaN(id)) {
+    throw new BadRequestError({ message: "Invalid application id!" });
+  }
 
-//   if (app.status === "Applied") {
-//     const updated = await ApplicationService.updateStatus(id, { status: ApplicationStatus.Viewed });
-//     res.status(200).json({ success: true, data: updated });
-//   } else {
-//     res.status(200).json({ success: true, data: app });
-//   }
-// }
+  const company = await companyService.findOne({
+    user_id: req.user.userId,
+  });
 
-// export async function updateApplicationStatus(req: Request, res: Response) {
-//   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
-//   if (req.user.role !== "Employer") {
-//     throw new UnauthorizedError({ message: "Only company can update application status" });
-//   }
+  const application = await ApplicationService.findOne({ 
+    id,
+    company_id: company.id
+  });
 
-//   const id = Number(req.params.id);
-//   const payload = validate.schema_validate(updateApplicationStatusSchema, req.body);
+  res.status(200).json({ success: true, data: application });
+}
 
-//   const owns = await verifyCompanyOwnsApplication(req.user.userId, id);
-//   if (!owns) {
-//     throw new UnauthorizedError({ message: "You do not own this job" });
-//   }
+export async function companyUpdateApplication(req: Request, res: Response) {
+  if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
 
-//   const payloadWithReviewedAt = {
-//     ...payload,
-//     reviewed_at: payload.reviewed_at || new Date().toISOString(),
-//   };
+  const id = Number(req.params.application_id);
 
-//   const updated = await ApplicationService.updateStatus(id, payloadWithReviewedAt);
-//   res.status(200).json({ success: true, data: updated });
-// }
-// export async function deleteApplication(req: Request, res: Response) {
-//   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
-//   const id = Number(req.params.id);
+  if (_.isNaN(id)) {
+    throw new BadRequestError({ message: "Invalid application id!" });
+  }
 
-//   const app = await ApplicationService.findOne({ id });
-//   if (app.user_id !== req.user.userId && req.user.role !== "Admin") {
-//     throw new UnauthorizedError({ message: "You cannot delete this application" });
-//   }
+  const payload = validate.schema_validate(updateApplicationStatusSchema, req.body);
 
-//   await ApplicationService.delete(id);
-//   res.status(204).send();
-// }
+  const oldApplication = await ApplicationService.findOne({ id });
+  const oldStatus: ApplicationStatus = oldApplication.status as ApplicationStatus;
+
+  if (payload.status && !LIST_EMPLOYER_ALLOWED_UPDATE_STATUS[oldStatus].includes(payload.status)) {
+    throw new BadRequestError({ message: `Invalid update status application, list allowed: ${LIST_EMPLOYER_ALLOWED_UPDATE_STATUS[oldStatus].join(',')}` })
+  }
+
+  const application = await ApplicationService.update(id, { 
+    status: payload.status,
+    feedback: payload.feedback,
+  });
+
+  res.status(200).json({ success: true, data: application });
+}
