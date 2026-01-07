@@ -34,18 +34,18 @@ export async function getMyApplications(req: Request, res: Response) {
   res.status(200).json({ success: true, ...result });
 }
 
+export async function getApplication(req: Request, res: Response) {
+  const id = Number(req.params.id);
+
+  const application = await ApplicationService.findOne({ id });
+
+  res.status(201).json({ success: true, data: application });
+}
+
 export async function createApplication(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
-  if (req.user.role !== "Student") {
-    throw new UnauthorizedError({ message: "Only students can apply" });
-  }
 
   const payload = validate.schema_validate(createApplicationSchema, req.body);
-
-  const existing = await ApplicationService.findByUserIdAndJobId(req.user.userId, payload.job_id);
-  if (existing) {
-    throw new BadRequestError({ message: "You have already applied to this job" });
-  }
 
   const applicationData = {
     ...payload,
@@ -98,7 +98,7 @@ export async function getCompanyApplication(req: Request, res: Response) {
     throw new UnauthorizedError({ message: "You do not own this job" });
   }
 
-  const app = await ApplicationService.getOne(id);
+  const app = await ApplicationService.findOne({ id });
 
   if (app.status === "Applied") {
     const updated = await ApplicationService.updateStatus(id, { status: ApplicationStatus.Viewed });
@@ -134,7 +134,7 @@ export async function deleteApplication(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
   const id = Number(req.params.id);
 
-  const app = await ApplicationService.getOne(id);
+  const app = await ApplicationService.findOne({ id });
   if (app.user_id !== req.user.userId && req.user.role !== "Admin") {
     throw new UnauthorizedError({ message: "You cannot delete this application" });
   }

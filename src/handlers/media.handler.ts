@@ -3,39 +3,16 @@ import { Request, Response } from "express-serve-static-core";
 import { BadRequestError, InternalServerError } from "@/utils/errors";
 import { supabase } from "@/config/supabase";
 import { env } from "@/config/env";
+import { MediaService } from "@/services/media.service";
 
 const ALLOWED_MIME_TYPE = ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm", "application/pdf"];
 
 export async function uploadMedia(req: Request, res: Response) {
-  const file = req.file;
-
-  if (!file) {
-    throw new BadRequestError({ message: "No file uploaded!" });
-  }
-
-  if (!ALLOWED_MIME_TYPE.includes(file.mimetype)) {
-    throw new BadRequestError({ message: "File type not allowed!" });
-  }
-
-  const ext = file.originalname.split(".").pop();
-  const fileName = `media_${Date.now()}.${ext}`;
-
-  const { data, error } = await supabase.storage.from(env.SUPABASE_BUCKET_NAME).upload(fileName, file.buffer, {
-    contentType: file.mimetype,
-    upsert: false,
-  });
-
-  if (error) {
-    throw new InternalServerError({ message: "File type not allowed!" });
-  }
-
-  const { data: publicUrl } = supabase.storage.from(env.SUPABASE_BUCKET_NAME).getPublicUrl(fileName);
+  const result = await MediaService.upload(req.file!);
 
   res.status(200).json({
     success: true,
-    url: publicUrl.publicUrl,
-    fileName,
-    type: file.mimetype,
+    ...result,
   });
 }
 

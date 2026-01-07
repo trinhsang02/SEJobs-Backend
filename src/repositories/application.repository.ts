@@ -1,7 +1,27 @@
 import { supabase } from "@/config/supabase";
-import { Application, ApplicationInsert, ApplicationStatusUpdate } from "@/types/common";
+import { Application, ApplicationInsert, ApplicationQueryParams, ApplicationStatusUpdate } from "@/types/common";
+import _ from "lodash";
 
 const ApplicationRepository = {
+  async findAll(userId: number, options: { page: number; limit: number }) {
+    const { page, limit } = options;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error, count } = await supabase
+      .from("applications")
+      .select("*", { count: "exact" })
+      .eq("user_id", userId)
+      .range(from, to)
+      .order("submitted_at", { ascending: false });
+
+    if (error) throw error;
+    return {
+      data: data as Application[],
+      pagination: { page, limit, total: count || 0 },
+    };
+  },
+
   async findByUserId(userId: number, options: { page: number; limit: number }) {
     const { page, limit } = options;
     const from = (page - 1) * limit;
@@ -46,12 +66,16 @@ const ApplicationRepository = {
     };
   },
 
-  async findOne(id: number): Promise<Application | null> {
-    const { data, error } = await supabase.from("applications").select("*").eq("id", id).single();
-    if (error) {
-      if (error.code === "PGRST116") return null;
-      throw error;
-    }
+  async findOne(params: ApplicationQueryParams): Promise<Application | null> {
+    const { data, error } = await supabase.rpc("get_application", {
+      q_id: _.get(params, "id") || null,
+      q_user_id: _.get(params, "user_id") || null,
+      q_company_id: _.get(params, "company_id") || null,
+      q_job_id: _.get(params, "job_id") || null,
+    });
+
+    if (error) throw error;
+    if (data && data.length === 0) return null;
     return data as Application;
   },
 
@@ -70,7 +94,7 @@ const ApplicationRepository = {
     return data as Application;
   },
 
-  async insert(payload: ApplicationInsert): Promise<Application> {
+  async create(payload: ApplicationInsert): Promise<Application> {
     const { data, error } = await supabase.from("applications").insert(payload).select().single();
     if (error) throw error;
     return data as Application;

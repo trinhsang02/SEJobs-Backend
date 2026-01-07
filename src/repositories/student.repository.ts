@@ -63,7 +63,7 @@ export class StudentRepository {
     }
 
     const { data, error } = await dbQuery.maybeSingle<Student>();
-    console.log(data);
+
     if (error) throw error;
 
     return data;

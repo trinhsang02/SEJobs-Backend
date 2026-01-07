@@ -1,23 +1,19 @@
 import { Router } from "express";
 import {
-  getMyApplications,
   createApplication,
-  listCompanyApplications,
-  getCompanyApplication,
-  updateApplicationStatus,
+  getApplication,
 } from "@/handlers/applications.handler";
 import { authenticate } from "@/middlewares/auth.middleware";
-import { upload } from "@/middlewares/upload.middleware";
+import { authorizeRoles } from "@/middlewares/authorizeRoles";
 
 const router = Router();
 
-// Student routes
-router.get("/me", authenticate, getMyApplications);
-router.post("/", authenticate, upload.single("resume"), createApplication);
+// TODO: TEMP
+router.get("/:id", authenticate, getApplication);
+router.post("/", authenticate, authorizeRoles("Student"), createApplication);
 
-// Company routes
-router.get("/company", authenticate, listCompanyApplications);
-router.get("/company/:id", authenticate, getCompanyApplication);
-router.put("/company/:id/status", authenticate, updateApplicationStatus);
+// router.get("/company", authenticate, listCompanyApplications);
+// router.get("/company/:id", authenticate, getCompanyApplication);
+// router.put("/company/:id/status", authenticate, updateApplicationStatus);
 
 export default router;

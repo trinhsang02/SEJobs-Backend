@@ -1,6 +1,13 @@
 import ApplicationRepository from "@/repositories/application.repository";
 import { CreateApplicationDTO, UpdateApplicationStatusDTO } from "@/dtos/user/Application.dto";
-import { NotFoundError, ConflictError } from "@/utils/errors";
+import { NotFoundError, ConflictError, BadRequestError } from "@/utils/errors";
+import JobRepository from "@/repositories/job.repository";
+import CompanyRepository from "@/repositories/company.repository";
+import { ApplicationQueryParams } from "@/types/common";
+import { supabase } from "@/config/supabase";
+import studentRepository from "@/repositories/student.repository";
+import path from "path";
+import { MediaService } from "@/services/media.service";
 
 function toDatabaseFormat<T extends Record<string, any>>(obj: T): any {
   const result: any = {};
@@ -19,34 +26,69 @@ export const ApplicationService = {
     return ApplicationRepository.findByCompanyId(companyId, options);
   },
 
-  async getOne(id: number) {
-    const app = await ApplicationRepository.findOne(id);
+  async findOne(params: ApplicationQueryParams) {
+    const app = await ApplicationRepository.findOne(params);
     if (!app) throw new NotFoundError({ message: "Application not found" });
     return app;
   },
 
-  async findByUserIdAndJobId(userId: number, jobId: number) {
-    return ApplicationRepository.findByUserIdAndJobId(userId, jobId);
-  },
-
   async create(payload: CreateApplicationDTO & { user_id: number }) {
-    const existing = await ApplicationRepository.findByUserIdAndJobId(payload.user_id, payload.job_id);
+    const existing = await ApplicationRepository.findOne({
+      user_id: payload.user_id,
+      job_id: payload.job_id,
+    });
+
     if (existing) {
       throw new ConflictError({ message: "You have already applied to this job" });
     }
 
-    const dbPayload = toDatabaseFormat(payload);
-    return ApplicationRepository.insert(dbPayload);
+    const { job } = await JobRepository.findOne(payload.job_id);
+
+    if (!job) {
+      throw new BadRequestError({ message: "job_id not found for this application!" });
+    }
+
+    if (!payload.resume_url) {
+      const student = await studentRepository.findOne({ user_id: payload.user_id });
+
+      if (!student || !student.id) {
+        throw new BadRequestError({ message: "Invalid user_id!" });
+      }
+
+      const { data: cv, error } = await supabase.from("cv").select("*").eq("studentid", student.id).single();
+
+      if (error) throw error;
+      const oldFilename = path.basename(cv?.filepath ?? "");
+
+      if (!oldFilename) {
+        throw new BadRequestError({ message: "User don't have CV!" });
+      }
+      
+      const { url } = await MediaService.clone(oldFilename);
+      payload.resume_url = url;
+    }
+
+    if (!payload.resume_url) {
+      throw new BadRequestError({ message: "Missing resume_url!" });
+    }
+
+    const dbPayload = toDatabaseFormat({
+      ...payload,
+      company_id: job.company_id
+    });
+
+    return ApplicationRepository.create(dbPayload);
   },
 
   async updateStatus(id: number, payload: UpdateApplicationStatusDTO) {
-    await this.getOne(id);
+    await this.findOne({
+      id: id
+    });
     const dbPayload = toDatabaseFormat(payload);
     return ApplicationRepository.updateStatus(id, dbPayload);
   },
 
   async delete(id: number) {
-    await this.getOne(id);
     return ApplicationRepository.delete(id);
   },
 };

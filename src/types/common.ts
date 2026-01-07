@@ -328,12 +328,6 @@ export type Application = Database["public"]["Tables"]["applications"]["Row"];
 export type ApplicationInsert = Database["public"]["Tables"]["applications"]["Insert"];
 export type ApplicationUpdate = Database["public"]["Tables"]["applications"]["Update"];
 
-export interface ApplicationQueryParams extends QueryParams {
-  application_id?: number;
-  student_id?: number;
-  job_id?: number;
-}
-
 export enum ApplicationStatus {
   Applied = "Applied",
   Viewed = "Viewed",
@@ -345,3 +339,14 @@ export enum ApplicationStatus {
   Cancelled = "Cancelled",
 }
 export type ApplicationStatusUpdate = Pick<Application, "status" | "reviewed_at" | "feedback">;
+
+export interface ApplicationQueryAllParams extends QueryParams {
+  user_ids?: number[];
+}
+
+export interface ApplicationQueryParams extends QueryParams {
+  id?: number;
+  user_id?: number;
+  company_id?: number;
+  job_id?: number;
+}
