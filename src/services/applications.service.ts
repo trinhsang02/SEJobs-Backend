@@ -3,11 +3,12 @@ import { CreateApplicationDTO, UpdateApplicationStatusDTO } from "@/dtos/user/Ap
 import { NotFoundError, ConflictError, BadRequestError } from "@/utils/errors";
 import JobRepository from "@/repositories/job.repository";
 import CompanyRepository from "@/repositories/company.repository";
-import { ApplicationQueryParams } from "@/types/common";
+import { ApplicationQueryAllParams, ApplicationQueryParams } from "@/types/common";
 import { supabase } from "@/config/supabase";
 import studentRepository from "@/repositories/student.repository";
 import path from "path";
 import { MediaService } from "@/services/media.service";
+import _ from "lodash";
 
 function toDatabaseFormat<T extends Record<string, any>>(obj: T): any {
   const result: any = {};
@@ -18,17 +19,15 @@ function toDatabaseFormat<T extends Record<string, any>>(obj: T): any {
 }
 
 export const ApplicationService = {
-  async findByUserId(userId: number, options: { page: number; limit: number }) {
-    return ApplicationRepository.findByUserId(userId, options);
-  },
-
-  async findByCompanyId(companyId: number, options: { page: number; limit: number; jobId?: number }) {
-    return ApplicationRepository.findByCompanyId(companyId, options);
+  async findAll(params: ApplicationQueryAllParams) {
+    return await ApplicationRepository.findAll(params);
   },
 
   async findOne(params: ApplicationQueryParams) {
     const app = await ApplicationRepository.findOne(params);
+
     if (!app) throw new NotFoundError({ message: "Application not found" });
+
     return app;
   },
 

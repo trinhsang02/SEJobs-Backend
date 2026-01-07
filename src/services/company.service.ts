@@ -5,7 +5,7 @@ import { CreateCompanyDto } from "@/dtos/company/CreateCompany.dto";
 import { BadRequestError, NotFoundError } from "@/utils/errors";
 import { UpdateCompanyDto } from "@/dtos/company/UpdateCompany.dto";
 import CompanyTypeService from "@/services/company_type.service";
-import { CompanyQueryAllParams } from "@/types/common";
+import { CompanyQueryAllParams, CompanyQueryParams } from "@/types/common";
 import companyBranchesRepository from "@/repositories/company_branches.repository";
 
 export class CompanyService {
@@ -15,10 +15,10 @@ export class CompanyService {
     return data;
   }
 
-  async findOne(input: { company_id: number }) {
+  async findOne(input: CompanyQueryParams) {
     const { company_id } = input;
 
-    const company = await companyRepository.findOne({ company_id });
+    const company = await companyRepository.findOne(input);
 
     if (!company) {
       throw new NotFoundError({ message: `Company with ID ${company_id} not found` });

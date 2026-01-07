@@ -1,68 +1,37 @@
 import { supabase } from "@/config/supabase";
-import { Application, ApplicationInsert, ApplicationQueryParams, ApplicationStatusUpdate } from "@/types/common";
+import { Application, ApplicationInsert, ApplicationQueryAllParams, ApplicationQueryParams, ApplicationStatusUpdate } from "@/types/common";
+import convert from "@/utils/convert";
 import _ from "lodash";
 
 const ApplicationRepository = {
-  async findAll(userId: number, options: { page: number; limit: number }) {
-    const { page, limit } = options;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
+  async findAll(params: ApplicationQueryAllParams) {
+    const page = _.get(params, "page", 1);
+    const limit = _.get(params, "limit", 10);
+    const hasPagination = page > 0 && limit > 0;
 
-    const { data, error, count } = await supabase
-      .from("applications")
-      .select("*", { count: "exact" })
-      .eq("user_id", userId)
-      .range(from, to)
-      .order("submitted_at", { ascending: false });
-
-    if (error) throw error;
-    return {
-      data: data as Application[],
-      pagination: { page, limit, total: count || 0 },
-    };
-  },
-
-  async findByUserId(userId: number, options: { page: number; limit: number }) {
-    const { page, limit } = options;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-
-    const { data, error, count } = await supabase
-      .from("applications")
-      .select("*", { count: "exact" })
-      .eq("user_id", userId)
-      .range(from, to)
-      .order("submitted_at", { ascending: false });
+    const { data, error } = await supabase.rpc("search_application", {
+      q_ids: convert.normalizeArray(_.get(params, "ids")),
+      q_statuses: convert.normalizeArray(_.get(params, "statuses")),
+      q_user_id: _.get(params, "user_id") || null,
+      q_company_id: _.get(params, "company_id") || null,
+      q_job_id: _.get(params, "job_id") || null,
+      q_sort_by: "created_at",
+      q_sort_dir: "desc",
+      q_page: page,
+      q_limit: limit,
+    });
 
     if (error) throw error;
+    const total = data?.[0]?.total || 0;
+
     return {
       data: data as Application[],
-      pagination: { page, limit, total: count || 0 },
-    };
-  },
-
-  async findByCompanyId(companyId: number, options: { page: number; limit: number; jobId?: number }) {
-    const { page, limit, jobId } = options;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-
-    let query = supabase
-      .from("applications")
-      .select("*, jobs(title, company_id)", { count: "exact" })
-      .eq("jobs.company_id", companyId)
-      .range(from, to)
-      .order("submitted_at", { ascending: false });
-
-    if (jobId) {
-      query = query.eq("job_id", jobId);
-    }
-
-    const { data, error, count } = await query;
-
-    if (error) throw error;
-    return {
-      data: data as Application[],
-      pagination: { page, limit, total: count || 0 },
+      pagination: hasPagination && {
+        page,
+        limit,
+        total,
+        total_pages: Math.ceil(total / limit),
+      },
     };
   },
 
@@ -75,8 +44,7 @@ const ApplicationRepository = {
     });
 
     if (error) throw error;
-    if (data && data.length === 0) return null;
-    return data as Application;
+    return data?.[0] ?? null;
   },
 
   async findByUserIdAndJobId(userId: number, jobId: number): Promise<Application | null> {

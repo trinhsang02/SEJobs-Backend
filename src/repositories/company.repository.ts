@@ -80,7 +80,7 @@ export class CompanyRepository {
   }
 
   async findOne(input: CompanyQueryParams) {
-    const { company_id, email, fields } = input;
+    const { company_id, user_id, email, fields } = input;
     const select_fields = fields || this.fields;
 
     let selectString = select_fields;
@@ -123,6 +123,10 @@ export class CompanyRepository {
 
     if (email) {
       dbQuery = dbQuery.eq("email", email);
+    }
+
+    if (user_id) {
+      dbQuery = dbQuery.eq("user_id", user_id);
     }
 
     const { data, error } = await dbQuery.maybeSingle<CompanyAfterJoined>();

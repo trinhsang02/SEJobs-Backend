@@ -341,7 +341,11 @@ export enum ApplicationStatus {
 export type ApplicationStatusUpdate = Pick<Application, "status" | "reviewed_at" | "feedback">;
 
 export interface ApplicationQueryAllParams extends QueryParams {
-  user_ids?: number[];
+  ids?: number[];
+  statuses?: ApplicationStatus[];
+  user_id?: number | null;
+  company_id?: number | null;
+  job_id?: number | null;
 }
 
 export interface ApplicationQueryParams extends QueryParams {
