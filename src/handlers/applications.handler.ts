@@ -116,7 +116,7 @@ export async function companyGetApplication(req: Request, res: Response) {
 export async function companyUpdateApplication(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
 
-  const id = Number(req.params.application_id);
+  const id = Number(req.params.id);
 
   if (_.isNaN(id)) {
     throw new BadRequestError({ message: "Invalid application id!" });
