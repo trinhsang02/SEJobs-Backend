@@ -367,7 +367,7 @@ export class UserService {
     });
 
     if (!user || user.is_active === false) {
-      return { success: true };
+      throw new NotFoundError({ message: "User with the provided email does not exist" });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
