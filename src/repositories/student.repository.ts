@@ -17,11 +17,15 @@ export class StudentRepository {
     const fields = _.get(input, "fields", this.fields);
     const page = _.get(input, "page");
     const limit = _.get(input, "limit");
+    const keyword = _.get(input, "keyword");
     const student_ids = _.get(input, "student_ids") || [];
     const user_ids = _.get(input, "user_ids") || [];
     const hasPagination = page && limit;
 
-    let dbQuery = this.db.from("student").select(fields, { count: "exact" });
+    let selectString = fields;
+    selectString = `${selectString}, users!inner(user_id, avatar, first_name, last_name, is_active, email)`;
+
+    let dbQuery = this.db.from("student").select(selectString, { count: "exact" });
 
     if (student_ids.length) {
       dbQuery = dbQuery.in("id", student_ids);
