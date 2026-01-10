@@ -57,19 +57,102 @@ as $$
     a.updated_at,
     count(*) over() as total,
 
-    -- job object
+    -- full job object
     jsonb_build_object(
       'id', j.id,
-      'title', j.title,
+      'external_id', j.external_id,
+      'website_url', j.website_url,
       'company_id', j.company_id,
+      'title', j.title,
+      'working_time', j.working_time,
+      'salary_from', j.salary_from,
+      'salary_to', j.salary_to,
+      'salary_text', j.salary_text,
+      'salary_currency', j.salary_currency,
+      'job_posted_at', j.job_posted_at,
+      'job_deadline', j.job_deadline,
+      'apply_reasons', j.apply_reasons,
+      'status', j.status,
+      'quantity', j.quantity,
       'created_at', j.created_at,
-      'updated_at', j.updated_at
+      'updated_at', j.updated_at,
+      'company_branches', (
+        select jsonb_agg(
+          jsonb_build_object(
+            'id', cb.id,
+            'name', cb.name,
+            'company_id', cb.company_id,
+            'address', cb.address,
+            'ward', case
+              when w.id is null then null
+              else jsonb_build_object(
+                'id', w.id,
+                'name', w.name
+              )
+            end,
+            'province', case
+              when p.id is null then null
+              else jsonb_build_object(
+                'id', p.id,
+                'name', p.name
+              )
+            end,
+            'country', case
+              when ct.id is null then null
+              else jsonb_build_object(
+                'id', ct.id,
+                'name', ct.name
+              )
+            end
+          )
+        )
+        from job_company_branches jcb
+        join company_branches cb on cb.id = jcb.company_branch_id
+        left join wards w on w.id = cb.ward_id
+        left join provinces p on p.id = cb.province_id
+        left join countries ct on ct.id = cb.country_id
+        where jcb.job_id = j.id
+      ),
+      'levels', (
+        select jsonb_agg(
+          jsonb_build_object(
+            'id', l.id,
+            'name', l.name
+          )
+        )
+        from job_levels jl
+        join levels l on l.id = jl.level_id
+        where jl.job_id = j.id
+      ),
+      'categories', (
+        select jsonb_agg(
+          jsonb_build_object(
+            'id', cat.id,
+            'name', cat.name
+          )
+        )
+        from job_categories jc
+        join categories cat on cat.id = jc.category_id
+        where jc.job_id = j.id
+      ),
+      'skills', (
+        select jsonb_agg(
+          jsonb_build_object(
+            'id', skill.id,
+            'name', skill.name
+          )
+        )
+        from job_skills js
+        join skills skill on skill.id = js.skill_id
+        where js.job_id = j.id
+      )
     ) as job,
 
     -- company object
     jsonb_build_object(
       'id', c.id,
       'name', c.name,
+      'logo', c.logo,
       'created_at', c.created_at,
       'updated_at', c.updated_at
     ) as company
