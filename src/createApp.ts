@@ -26,6 +26,7 @@ import cvRoutes from "./routes/cv.route";
 import notificationRoutes from "./routes/notifications.route";
 import certificationRoutes from "./routes/certifications.route";
 import applicationRoutes from "./routes/applications.route";
+import recommendationRoutes from "./routes/recommendations.route";
 import { requestLogger, errorHandler } from "@/middlewares";
 import { specs, swaggerUi } from "./config/swagger";
 import logger from "./utils/logger";
@@ -84,6 +85,7 @@ export const createApp = () => {
   app.use("/api/cvs", cvRoutes);
   app.use("/api/notifications", notificationRoutes);
   app.use("/api/applications", applicationRoutes);
+  app.use("/api/recommendations", recommendationRoutes);
 
   // app.use("/api/experiences", experiencesRoutes);
   // Error handler
