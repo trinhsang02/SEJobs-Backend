@@ -8,12 +8,18 @@ import axios from "axios";
 import { getTopCVAccessToken } from "@/utils/topcv-auth";
 import { MY_PROVINCE_ID_TO_TOPCV_ID, mapMyProvinceToTopCV } from "@/utils/cityMapper";
 import { getPrimaryTopCVCategory } from "@/utils/categoryMapper";
+import { simpleCache } from "@/utils/cache";
 
 export class RecommendationService {
     private jobRepo: JobRepository;
     private studentRepo: StudentRepository;
     private similarityService: SimilarityService;
     private featureService: FeatureExtractionService;
+    private readonly JOB_CACHE_TTL = 24 * 60 * 60 * 1000; // 1 day
+    private readonly TOPCV_CACHE_TTL = 24 * 60 * 60 * 1000; // 1 day
+    private readonly STUDENT_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+    private readonly APPLICATIONS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+    private readonly JOB_DETAIL_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
     constructor() {
         this.jobRepo = new JobRepository();
@@ -23,38 +29,198 @@ export class RecommendationService {
     }
 
     /**
+     * Helper: get jobs with in-memory cache keyed by query params
+     */
+    private async getJobsWithCache(params: any): Promise<any[]> {
+        const key = `jobs.findAll:${JSON.stringify(params)}`;
+        const cached = simpleCache.get<any[]>(key);
+        if (cached) {
+            try {
+                const sizeBytes = Buffer.byteLength(JSON.stringify(cached), 'utf8');
+                const mem = process.memoryUsage();
+                console.log(`[Cache] HIT ${key} items=${cached.length} sizeMB=${(sizeBytes/1048576).toFixed(2)} heapMB=${(mem.heapUsed/1048576).toFixed(2)} rssMB=${(mem.rss/1048576).toFixed(2)}`);
+            } catch {}
+            return cached;
+        }
+        const result = await this.jobRepo.findAll(params);
+        const jobs = result?.data || [];
+        simpleCache.set(key, jobs, this.JOB_CACHE_TTL);
+        try {
+            const sizeBytes = Buffer.byteLength(JSON.stringify(jobs), 'utf8');
+            const mem = process.memoryUsage();
+            console.log(`[Cache] SET ${key} items=${jobs.length} sizeMB=${(sizeBytes/1048576).toFixed(2)} heapMB=${(mem.heapUsed/1048576).toFixed(2)} rssMB=${(mem.rss/1048576).toFixed(2)}`);
+        } catch {}
+        return jobs;
+    }
+
+    /**
+     * Helper: get student profile with cache
+     */
+    private async getStudentWithCache(userId: number): Promise<any | null> {
+        const key = `student.findOne:${userId}`;
+        const cached = simpleCache.get<any>(key);
+        if (cached) {
+            try {
+                const sizeBytes = Buffer.byteLength(JSON.stringify(cached), 'utf8');
+                console.log(`[Cache] HIT ${key} sizeMB=${(sizeBytes/1048576).toFixed(4)}`);
+            } catch {}
+            return cached;
+        }
+        const student = await this.studentRepo.findOne({ user_id: userId });
+        if (student) {
+            simpleCache.set(key, student, this.STUDENT_CACHE_TTL);
+            try {
+                const sizeBytes = Buffer.byteLength(JSON.stringify(student), 'utf8');
+                console.log(`[Cache] SET ${key} sizeMB=${(sizeBytes/1048576).toFixed(4)}`);
+            } catch {}
+        }
+        return student;
+    }
+
+    /**
+     * Helper: get applications list with cache per user
+     */
+    private async getApplicationsWithCache(userId: number, limit: number = 100): Promise<any[]> {
+        const params = { user_id: userId, limit };
+        const key = `applications.findAll:${JSON.stringify(params)}`;
+        const cached = simpleCache.get<any[]>(key);
+        if (cached) {
+            try {
+                const sizeBytes = Buffer.byteLength(JSON.stringify(cached), 'utf8');
+                console.log(`[Cache] HIT ${key} items=${cached.length} sizeMB=${(sizeBytes/1048576).toFixed(4)}`);
+            } catch {}
+            return cached;
+        }
+        const result = await ApplicationRepository.findAll(params);
+        const apps = result?.data || [];
+        simpleCache.set(key, apps, this.APPLICATIONS_CACHE_TTL);
+        try {
+            const sizeBytes = Buffer.byteLength(JSON.stringify(apps), 'utf8');
+            console.log(`[Cache] SET ${key} items=${apps.length} sizeMB=${(sizeBytes/1048576).toFixed(4)}`);
+        } catch {}
+        return apps;
+    }
+
+    /**
+     * Helper: get job detail with cache
+     */
+    private async getJobDetailWithCache(jobId: number): Promise<any | null> {
+        const key = `jobs.findOne:${jobId}`;
+        const cached = simpleCache.get<any>(key);
+        if (cached) {
+            return cached;
+        }
+        const result = await this.jobRepo.findOne(jobId);
+        const job = result?.job ?? null;
+        if (job) {
+            simpleCache.set(key, job, this.JOB_DETAIL_CACHE_TTL);
+        }
+        return job;
+    }
+
+    /**
+     * Helper: get students list with cache
+     */
+    private async getStudentsWithCache(params: any): Promise<any[]> {
+        const key = `students.findAll:${JSON.stringify(params)}`;
+        const cached = simpleCache.get<any[]>(key);
+        if (cached) {
+            return cached;
+        }
+        const result = await this.studentRepo.findAll<any>(params);
+        const students = result?.data || [];
+        simpleCache.set(key, students, this.STUDENT_CACHE_TTL);
+        return students;
+    }
+
+    /**
+     * Helper: Extract job_id from application
+     * RPC search_application returns nested job object, so fallback to app.job.id if job_id is missing
+     */
+    private getJobIdFromApplication(app: any): number | null {
+        const id = app?.job_id ?? app?.job?.id;
+        return id !== undefined && id !== null ? Number(id) : null;
+    }
+
+    /**
+     * Check if student profile is empty (no meaningful data for recommendation)
+     */
+    private isEmptyProfile(student: any, applications: any[]): boolean {
+        const hasSkills = Array.isArray(student.skills) && student.skills.length > 0;
+        const hasDesiredPositions = Array.isArray(student.desired_positions) && student.desired_positions.length > 0;
+        const hasExperiences = Array.isArray(student.experiences) && student.experiences.length > 0;
+        const hasEducations = Array.isArray(student.educations) && student.educations.length > 0;
+        const hasApplications = applications.length > 0;
+        const hasAbout = Boolean(student.about?.trim());
+
+        return !hasSkills && !hasDesiredPositions && !hasExperiences && 
+               !hasEducations && !hasApplications && !hasAbout;
+    }
+
+    /**
+     * Get default recommendations for empty profiles
+     * Returns popular/newest jobs for Fresher level
+     */
+    private async getDefaultRecommendations(limit: number, appliedJobIds: Set<number>) {
+        const cachedJobs = await this.getJobsWithCache({
+            level_ids: [10, 2], // Fresher and Junior
+            sort_by: "job_posted_at",
+            order: "desc",
+            limit: limit * 2, // Get more to filter out applied jobs
+            page: 1,
+        });
+        const jobs = cachedJobs
+            .filter((job: any) => !appliedJobIds.has(job.id))
+            .slice(0, limit)
+            .map((job: any) => ({
+                ...job,
+                recommendation_score: 0.5, // Default score for popular jobs
+                match_percentage: 50.0,
+            }));
+
+        return jobs;
+    }
+
+    /**
      * Gợi ý công việc cho student dựa trên profile và lịch sử ứng tuyển
      * Sử dụng Content-Based Filtering
      */
     async recommendJobsForStudent(userId: number, limit: number = 20) {
         // 1. Lấy student profile
-        const studentResult = await this.studentRepo.findOne({ user_id: userId });
+        const studentResult = await this.getStudentWithCache(userId);
         if (!studentResult) {
             throw new NotFoundError({ message: "Student profile not found" });
         }
         const student = studentResult;
 
         // 2. Lấy lịch sử ứng tuyển
-        const applicationsResult = await ApplicationRepository.findAll({
-            user_id: userId,
-            limit: 100, // Lấy tối đa 100 applications gần nhất
-        });
-        const applications = applicationsResult.data || [];
+        const applications = await this.getApplicationsWithCache(userId, 100);
 
-        // 3. Trích xuất feature vector từ student profile
+        // Lọc bỏ jobs đã apply (dùng chung cho cả default và recommendation)
+        const appliedJobIds = new Set(
+            applications
+                .map((app) => this.getJobIdFromApplication(app))
+                .filter((id): id is number => id !== null)
+        );
+
+        // 3. Fallback: Nếu profile hoàn toàn trống, trả về popular jobs
+        if (this.isEmptyProfile(student, applications)) {
+            return await this.getDefaultRecommendations(limit, appliedJobIds);
+        }
+
+        // 4. Trích xuất feature vector từ student profile
         const studentVector = await this.featureService.extractStudentFeatures({
             student,
             applications,
         });
 
-        // 4. Lấy danh sách jobs đang mở (Active)
-        const jobsResult = await this.jobRepo.findAll({
+        // 5. Lấy danh sách jobs đang mở (Active)
+        const jobs = await this.getJobsWithCache({
             limit: 500, // Lấy pool lớn để có nhiều lựa chọn
             page: 1,
         });
-        const jobs = jobsResult.data || [];
 
-        // 5. Tính similarity score cho từng job
+        // 6. Tính similarity score cho từng job
         const scoredJobs = await Promise.all(
             jobs.map(async (job) => {
                 const jobVector = await this.featureService.extractJobFeatures(job);
@@ -63,9 +229,7 @@ export class RecommendationService {
             })
         );
 
-        // 6. Lọc bỏ jobs đã apply
-        const appliedJobIds = new Set(applications.map((app) => app.job_id));
-
+        // 7. Filter và return recommendations
         const recommendations = scoredJobs
             .filter((item) => !appliedJobIds.has(item.job.id))
             .sort((a, b) => b.score - a.score)
@@ -85,21 +249,19 @@ export class RecommendationService {
      */
     async findSimilarJobs(jobId: number, limit: number = 10) {
         // 1. Lấy target job
-        const targetJobResult = await this.jobRepo.findOne(jobId);
-        if (!targetJobResult?.job) {
+        const targetJob = await this.getJobDetailWithCache(jobId);
+        if (!targetJob) {
             throw new NotFoundError({ message: "Job not found" });
         }
-        const targetJob = targetJobResult.job;
 
         // 2. Extract features từ target job
         const targetVector = await this.featureService.extractJobFeatures(targetJob);
 
         // 3. Lấy tất cả jobs active
-        const jobsResult = await this.jobRepo.findAll({
+        const jobs = await this.getJobsWithCache({
             limit: 500,
             page: 1,
         });
-        const jobs = jobsResult.data || [];
 
         // 4. Tính similarity cho từng job
         const scoredJobs = await Promise.all(
@@ -129,34 +291,49 @@ export class RecommendationService {
      */
     async findMatchingStudentsForJob(jobId: number, limit: number = 20) {
         // 1. Lấy job
-        const jobResult = await this.jobRepo.findOne(jobId);
-        if (!jobResult?.job) {
+        const job = await this.getJobDetailWithCache(jobId);
+        if (!job) {
             throw new NotFoundError({ message: "Job not found" });
         }
-        const job = jobResult.job;
 
         // 2. Extract features từ job
         const jobVector = await this.featureService.extractJobFeatures(job);
 
         // 3. Lấy tất cả students
-        const studentsResult = await this.studentRepo.findAll<any>({
+        const students = await this.getStudentsWithCache({
             limit: 500,
             page: 1,
         });
-        const students = studentsResult.data || [];
 
-        // 4. Tính similarity cho từng student
+        if (students.length === 0) {
+            return [];
+        }
+
+        // 4. Batch load all applications (FIX N+1 QUERY)
+        // Note: Load applications for each user separately since ApplicationRepository doesn't support batch user_ids
+        const applicationPromises = students.map(student => 
+            ApplicationRepository.findAll({
+                user_id: student.user_id,
+                limit: 100,
+            })
+        );
+        const applicationResults = await Promise.all(applicationPromises);
+        
+        // Group applications by user_id
+        const applicationsByUser = new Map<number, any[]>();
+        students.forEach((student, index) => {
+            const result = applicationResults[index];
+            applicationsByUser.set(student.user_id, result?.data || []);
+        });
+
+        // 5. Tính similarity cho từng student
         const scoredStudents = await Promise.all(
             students.map(async (student) => {
-                // Lấy application history của student
-                const applicationsResult = await ApplicationRepository.findAll({
-                    user_id: student.user_id,
-                    limit: 50,
-                });
+                const applications = applicationsByUser.get(student.user_id) || [];
 
                 const studentVector = await this.featureService.extractStudentFeatures({
                     student,
-                    applications: applicationsResult.data || [],
+                    applications,
                 });
 
                 const score = this.similarityService.calculateSimilarity(jobVector, studentVector);
@@ -164,7 +341,7 @@ export class RecommendationService {
             })
         );
 
-        // 5. Return top matching students
+        // 6. Return top matching students
         return scoredStudents
             .sort((a, b) => b.score - a.score)
             .slice(0, limit)
@@ -189,19 +366,26 @@ export class RecommendationService {
         },
         limit: number = 20
     ) {
-        const studentResult = await this.studentRepo.findOne({ user_id: userId });
+        const studentResult = await this.getStudentWithCache(userId);
         if (!studentResult) {
             throw new NotFoundError({ message: "Student profile not found" });
         }
 
-        const applicationsResult = await ApplicationRepository.findAll({
-            user_id: userId,
-            limit: 100,
-        });
+        const applicationsResultData = await this.getApplicationsWithCache(userId, 100);
+
+        const alreadyAppliedJobIds = new Set(
+            (applicationsResultData || [])
+                .map((app) => this.getJobIdFromApplication(app))
+                .filter((id): id is number => id !== null)
+        );
+
+        if (this.isEmptyProfile(studentResult, applicationsResultData || [])) {
+            return await this.getDefaultRecommendations(limit, alreadyAppliedJobIds);
+        }
 
         const studentVector = await this.featureService.extractStudentFeatures({
             student: studentResult,
-            applications: applicationsResult.data || [],
+            applications: applicationsResultData || [],
         });
 
         // Override weights
@@ -210,23 +394,27 @@ export class RecommendationService {
         if (weights.location !== undefined) studentVector.weights.location = weights.location;
         if (weights.salary !== undefined) studentVector.weights.salary = weights.salary;
 
-        const jobsResult = await this.jobRepo.findAll({
+        const jobs = await this.getJobsWithCache({
             limit: 500,
             page: 1,
         });
 
         const scoredJobs = await Promise.all(
-            (jobsResult.data || []).map(async (job) => {
+            jobs.map(async (job: any) => {
                 const jobVector = await this.featureService.extractJobFeatures(job);
                 const score = this.similarityService.calculateSimilarity(studentVector, jobVector);
                 return { job, score };
             })
         );
 
-        const appliedJobIds = new Set((applicationsResult.data || []).map((app) => app.job_id));
+        const appliedJobIds = new Set(
+            (applicationsResultData || [])
+                .map((app) => this.getJobIdFromApplication(app))
+                .filter((id): id is number => id !== null)
+        );
 
         return scoredJobs
-            .filter((item) => !appliedJobIds.has(item.job.id))
+            .filter((item) => !alreadyAppliedJobIds.has(item.job.id))
             .sort((a, b) => b.score - a.score)
             .slice(0, limit)
             .map((item) => ({
@@ -247,6 +435,16 @@ export class RecommendationService {
         limit?: number;
     }): Promise<any[]> {
         try {
+            const cacheKey = `topcv.jobs:${JSON.stringify(params)}`;
+            const cached = simpleCache.get<any[]>(cacheKey);
+            if (cached) {
+                try {
+                    const sizeBytes = Buffer.byteLength(JSON.stringify(cached), 'utf8');
+                    const mem = process.memoryUsage();
+                    console.log(`[Cache] HIT ${cacheKey} items=${cached.length} sizeMB=${(sizeBytes/1048576).toFixed(2)} heapMB=${(mem.heapUsed/1048576).toFixed(2)} rssMB=${(mem.rss/1048576).toFixed(2)}`);
+                } catch {}
+                return cached;
+            }
             const token = await getTopCVAccessToken();
             // TopCV only allows per_page between 5 and 100
             const perPage = Math.min(Math.max(params.limit ?? 50, 5), 100);
@@ -263,12 +461,13 @@ export class RecommendationService {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
-                timeout: 5000,
+                timeout: 10000, // FIX: Increase timeout to 10s
             });
 
             const payload = response.data;
             let jobs: any[] = [];
 
+            // FIX: Add validation and proper error handling
             if (Array.isArray(payload)) {
                 jobs = payload;
             } else if (Array.isArray(payload?.data)) {
@@ -277,10 +476,31 @@ export class RecommendationService {
                 jobs = payload.data.data;
             } else if (Array.isArray(payload?.results)) {
                 jobs = payload.results;
+            } else {
+                console.warn('[TopCV] Unexpected response structure:', {
+                    hasData: !!payload?.data,
+                    dataType: typeof payload?.data,
+                    keys: payload ? Object.keys(payload) : []
+                });
             }
 
+            console.log(`[TopCV] Successfully fetched ${jobs.length} jobs`);
+            // set cache
+            simpleCache.set(cacheKey, jobs, this.TOPCV_CACHE_TTL);
+            try {
+                const sizeBytes = Buffer.byteLength(JSON.stringify(jobs), 'utf8');
+                const mem = process.memoryUsage();
+                console.log(`[Cache] SET ${cacheKey} items=${jobs.length} sizeMB=${(sizeBytes/1048576).toFixed(2)} heapMB=${(mem.heapUsed/1048576).toFixed(2)} rssMB=${(mem.rss/1048576).toFixed(2)}`);
+            } catch {}
             return jobs;
         } catch (error: any) {
+            // FIX: Proper error logging instead of silent failure
+            console.error('[TopCV] Failed to fetch jobs:', {
+                message: error.message,
+                code: error.code,
+                status: error.response?.status,
+                params
+            });
             return [];
         }
     }
@@ -291,18 +511,25 @@ export class RecommendationService {
      */
     async recommendJobsWithTopCV(userId: number, limit: number = 20) {
         // 1. Lấy student profile
-        const studentResult = await this.studentRepo.findOne({ user_id: userId });
+        const studentResult = await this.getStudentWithCache(userId);
         if (!studentResult) {
             throw new NotFoundError({ message: "Student profile not found" });
         }
         const student = studentResult;
 
         // 2. Lấy lịch sử ứng tuyển
-        const applicationsResult = await ApplicationRepository.findAll({
-            user_id: userId,
-            limit: 100,
-        });
-        const applications = applicationsResult.data || [];
+        const applications = await this.getApplicationsWithCache(userId, 100);
+
+        // Lọc bỏ jobs đã apply
+        const excludeJobIds = new Set(
+            applications
+                .map((app) => this.getJobIdFromApplication(app))
+                .filter((id): id is number => id !== null)
+        );
+
+        if (this.isEmptyProfile(student, applications)) {
+            return await this.getDefaultRecommendations(limit, excludeJobIds);
+        }
 
         // 3. Trích xuất feature vector từ student profile
         const studentVector = await this.featureService.extractStudentFeatures({
@@ -311,11 +538,10 @@ export class RecommendationService {
         });
 
         // 4. Lấy jobs từ database
-        const jobsResult = await this.jobRepo.findAll({
+        const dbJobs = await this.getJobsWithCache({
             limit: 300,
             page: 1,
         });
-        const dbJobs = jobsResult.data || [];
 
         // 5. Lấy jobs từ TopCV
         // Tạo keyword từ desired_positions
@@ -374,12 +600,10 @@ export class RecommendationService {
         );
 
         // 8. Lọc bỏ jobs đã apply (chỉ với database jobs)
-        const appliedJobIds = new Set(applications.map((app) => app.job_id));
-
         const recommendations = scoredJobs
             .filter((item) => {
                 // Nếu là job từ database, check đã apply chưa
-                if (item.job.source === "database" && appliedJobIds.has(item.job.id)) {
+                if (item.job.source === "database" && excludeJobIds.has(item.job.id)) {
                     return false;
                 }
                 return true;

@@ -3,7 +3,7 @@ import { jaccardSimilarity, cosineSimilarity, overlapCoefficient } from "@/utils
 export interface FeatureVector {
     // Categorical features (arrays of IDs)
     categories: number[];
-    skills: number[];
+    skills: number[] | string[]; // Support both for flexibility
     levels: number[];
     employment_types: number[];
 
@@ -37,7 +37,8 @@ export class SimilarityService {
         // 1. Categorical features - Jaccard Similarity
         totalScore += this.jaccardSimilarity(vector1.categories, vector2.categories) * vector1.weights.categories;
 
-        totalScore += this.jaccardSimilarity(vector1.skills, vector2.skills) * vector1.weights.skills;
+        // Skills: Handle both string[] and number[]
+        totalScore += this.skillsSimilarity(vector1.skills, vector2.skills) * vector1.weights.skills;
 
         totalScore += this.jaccardSimilarity(vector1.levels, vector2.levels) * vector1.weights.levels;
 
@@ -55,6 +56,34 @@ export class SimilarityService {
         totalScore += this.salarySimilarity(vector1.salary, vector2.salary) * vector1.weights.salary;
 
         return totalScore;
+    }
+
+    /**
+     * Skills similarity - handle both string[] and number[]
+     */
+    private skillsSimilarity(skills1: number[] | string[], skills2: number[] | string[]): number {
+        // If both are strings, compare as strings
+        if (typeof skills1[0] === 'string' || typeof skills2[0] === 'string') {
+            return this.jaccardSimilarityGeneric(skills1 as any[], skills2 as any[]);
+        }
+        // Otherwise use number comparison
+        return this.jaccardSimilarity(skills1 as number[], skills2 as number[]);
+    }
+
+    /**
+     * Generic Jaccard Similarity for any comparable type
+     */
+    private jaccardSimilarityGeneric<T>(arr1: T[], arr2: T[]): number {
+        if (arr1.length === 0 && arr2.length === 0) return 1;
+        if (arr1.length === 0 || arr2.length === 0) return 0;
+
+        const set1 = new Set(arr1);
+        const set2 = new Set(arr2);
+
+        const intersection = new Set([...set1].filter((x) => set2.has(x)));
+        const union = new Set([...set1, ...set2]);
+
+        return intersection.size / union.size;
     }
 
     /**
@@ -117,7 +146,7 @@ export class SimilarityService {
         let totalScore = 0;
 
         totalScore += this.jaccardSimilarity(vector1.categories, vector2.categories) * weights.categories;
-        totalScore += this.jaccardSimilarity(vector1.skills, vector2.skills) * weights.skills;
+        totalScore += this.skillsSimilarity(vector1.skills, vector2.skills) * weights.skills;
         totalScore += this.jaccardSimilarity(vector1.levels, vector2.levels) * weights.levels;
         totalScore +=
             this.jaccardSimilarity(vector1.employment_types, vector2.employment_types) * weights.employment_types;
