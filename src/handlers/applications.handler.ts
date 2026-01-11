@@ -131,9 +131,24 @@ export async function companyUpdateApplication(req: Request, res: Response) {
     throw new BadRequestError({ message: `Invalid update status application, list allowed: ${LIST_EMPLOYER_ALLOWED_UPDATE_STATUS[oldStatus].join(',')}` })
   }
 
+  if (payload.status === 'Interview_Scheduled') {
+    if (!payload.interview_time || !payload.interview_location) {
+      throw new BadRequestError({ message: 'interview_time and interview_location are required for Interview_Scheduled status' });
+    }
+  }
+
+  if (payload.status === 'Offered') {
+    if (!payload.offered_salary) {
+      throw new BadRequestError({ message: 'offered_salary is required for Offered status' });
+    }
+  }
+
   const application = await ApplicationService.update(id, { 
     status: payload.status,
     feedback: payload.feedback,
+    interview_time: payload.interview_time,
+    interview_location: payload.interview_location,
+    offered_salary: payload.offered_salary,
   });
 
   res.status(200).json({ success: true, data: application });

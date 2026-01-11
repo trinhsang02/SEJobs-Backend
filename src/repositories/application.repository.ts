@@ -44,7 +44,23 @@ const ApplicationRepository = {
     });
 
     if (error) throw error;
-    return data?.[0] ?? null;
+    const application = data?.[0] ?? null;
+    
+    if (!application) return null;
+
+    const { data: statusDetails, error: statusError } = await supabase
+      .from("application_status_details")
+      .select("*")
+      .eq("application_id", application.id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (statusError) throw statusError;
+
+    return {
+      ...application,
+      status_details: statusDetails?.[0] || null
+    };
   },
 
   async create(payload: ApplicationInsert): Promise<Application> {
