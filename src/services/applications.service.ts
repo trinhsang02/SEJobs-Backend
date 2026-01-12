@@ -9,6 +9,7 @@ import studentRepository from "@/repositories/student.repository";
 import path from "path";
 import { MediaService } from "@/services/media.service";
 import _ from "lodash";
+import ApplicationStatusDetailsRepository from "@/repositories/application_status_details.repository";
 
 function toDatabaseFormat<T extends Record<string, any>>(obj: T): any {
   const result: any = {};
@@ -80,12 +81,55 @@ export const ApplicationService = {
   },
 
   async update(id: number, payload: UpdateApplicationStatusDTO) {
-    const dbPayload = toDatabaseFormat({
-      ...payload,
+    const applicationPayload = {
+      status: payload.status,
+      feedback: payload.feedback,
       updated_at: new Date()
-    });
+    };
 
-    return ApplicationRepository.updateStatus(id, dbPayload);
+    const dbPayload = toDatabaseFormat(applicationPayload);
+
+    const resultUpdate = await ApplicationRepository.updateStatus(id, dbPayload);
+
+    if (payload.status) {
+      const statusDetailsData: any = {
+        application_id: id,
+        status: payload.status
+      };
+
+      if (payload.status === 'Interview_Scheduled') {
+        statusDetailsData.interview_time = payload.interview_time;
+        statusDetailsData.interview_location = payload.interview_location;
+      }
+
+      if (payload.status === 'Offered') {
+        statusDetailsData.offered_salary = payload.offered_salary;
+      }
+
+      try {
+        const existingStatusDetails = await ApplicationStatusDetailsRepository.getLatestByApplicationId(id);
+        
+        if (existingStatusDetails) {
+          await ApplicationStatusDetailsRepository.update(existingStatusDetails.id, statusDetailsData);
+        } else {
+          await ApplicationStatusDetailsRepository.create(statusDetailsData);
+        }
+      } catch (error: any) {
+        if (error.code === 'PGRST116') {
+          await ApplicationStatusDetailsRepository.create(statusDetailsData);
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    const result = await ApplicationRepository.findOne({ id });
+
+    if (!result) {
+      throw new NotFoundError({ message: "Application not found after update" });
+    }
+
+    return result;
   },
 
   async delete(id: number) {
