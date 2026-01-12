@@ -1256,6 +1256,47 @@ export type Database = {
           }
         ];
       };
+      application_status_details: {
+        Row: {
+          id: number;
+          application_id: number;
+          status: string;
+          interview_time?: Date;
+          interview_location?: string;
+          offered_salary?: number;
+          created_at: Date;
+          updated_at?: Date;
+        };
+        Insert: {
+          id?: number;
+          application_id: number;
+          status: string;
+          interview_time?: Date;
+          interview_location?: string;
+          offered_salary?: number;
+          created_at?: Date;
+          updated_at?: Date;
+        };
+        Update: {
+          id?: number;
+          application_id?: number;
+          status?: string;
+          interview_time?: Date;
+          interview_location?: string;
+          offered_salary?: number;
+          created_at?: Date;
+          updated_at?: Date;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "application_status_details_application_id_fkey";
+            columns: ["application_id"];
+            isOneToOne: false;
+            referencedRelation: "applications";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

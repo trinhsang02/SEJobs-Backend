@@ -350,11 +350,17 @@ export const LIST_EMPLOYER_ALLOWED_UPDATE_STATUS: Record<ApplicationStatus, read
     ApplicationStatus.Shortlisted,
     ApplicationStatus.Offered,
   ],
-  [ApplicationStatus.Viewed]: [ApplicationStatus.InterviewScheduled, ApplicationStatus.Hired, ApplicationStatus.Rejected, ApplicationStatus.Shortlisted, ApplicationStatus.Offered],
+  [ApplicationStatus.Viewed]: [
+    ApplicationStatus.InterviewScheduled,
+    ApplicationStatus.Hired,
+    ApplicationStatus.Rejected,
+    ApplicationStatus.Shortlisted,
+    ApplicationStatus.Offered
+  ],
+  [ApplicationStatus.Shortlisted]: [ApplicationStatus.Hired, ApplicationStatus.Rejected, ApplicationStatus.InterviewScheduled, ApplicationStatus.Offered],
+  [ApplicationStatus.Offered]: [ApplicationStatus.Hired, ApplicationStatus.Rejected],
   [ApplicationStatus.InterviewScheduled]: [ApplicationStatus.Hired, ApplicationStatus.Rejected, ApplicationStatus.Shortlisted, ApplicationStatus.Offered],
-  [ApplicationStatus.Hired]: [ApplicationStatus.Rejected, ApplicationStatus.Shortlisted, ApplicationStatus.Offered],
-  [ApplicationStatus.Shortlisted]: [ApplicationStatus.Rejected, ApplicationStatus.Offered],
-  [ApplicationStatus.Offered]: [ApplicationStatus.Rejected],
+  [ApplicationStatus.Hired]: [],
   [ApplicationStatus.Rejected]: [],
 };
 
@@ -371,4 +377,13 @@ export interface ApplicationQueryParams extends QueryParams {
   user_id?: number;
   company_id?: number;
   job_id?: number;
+}
+
+// APPLICATION STATUS DETAILS
+export type ApplicationStatusDetails = Database["public"]["Tables"]["application_status_details"]["Row"];
+export type ApplicationStatusDetailsInsert = Database["public"]["Tables"]["application_status_details"]["Insert"];
+export type ApplicationStatusDetailsUpdate = Database["public"]["Tables"]["application_status_details"]["Update"];
+
+export interface ApplicationStatusDetailsQueryParams extends QueryParams {
+  application_id?: number;
 }
