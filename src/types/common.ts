@@ -344,20 +344,20 @@ export const LIST_EMPLOYER_ALLOWED_UPDATE_STATUS: Record<ApplicationStatus, read
   [ApplicationStatus.Cancelled]: [],
   [ApplicationStatus.Applied]: [
     ApplicationStatus.Viewed,
-    ApplicationStatus.InterviewScheduled,
-    ApplicationStatus.Hired,
-    ApplicationStatus.Rejected,
     ApplicationStatus.Shortlisted,
+    ApplicationStatus.InterviewScheduled,
     ApplicationStatus.Offered,
+    ApplicationStatus.Hired,
+    ApplicationStatus.Rejected
   ],
   [ApplicationStatus.Viewed]: [
-    ApplicationStatus.InterviewScheduled,
-    ApplicationStatus.Hired,
-    ApplicationStatus.Rejected,
     ApplicationStatus.Shortlisted,
-    ApplicationStatus.Offered
+    ApplicationStatus.InterviewScheduled,
+    ApplicationStatus.Offered,
+    ApplicationStatus.Hired,
+    ApplicationStatus.Rejected
   ],
-  [ApplicationStatus.Shortlisted]: [ApplicationStatus.Hired, ApplicationStatus.Rejected, ApplicationStatus.InterviewScheduled, ApplicationStatus.Offered],
+  [ApplicationStatus.Shortlisted]: [ApplicationStatus.InterviewScheduled, ApplicationStatus.Offered, ApplicationStatus.Hired, ApplicationStatus.Rejected],
   [ApplicationStatus.Offered]: [ApplicationStatus.Hired, ApplicationStatus.Rejected],
   [ApplicationStatus.InterviewScheduled]: [ApplicationStatus.Hired, ApplicationStatus.Rejected, ApplicationStatus.Shortlisted, ApplicationStatus.Offered],
   [ApplicationStatus.Hired]: [],
