@@ -19,7 +19,7 @@ export class RecommendationService {
     private readonly TOPCV_CACHE_TTL = 24 * 60 * 60 * 1000; // 1 day
     private readonly STUDENT_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
     private readonly APPLICATIONS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-    private readonly JOB_DETAIL_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+    private readonly JOB_DETAIL_CACHE_TTL = 24 * 60 * 60 * 1000; // 1 day
 
     constructor() {
         this.jobRepo = new JobRepository();
@@ -35,21 +35,11 @@ export class RecommendationService {
         const key = `jobs.findAll:${JSON.stringify(params)}`;
         const cached = simpleCache.get<any[]>(key);
         if (cached) {
-            try {
-                const sizeBytes = Buffer.byteLength(JSON.stringify(cached), 'utf8');
-                const mem = process.memoryUsage();
-                console.log(`[Cache] HIT ${key} items=${cached.length} sizeMB=${(sizeBytes/1048576).toFixed(2)} heapMB=${(mem.heapUsed/1048576).toFixed(2)} rssMB=${(mem.rss/1048576).toFixed(2)}`);
-            } catch {}
             return cached;
         }
         const result = await this.jobRepo.findAll(params);
         const jobs = result?.data || [];
         simpleCache.set(key, jobs, this.JOB_CACHE_TTL);
-        try {
-            const sizeBytes = Buffer.byteLength(JSON.stringify(jobs), 'utf8');
-            const mem = process.memoryUsage();
-            console.log(`[Cache] SET ${key} items=${jobs.length} sizeMB=${(sizeBytes/1048576).toFixed(2)} heapMB=${(mem.heapUsed/1048576).toFixed(2)} rssMB=${(mem.rss/1048576).toFixed(2)}`);
-        } catch {}
         return jobs;
     }
 
@@ -60,19 +50,11 @@ export class RecommendationService {
         const key = `student.findOne:${userId}`;
         const cached = simpleCache.get<any>(key);
         if (cached) {
-            try {
-                const sizeBytes = Buffer.byteLength(JSON.stringify(cached), 'utf8');
-                console.log(`[Cache] HIT ${key} sizeMB=${(sizeBytes/1048576).toFixed(4)}`);
-            } catch {}
             return cached;
         }
         const student = await this.studentRepo.findOne({ user_id: userId });
         if (student) {
             simpleCache.set(key, student, this.STUDENT_CACHE_TTL);
-            try {
-                const sizeBytes = Buffer.byteLength(JSON.stringify(student), 'utf8');
-                console.log(`[Cache] SET ${key} sizeMB=${(sizeBytes/1048576).toFixed(4)}`);
-            } catch {}
         }
         return student;
     }
@@ -85,19 +67,11 @@ export class RecommendationService {
         const key = `applications.findAll:${JSON.stringify(params)}`;
         const cached = simpleCache.get<any[]>(key);
         if (cached) {
-            try {
-                const sizeBytes = Buffer.byteLength(JSON.stringify(cached), 'utf8');
-                console.log(`[Cache] HIT ${key} items=${cached.length} sizeMB=${(sizeBytes/1048576).toFixed(4)}`);
-            } catch {}
             return cached;
         }
         const result = await ApplicationRepository.findAll(params);
         const apps = result?.data || [];
         simpleCache.set(key, apps, this.APPLICATIONS_CACHE_TTL);
-        try {
-            const sizeBytes = Buffer.byteLength(JSON.stringify(apps), 'utf8');
-            console.log(`[Cache] SET ${key} items=${apps.length} sizeMB=${(sizeBytes/1048576).toFixed(4)}`);
-        } catch {}
         return apps;
     }
 
@@ -438,61 +412,69 @@ export class RecommendationService {
             const cacheKey = `topcv.jobs:${JSON.stringify(params)}`;
             const cached = simpleCache.get<any[]>(cacheKey);
             if (cached) {
-                try {
-                    const sizeBytes = Buffer.byteLength(JSON.stringify(cached), 'utf8');
-                    const mem = process.memoryUsage();
-                    console.log(`[Cache] HIT ${cacheKey} items=${cached.length} sizeMB=${(sizeBytes/1048576).toFixed(2)} heapMB=${(mem.heapUsed/1048576).toFixed(2)} rssMB=${(mem.rss/1048576).toFixed(2)}`);
-                } catch {}
                 return cached;
             }
             const token = await getTopCVAccessToken();
+            
             // TopCV only allows per_page between 5 and 100
-            const perPage = Math.min(Math.max(params.limit ?? 50, 5), 100);
-            const requestParams = {
-                page: 1,
-                per_page: perPage,
-                ...(params.keyword && { keyword: params.keyword }),
-                ...(params.city_id && { city_id: params.city_id }),
-                ...(params.category_id && { category_id: params.category_id }),
-            };
-
-            const response = await axios.get(`${process.env.TOPCV_JOBS_URL}`, {
-                params: requestParams,
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                timeout: 10000, // FIX: Increase timeout to 10s
+            const totalLimit = params.limit ?? 50;
+            const perPage = 100; // Always fetch max per page
+            const numPages = Math.ceil(totalLimit / perPage); // Calculate number of pages needed
+            
+            // Fetch multiple pages in parallel
+            const fetchPromises = Array.from({ length: numPages }, (_, i) => {
+                const requestParams = {
+                    page: i + 1,
+                    per_page: perPage,
+                    ...(params.keyword && { keyword: params.keyword }),
+                    ...(params.city_id && { city_id: params.city_id }),
+                    ...(params.category_id && { category_id: params.category_id }),
+                };
+                
+                return axios.get(`${process.env.TOPCV_JOBS_URL}`, {
+                    params: requestParams,
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    timeout: 10000,
+                });
             });
 
-            const payload = response.data;
-            let jobs: any[] = [];
+            const responses = await Promise.all(fetchPromises);
+            let allJobs: any[] = [];
 
-            // FIX: Add validation and proper error handling
-            if (Array.isArray(payload)) {
-                jobs = payload;
-            } else if (Array.isArray(payload?.data)) {
-                jobs = payload.data;
-            } else if (Array.isArray(payload?.data?.data)) {
-                jobs = payload.data.data;
-            } else if (Array.isArray(payload?.results)) {
-                jobs = payload.results;
-            } else {
-                console.warn('[TopCV] Unexpected response structure:', {
-                    hasData: !!payload?.data,
-                    dataType: typeof payload?.data,
-                    keys: payload ? Object.keys(payload) : []
-                });
+            // Parse all responses
+            for (const response of responses) {
+                const payload = response.data;
+                let jobs: any[] = [];
+
+                // FIX: Add validation and proper error handling
+                if (Array.isArray(payload)) {
+                    jobs = payload;
+                } else if (Array.isArray(payload?.data)) {
+                    jobs = payload.data;
+                } else if (Array.isArray(payload?.data?.data)) {
+                    jobs = payload.data.data;
+                } else if (Array.isArray(payload?.results)) {
+                    jobs = payload.results;
+                } else {
+                    console.warn('[TopCV] Unexpected response structure:', {
+                        hasData: !!payload?.data,
+                        dataType: typeof payload?.data,
+                        keys: payload ? Object.keys(payload) : []
+                    });
+                }
+
+                allJobs.push(...jobs);
             }
 
-            console.log(`[TopCV] Successfully fetched ${jobs.length} jobs`);
+            // Trim to exact limit
+            allJobs = allJobs.slice(0, totalLimit);
+
+            console.log(`[TopCV] Successfully fetched ${allJobs.length} jobs from ${numPages} page(s)`);
             // set cache
-            simpleCache.set(cacheKey, jobs, this.TOPCV_CACHE_TTL);
-            try {
-                const sizeBytes = Buffer.byteLength(JSON.stringify(jobs), 'utf8');
-                const mem = process.memoryUsage();
-                console.log(`[Cache] SET ${cacheKey} items=${jobs.length} sizeMB=${(sizeBytes/1048576).toFixed(2)} heapMB=${(mem.heapUsed/1048576).toFixed(2)} rssMB=${(mem.rss/1048576).toFixed(2)}`);
-            } catch {}
-            return jobs;
+            simpleCache.set(cacheKey, allJobs, this.TOPCV_CACHE_TTL);
+            return allJobs;
         } catch (error: any) {
             // FIX: Proper error logging instead of silent failure
             console.error('[TopCV] Failed to fetch jobs:', {
@@ -573,7 +555,7 @@ export class RecommendationService {
             keyword?: string;
             city_id?: string;
             limit?: number;
-        } = { limit: 100 };
+        } = { limit: 200 };
 
         if (keyword) topcvParams.keyword = keyword;
         if (cityId) topcvParams.city_id = cityId;
