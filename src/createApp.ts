@@ -3,6 +3,10 @@ import "express-async-errors";
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+
+// Initialize event observers (Observer Pattern)
+import "@/events/observers";
+
 import testRoutes from "./routes/test.route";
 import userRoutes from "./routes/users.route";
 import addressRoutes from "./routes/address.route";
@@ -28,6 +32,7 @@ import certificationRoutes from "./routes/certifications.route";
 import applicationRoutes from "./routes/applications.route";
 import recommendationRoutes from "./routes/recommendations.route";
 import studentRoutes from "./routes/student.route";
+import jobNotificationSubscriptionsRoutes from "./routes/job_notification_subscriptions.route";
 import { requestLogger, errorHandler } from "@/middlewares";
 import { specs, swaggerUi } from "./config/swagger";
 import logger from "./utils/logger";
@@ -88,6 +93,7 @@ export const createApp = () => {
   app.use("/api/applications", applicationRoutes);
   app.use("/api/recommendations", recommendationRoutes);
   app.use("/api/students", studentRoutes);
+  app.use("/api/job-notification-subscriptions", jobNotificationSubscriptionsRoutes);
 
   // app.use("/api/experiences", experiencesRoutes);
   // Error handler

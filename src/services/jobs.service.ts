@@ -13,7 +13,7 @@ import companyBranchesRepo from "@/repositories/company_branches.repository";
 import savedJobsRepo from "@/repositories/saved_jobs.repository";
 import { toCamelCaseKeys } from "@/utils/casing";
 import { toTopCvFormat } from "@/utils/topCVFormat";
-
+import { appEventEmitter, AppEvents } from "@/events/EventEmitter";
 export class JobService {
   async getTotalJobs(input: JobQueryParams) {
     const total = await jobRepository.countFindAll(input);
@@ -167,6 +167,14 @@ export class JobService {
       ]);
 
       const jobId = createdJob.id;
+
+      // Emit JOB_CREATED event (Observer Pattern)
+      // Observers will handle notifications asynchronously
+      appEventEmitter.emit(AppEvents.JOB_CREATED, {
+        jobId: createdJob.id,
+        companyId: jobPayload.company_id || 0,
+        title: jobPayload.title || "",
+      });
 
       return await this.findOne({ jobId });
     } catch (error) {
