@@ -21,7 +21,7 @@ export const updateApplicationStatusSchema = z.object({
   feedback: z.string().optional(),
   interview_time: z.string().optional(),
   interview_location: z.string().optional(),
-  offered_salary: z.number().optional(),
+  offered_salary: z.string().optional(),
 });
 
 export type CreateApplicationDTO = z.infer<typeof createApplicationSchema>;

@@ -89,7 +89,7 @@ export const ApplicationService = {
 
     const dbPayload = toDatabaseFormat(applicationPayload);
 
-    const result = await ApplicationRepository.updateStatus(id, dbPayload);
+    const resultUpdate = await ApplicationRepository.updateStatus(id, dbPayload);
 
     if (payload.status) {
       const statusDetailsData: any = {
@@ -121,6 +121,12 @@ export const ApplicationService = {
           throw error;
         }
       }
+    }
+
+    const result = await ApplicationRepository.findOne({ id });
+
+    if (!result) {
+      throw new NotFoundError({ message: "Application not found after update" });
     }
 
     return result;

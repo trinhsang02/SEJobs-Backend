@@ -1263,7 +1263,7 @@ export type Database = {
           status: string;
           interview_time?: Date;
           interview_location?: string;
-          offered_salary?: number;
+          offered_salary?: string;
           created_at: Date;
           updated_at?: Date;
         };
@@ -1273,7 +1273,7 @@ export type Database = {
           status: string;
           interview_time?: Date;
           interview_location?: string;
-          offered_salary?: number;
+          offered_salary?: string;
           created_at?: Date;
           updated_at?: Date;
         };
@@ -1283,7 +1283,7 @@ export type Database = {
           status?: string;
           interview_time?: Date;
           interview_location?: string;
-          offered_salary?: number;
+          offered_salary?: string;
           created_at?: Date;
           updated_at?: Date;
         };
