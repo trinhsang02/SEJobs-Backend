@@ -76,6 +76,7 @@ export type CompanyCompanyTypesUpdate = Database["public"]["Tables"]["company_co
 
 // JOB
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
+export type JobStatus = Database["public"]["Enums"]["jobstatus"];
 export type JobAfterJoined = Job & {
   company: Company;
   levels: Level[];
@@ -117,6 +118,7 @@ export interface JobQueryParams extends QueryParams {
   keyword?: string;
   sort_by?: SortableJobFields;
   order?: "asc" | "desc";
+  statuses?: JobStatus[];
 }
 
 // CATEGORY

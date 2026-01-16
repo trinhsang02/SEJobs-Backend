@@ -48,6 +48,11 @@ function parseJobQueryParams(query: any, includePagination = true) {
     .split(query.employment_type_ids as string, ",", Number)
     .filter((id) => !isNaN(id));
   const category_ids = convert.split(query.category_ids as string, ",", Number).filter((id) => !isNaN(id));
+  
+  // Parse statuses (support comma-separated string)
+  const statuses = query.statuses 
+    ? convert.split(query.statuses as string, ",", String).filter((s: string) => s.trim().length > 0)
+    : undefined;
 
   const queryParams: any = {
     province_ids,
@@ -57,6 +62,11 @@ function parseJobQueryParams(query: any, includePagination = true) {
     skill_ids,
     keyword,
   };
+  
+  // Add statuses if provided
+  if (statuses && statuses.length > 0) {
+    queryParams.statuses = statuses;
+  }
 
   // Add pagination if needed
   if (includePagination) {
@@ -207,6 +217,7 @@ export async function listMergedJobs(req: Request, res: Response) {
   const globalOffset = (page - 1) * page_size;
 
   const queryParams = parseJobQueryParams(req.query, false);
+  queryParams.statuses = ['Pending', 'Approved', 'Rejected'];
 
   const totalJobs = await jobService.getTotalJobs(queryParams);
   const totalTopCVJobs = await getTopCVTotal(queryParams);
