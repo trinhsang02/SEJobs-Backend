@@ -1,6 +1,6 @@
 drop function if exists public.search_job(
   text, integer, integer[], integer[], integer[], integer[],
-  integer[], numeric, numeric, text, text, integer, integer
+  integer[], numeric, numeric, text, text, integer, integer, public.jobstatus[]
 );
 
 create function public.search_job(
@@ -16,7 +16,8 @@ create function public.search_job(
   q_sort_by text default 'created_at',
   q_sort_dir text default 'desc',
   q_page integer default 1,
-  q_limit integer default 10
+  q_limit integer default 10,
+  q_statuses public.jobstatus[] default null
 )
 returns table (
   id bigint,
@@ -270,6 +271,10 @@ as $$
     and (
       q_salary_to is null
       or j.salary_from <= q_salary_to
+    )
+    and (
+      q_statuses is null
+      or j.status = any(q_statuses)
     )
   order by
     case when q_sort_by = 'id'            and q_sort_dir = 'asc'  then j.id end asc,

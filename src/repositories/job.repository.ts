@@ -27,6 +27,9 @@ export class JobRepository {
       q_employment_type_ids: convert.normalizeArray(input.employment_type_ids),
       q_salary_from: input.salary_from || null,
       q_salary_to: input.salary_to || null,
+      q_statuses: convert.normalizeArray(input.statuses),
+      q_page: 1,
+      q_limit: 1,
     });
     if (error) throw error;
 
@@ -54,6 +57,7 @@ export class JobRepository {
       q_sort_dir: _.get(input, "order", "desc"),
       q_page: page,
       q_limit: limit,
+      q_statuses: convert.normalizeArray(input.statuses),
     });
 
     if (error) throw error;
