@@ -1,9 +1,9 @@
 import { Database } from "@/types/database";
 
 export interface QueryParams {
-  page?: number;
-  limit?: number;
-  fields?: string;
+  page?: number | undefined;
+  limit?: number | undefined;
+  fields?: string | undefined;
 }
 
 // USER
@@ -43,14 +43,14 @@ export type CompanyInsert = Database["public"]["Tables"]["companies"]["Insert"];
 export type CompanyUpdate = Database["public"]["Tables"]["companies"]["Update"];
 
 export interface CompanyQueryAllParams extends QueryParams {
-  company_ids?: number[];
-  company_type_ids?: number[];
-  employee_count_from?: number;
-  employee_count_to?: number;
-  keyword?: string;
-  email?: string;
-  user_ids?: number[];
-  order?: "name:asc" | "name:desc" | "created_at:asc" | "created_at:desc";
+  company_ids?: number[] | undefined;
+  company_type_ids?: number[] | undefined;
+  employee_count_from?: number | undefined;
+  employee_count_to?: number | undefined;
+  keyword?: string | undefined;
+  email?: string | undefined;
+  user_ids?: number[] | undefined;
+  order?: "name:asc" | "name:desc" | "created_at:asc" | "created_at:desc" | undefined;
 }
 
 export interface CompanyQueryParams extends QueryParams {
@@ -350,18 +350,28 @@ export const LIST_EMPLOYER_ALLOWED_UPDATE_STATUS: Record<ApplicationStatus, read
     ApplicationStatus.InterviewScheduled,
     ApplicationStatus.Offered,
     ApplicationStatus.Hired,
-    ApplicationStatus.Rejected
+    ApplicationStatus.Rejected,
   ],
   [ApplicationStatus.Viewed]: [
     ApplicationStatus.Shortlisted,
     ApplicationStatus.InterviewScheduled,
     ApplicationStatus.Offered,
     ApplicationStatus.Hired,
-    ApplicationStatus.Rejected
+    ApplicationStatus.Rejected,
   ],
-  [ApplicationStatus.Shortlisted]: [ApplicationStatus.InterviewScheduled, ApplicationStatus.Offered, ApplicationStatus.Hired, ApplicationStatus.Rejected],
+  [ApplicationStatus.Shortlisted]: [
+    ApplicationStatus.InterviewScheduled,
+    ApplicationStatus.Offered,
+    ApplicationStatus.Hired,
+    ApplicationStatus.Rejected,
+  ],
   [ApplicationStatus.Offered]: [ApplicationStatus.Hired, ApplicationStatus.Rejected],
-  [ApplicationStatus.InterviewScheduled]: [ApplicationStatus.Hired, ApplicationStatus.Rejected, ApplicationStatus.Shortlisted, ApplicationStatus.Offered],
+  [ApplicationStatus.InterviewScheduled]: [
+    ApplicationStatus.Hired,
+    ApplicationStatus.Rejected,
+    ApplicationStatus.Shortlisted,
+    ApplicationStatus.Offered,
+  ],
   [ApplicationStatus.Hired]: [],
   [ApplicationStatus.Rejected]: [],
 };
@@ -372,6 +382,8 @@ export interface ApplicationQueryAllParams extends QueryParams {
   user_id?: number | null;
   company_id?: number | null;
   job_id?: number | null;
+  sort_by?: "created_at" | "updated_at";
+  order?: "asc" | "desc";
 }
 
 export interface ApplicationQueryParams extends QueryParams {
