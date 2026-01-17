@@ -28,6 +28,7 @@ import certificationRoutes from "./routes/certifications.route";
 import applicationRoutes from "./routes/applications.route";
 import recommendationRoutes from "./routes/recommendations.route";
 import studentRoutes from "./routes/student.route";
+import adminRoutes from "./routes/admin.route";
 import { requestLogger, errorHandler } from "@/middlewares";
 import { specs, swaggerUi } from "./config/swagger";
 import logger from "./utils/logger";
@@ -50,7 +51,7 @@ export const createApp = () => {
       },
       credentials: true,
       exposedHeaders: ["Authorization"],
-    })
+    }),
   );
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true }));
@@ -88,6 +89,7 @@ export const createApp = () => {
   app.use("/api/applications", applicationRoutes);
   app.use("/api/recommendations", recommendationRoutes);
   app.use("/api/students", studentRoutes);
+  app.use("/api/admin", adminRoutes);
 
   // app.use("/api/experiences", experiencesRoutes);
   // Error handler
