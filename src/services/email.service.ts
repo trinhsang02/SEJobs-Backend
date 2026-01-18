@@ -1,27 +1,43 @@
 import nodemailer from "nodemailer";
 
 // Cấu hình từ .env
-const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
-const SMTP_PORT = parseInt(process.env.SMTP_PORT || "587", 10);
-const SMTP_USER = process.env.SMTP_USER;
-const SMTP_PASS = process.env.SMTP_PASS;
+// const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
+// const SMTP_PORT = parseInt(process.env.SMTP_PORT || "587", 10);
+// const SMTP_USER = process.env.SMTP_USER;
+// const SMTP_PASS = process.env.SMTP_PASS;
 
-if (!SMTP_USER || !SMTP_PASS) {
-  console.warn("SMTP config missing — email will be logged to console instead");
+// if (!SMTP_USER || !SMTP_PASS) {
+//   console.warn("SMTP config missing — email will be logged to console instead");
+// }
+
+// const transporter =
+//   SMTP_USER && SMTP_PASS
+//     ? nodemailer.createTransport({
+//         host: SMTP_HOST,
+//         port: SMTP_PORT,
+//         secure: false, // true cho port 465, false cho 587
+//         auth: {
+//           user: SMTP_USER,
+//           pass: SMTP_PASS,
+//         },
+//       })
+//     : null;
+
+function getTransporter() {
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!user || !pass) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT || "587", 10),
+    secure: false,
+    auth: { user, pass },
+  });
 }
-
-const transporter =
-  SMTP_USER && SMTP_PASS
-    ? nodemailer.createTransport({
-        host: SMTP_HOST,
-        port: SMTP_PORT,
-        secure: false, // true cho port 465, false cho 587
-        auth: {
-          user: SMTP_USER,
-          pass: SMTP_PASS,
-        },
-      })
-    : null;
 
 // Email Templates
 class EmailTemplates {
@@ -63,9 +79,9 @@ class EmailTemplates {
     const frontendUrl = process.env.FRONTEND_URL || "https://sejobs.vercel.app";
     const jobUrl = `${frontendUrl}/job?id=${params.jobId}`;
     const locationText = params.location || "Hồ Chí Minh";
-    
+
     // Logo: dùng URL nếu có, không thì dùng chữ cái đầu
-    const logoHtml = params.companyLogo 
+    const logoHtml = params.companyLogo
       ? `<img src="${params.companyLogo}" alt="${params.company}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;" />`
       : `
         <div style="
@@ -82,7 +98,7 @@ class EmailTemplates {
           </span>
         </div>
       `;
-    
+
     const content = `
       <h2 style="color: #1976d2; margin-bottom: 10px;">Cơ hội việc làm mới cho bạn!</h2>
       <p style="color: #666;">Xin chào <strong>${params.firstName}</strong>,</p>
@@ -203,10 +219,13 @@ export class EmailService {
   }): Promise<void> {
     const { to, subject, html, logPrefix } = options;
 
+    const transporter = getTransporter();
+    const fromEmail = process.env.SMTP_USER || "no-reply@sejobs.edu.vn";
+
     if (transporter) {
       try {
         await transporter.sendMail({
-          from: `"SEJobs" <${SMTP_USER}>`,
+          from: `"SEJobs" <${fromEmail}>`,
           to,
           subject,
           html,
@@ -217,6 +236,9 @@ export class EmailService {
         throw new Error(`Failed to send ${logPrefix}`);
       }
     } else {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("SMTP config missing — email will be logged to console instead");
+      }
       console.log(`[EMAIL GIẢ LẬP] ${logPrefix} → ${to}`);
     }
   }
@@ -252,17 +274,18 @@ export class EmailService {
     };
   }): Promise<void> {
     const { email, firstName, job } = input;
-    
+
     const salaryFrom = job.salary_from && job.salary_from > 0 ? job.salary_from : null;
     const salaryTo = job.salary_to && job.salary_to > 0 ? job.salary_to : null;
-    
+
     let salaryText = "Thỏa thuận";
-    
+
     const invalidSalaryPatterns = ["0 - 0", "0-0", "0 vnd", "0 - 0 vnd"];
-    const hasSalaryText = job.salary_text && 
-      job.salary_text.trim() !== "" && 
-      !invalidSalaryPatterns.some(pattern => job.salary_text?.toLowerCase().includes(pattern));
-    
+    const hasSalaryText =
+      job.salary_text &&
+      job.salary_text.trim() !== "" &&
+      !invalidSalaryPatterns.some((pattern) => job.salary_text?.toLowerCase().includes(pattern));
+
     if (hasSalaryText) {
       salaryText = job.salary_text!;
     } else if (salaryFrom && salaryTo) {
