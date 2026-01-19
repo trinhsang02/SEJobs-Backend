@@ -148,7 +148,6 @@ export class AdminService {
       const { data: recentApplications } = await applicationRepository.findAll({
         page: 1,
         limit: 10,
-        fields: "id, submitted_at, user_id, job_id, company_id",
         sort_by: "submitted_at" as any,
         order: "desc" as any,
       });
@@ -174,7 +173,7 @@ export class AdminService {
 
       const companyIds = [
         ...new Set([
-          ...recentApplications.map((app) => app.company_id).filter((id) => id),
+          ...recentApplications.map((app: any) => app.job?.company_id).filter((id) => id),
           ...recentJobs.map((job) => job.company_id).filter((id) => id),
         ]),
       ].map((id) => Number(id));
@@ -227,48 +226,17 @@ export class AdminService {
 
       const usersMap = _.keyBy(users, "user_id");
 
-      const jobIds = recentApplications
-        .map((app) => app.job_id)
-        .filter((id) => id)
-        .map((id) => Number(id));
-
-      let jobs: JobInfo[] = [];
-      if (jobIds.length > 0) {
-        const jobResults = await Promise.all(
-          jobIds.map(async (jobId) => {
-            try {
-              const result = await jobRepository.findOne(jobId);
-              return result?.job || null;
-            } catch (error) {
-              console.error(`Error fetching job ${jobId}:`, error);
-              return null;
-            }
-          }),
-        );
-
-        jobs = jobResults
-          .filter((job) => job !== null)
-          .map((job) => ({
-            id: (job as any).id,
-            title: (job as any).title,
-            created_at: (job as any).created_at,
-            company_id: (job as any).company_id,
-          }));
-      }
-
-      const jobsMap = _.keyBy(jobs, "id");
-
       const activities = [
-        ...recentApplications.slice(0, 5).map((app) => {
+        ...recentApplications.slice(0, 5).map((app: any) => {
           const user = usersMap[app.user_id] || { first_name: "Unknown", last_name: "User" };
-          const job = jobsMap[app.job_id] || { title: "Unknown Job" };
-          const company = app.company_id
-            ? companiesMap[app.company_id] || { name: "Unknown Company" }
-            : { name: "Unknown Company" };
+          const job = app.job || { title: "Unknown Job", company_id: null };
+          const company = job.company_id
+            ? companiesMap[job.company_id] || app.company || { name: "Unknown Company" }
+            : app.company || { name: "Unknown Company" };
 
           return {
             user: `${user.first_name} ${user.last_name}`,
-            action: `applied to "${job.title}" position`,
+            action: `applied to "${job.title}"`,
             company: company.name,
             time: this.formatTimeAgo(app.submitted_at),
           };
@@ -317,25 +285,22 @@ export class AdminService {
 
       const { data: jobs } = await jobRepository.findAll({
         fields: "id, company_id, status",
-        statuses: ["Approved"] as JobStatus[],
       });
 
       const { data: applications } = await applicationRepository.findAll({
-        fields: "id, job_id",
+        page: 1,
+        limit: 100,
       });
 
       const jobsByCompany = _.groupBy(jobs, "company_id");
-      const applicationsByJob = _.groupBy(applications, "job_id");
+      const applicationsByCompany = _.groupBy(applications, (app: any) => Number(app.company?.id));
 
       const companyStats = (companies as CompanyInfo[]).map((company) => {
         const companyJobs = jobsByCompany[company.id] || [];
         const jobCount = companyJobs.length;
 
-        let applicationCount = 0;
-        companyJobs.forEach((job) => {
-          const jobApps = applicationsByJob[job.id] || [];
-          applicationCount += jobApps.length;
-        });
+        const companyApplications = applicationsByCompany[company.id] || [];
+        const applicationCount = companyApplications.length;
 
         return {
           id: company.id,

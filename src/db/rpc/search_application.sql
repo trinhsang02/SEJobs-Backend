@@ -166,11 +166,14 @@ as $$
     and (q_company_id is null or a.company_id = q_company_id)
     and (q_job_id     is null or a.job_id = q_job_id)
   order by
-    case when q_sort_by = 'id'            and q_sort_dir = 'asc'  then j.id end asc,
-    case when q_sort_by = 'id'            and q_sort_dir = 'desc' then j.id end desc,
+    case when q_sort_by = 'id'            and q_sort_dir = 'asc'  then a.id end asc,
+    case when q_sort_by = 'id'            and q_sort_dir = 'desc' then a.id end desc,
 
-    case when q_sort_by = 'created_at'    and q_sort_dir = 'asc'  then j.created_at end asc,
-    case when q_sort_by = 'created_at'    and q_sort_dir = 'desc' then j.created_at end desc,
+    case when q_sort_by = 'submitted_at'  and q_sort_dir = 'asc'  then a.submitted_at end asc,
+    case when q_sort_by = 'submitted_at'  and q_sort_dir = 'desc' then a.submitted_at end desc,
+
+    case when q_sort_by = 'created_at'    and q_sort_dir = 'asc'  then a.created_at end asc,
+    case when q_sort_by = 'created_at'    and q_sort_dir = 'desc' then a.created_at end desc,
 
     a.id desc
   limit q_limit
