@@ -8,7 +8,8 @@
     },
     "rootDir": "./src",
     "outDir": "./dist",
-
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
     "module": "commonjs",
