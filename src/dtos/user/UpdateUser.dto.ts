@@ -8,6 +8,7 @@ export const updateUserSchema = z
     last_name: z.string().min(1, "Last name is required").optional(),
     email: z.string().email("Invalid email address").optional(),
     role: z.enum(["Student", "Employer", "Manager", "Admin"]).optional(),
+    is_active: z.boolean().optional(),
     updated_at: z.string().optional(),
     student_info: studentProfileSchema.optional(),
   })
