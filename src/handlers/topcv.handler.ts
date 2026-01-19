@@ -169,7 +169,7 @@ export async function getTopCVwithOffset(
         page,
         per_page: TOPCV_PER_PAGE,
       });
-      const data = res.data?.data || [];
+      const data = res.data?.data?.data || [];
 
       if (!data.length) break;
 
