@@ -160,6 +160,8 @@ export async function createJob(req: Request, res: Response) {
     
     if (company?.is_verified === true) {
       jobData.status = "Approved";
+    } else {
+      jobData.status = "Pending";
     }
   }
 
