@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+// import nodemailer from "nodemailer";
 
 // Cấu hình từ .env
 // const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
