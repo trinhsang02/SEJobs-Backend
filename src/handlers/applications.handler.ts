@@ -4,9 +4,10 @@ import { createApplicationSchema, updateApplicationStatusSchema } from "@/dtos/u
 import { ApplicationService } from "@/services/applications.service";
 import { UnauthorizedError, NotFoundError, BadRequestError } from "@/utils/errors";
 import convert from "@/utils/convert";
-import { ApplicationStatus, LIST_EMPLOYER_ALLOWED_UPDATE_STATUS, LIST_STUDENT_ALLOWED_UPDATE_STATUS } from "@/types/common";
+import { ApplicationStatus, LIST_EMPLOYER_ALLOWED_UPDATE_STATUS, LIST_STUDENT_ALLOWED_UPDATE_STATUS, Job } from "@/types/common";
 import _ from "lodash";
 import companyService from "@/services/company.service";
+import jobRepository from "@/repositories/job.repository";
 
 export async function listApplications(req: Request, res: Response) {
   if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
@@ -72,6 +73,23 @@ export async function createApplication(req: Request, res: Response) {
   res.status(201).json({ success: true, data: created });
 }
 
+// --- Admin Routes ---
+
+export async function adminListApplications(req: Request, res: Response) {
+  if (!req.user) throw new UnauthorizedError({ message: "Authentication required" });
+
+  const { data, pagination} = await ApplicationService.findAll({ 
+    company_id: _.toNumber(req.query.company_id) || null,
+    job_id: _.toNumber(req.query.job_id) || null,
+    user_id: _.toNumber(req.query.user_id) || null,
+    statuses: convert.split(req.query.statuses as string, ',', String) as ApplicationStatus[],
+    page: _.toNumber(req.query.page) || 1,
+    limit: _.toNumber(req.query.limit) || 10,
+  });
+
+  res.status(200).json({ success: true, data, pagination });
+}
+
 // --- Company Routes ---
 
 export async function companyListApplications(req: Request, res: Response) {
@@ -80,6 +98,13 @@ export async function companyListApplications(req: Request, res: Response) {
   const company = await companyService.findOne({
     user_id: req.user.userId,
   });
+
+  if (req.query.job_id) {
+    const { job } = await jobRepository.findOne(_.toNumber(req.query.job_id) || 0);
+    if (job && job?.company_id !== company.id) {
+      throw new UnauthorizedError({ message: "Authentication required" });
+    }
+  }
 
   const { data, pagination} = await ApplicationService.findAll({ 
     company_id: company.id,

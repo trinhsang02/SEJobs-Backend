@@ -7,12 +7,14 @@ import {
   updateApplication,
   companyUpdateApplication,
   companyGetApplication,
+  adminListApplications,
 } from "@/handlers/applications.handler";
 import { authenticate } from "@/middlewares/auth.middleware";
 import { authorizeRoles } from "@/middlewares/authorizeRoles";
 
 const router = Router();
 
+router.get("/admin/list", authenticate, authorizeRoles("Admin"), adminListApplications);
 router.get("/company/list", authenticate, authorizeRoles("Employer"), companyListApplications);
 router.get("/company/:id", authenticate, authorizeRoles("Employer"), companyGetApplication);
 router.put("/company/:id", authenticate, authorizeRoles("Employer"), companyUpdateApplication);

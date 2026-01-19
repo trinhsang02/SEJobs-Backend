@@ -19,6 +19,10 @@ async function fetchTopCVJobs(queryParams: {
   exp_id?: string;
 }) {
   const token = await getTopCVAccessToken();
+  if (!token) {
+    throw new Error("TopCV authentication unavailable");
+  }
+
   const page = queryParams.page || 1;
   const per_page = queryParams.per_page || 15;
   const { keyword, city_id, province_ids, category_ids, level_ids, exp_id } = queryParams;
@@ -138,14 +142,19 @@ export async function getTopCVTotal(params: {
   }
 }
 
-export async function getTopCVwithOffset(offset: number, limit: number, page_size: number, queryParams: {
-  keyword?: string;
-  city_id?: string;
-  province_ids?: string;
-  category_id?: string;
-  level_ids?: string;
-  exp_id?: string;
-}) {
+export async function getTopCVwithOffset(
+  offset: number,
+  limit: number,
+  page_size: number,
+  queryParams: {
+    keyword?: string;
+    city_id?: string;
+    province_ids?: string;
+    category_id?: string;
+    level_ids?: string;
+    exp_id?: string;
+  },
+) {
   const TOPCV_PER_PAGE = page_size * 2;
   const result = [];
   let remaining = limit;
@@ -154,21 +163,26 @@ export async function getTopCVwithOffset(offset: number, limit: number, page_siz
   let index = offset % TOPCV_PER_PAGE;
 
   while (remaining > 0) {
-    const res = await fetchTopCVJobs({
-      ...queryParams,
-      page,
-      per_page: TOPCV_PER_PAGE,
-    }).then((response) => response.data?.data || { data: [] });
-    const data = res.data || [];
+    try {
+      const res = await fetchTopCVJobs({
+        ...queryParams,
+        page,
+        per_page: TOPCV_PER_PAGE,
+      });
+      const data = res.data?.data || [];
 
-    if (!data.length) break;
+      if (!data.length) break;
 
-    const slice = data.slice(index, index + remaining);
-    result.push(...slice);
+      const slice = data.slice(index, index + remaining);
+      result.push(...slice);
 
-    remaining -= slice.length;
-    page++;
-    index = 0;
+      remaining -= slice.length;
+      page++;
+      index = 0;
+    } catch (error) {
+      console.error("Error in getTopCVwithOffset:", error);
+      break;
+    }
   }
 
   return result;
@@ -209,13 +223,12 @@ export async function listTopCVJobs(req: Request, res: Response) {
         message: "TopCV API timeout",
       });
     }
-    if (error.response) {
-      console.error("TopCV API error:", {
-        status: error.response.status,
-        data: error.response.data,
-        url: error.config?.url,
-      });
-    }
+    console.error("TopCV API error in listTopCVJobs:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url,
+    });
     res.status(502).json({
       success: false,
       message: "Network error or TopCV unavailable",
@@ -227,6 +240,12 @@ export async function getTopCVJobDetail(req: Request, res: Response) {
   const { id } = req.params;
   try {
     const token = await getTopCVAccessToken();
+    if (!token) {
+      return res.status(502).json({
+        success: false,
+        message: "TopCV authentication unavailable",
+      });
+    }
     const response = await axios.get(`${process.env.TOPCV_JOBS_URL}/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -251,13 +270,12 @@ export async function getTopCVJobDetail(req: Request, res: Response) {
         message: "TopCV API timeout",
       });
     }
-    if (error.response) {
-      console.error("TopCV API error:", {
-        status: error.response.status,
-        data: error.response.data,
-        url: error.config?.url,
-      });
-    }
+    console.error("TopCV API error in getTopCVJobDetail:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url,
+    });
     res.status(502).json({
       success: false,
       message: "Network error or TopCV unavailable",
@@ -290,6 +308,12 @@ export async function getTopCVJobRecommend(req: Request, res: Response) {
 
   try {
     const token = await getTopCVAccessToken();
+    if (!token) {
+      return res.status(502).json({
+        success: false,
+        message: "TopCV authentication unavailable",
+      });
+    }
     const response = await axios.get(`${process.env.TOPCV_JOBS_URL}/recommend`, {
       params,
       headers: {
@@ -320,13 +344,12 @@ export async function getTopCVJobRecommend(req: Request, res: Response) {
         message: "TopCV API timeout",
       });
     }
-    if (error.response) {
-      console.error("TopCV API error:", {
-        status: error.response.status,
-        data: error.response.data,
-        url: error.config?.url,
-      });
-    }
+    console.error("TopCV API error in getTopCVJobRecommend:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url,
+    });
     res.status(502).json({
       success: false,
       message: "Network error or TopCV unavailable",

@@ -4,9 +4,11 @@ import companyTypeRepository from "@/repositories/company_types.repository";
 import { CreateCompanyDto } from "@/dtos/company/CreateCompany.dto";
 import { BadRequestError, NotFoundError } from "@/utils/errors";
 import { UpdateCompanyDto } from "@/dtos/company/UpdateCompany.dto";
+import { UpdateCompanyAdminDto } from "@/dtos/company/UpdateCompanyAdmin.dto";
 import CompanyTypeService from "@/services/company_type.service";
 import { CompanyQueryAllParams, CompanyQueryParams } from "@/types/common";
 import companyBranchesRepository from "@/repositories/company_branches.repository";
+import userRepository from "@/repositories/user.repository";
 
 export class CompanyService {
   async findAll(input: CompanyQueryAllParams) {
@@ -147,6 +149,70 @@ export class CompanyService {
     }
 
     return deletedCompany;
+  }
+
+  async updateCompanyAdmin(input: { companyId: number; companyData: UpdateCompanyAdminDto }) {
+    const { companyId, companyData } = input;
+
+    const existingCompany = await this.findOne({ company_id: companyId });
+
+    if (!existingCompany) {
+      throw new NotFoundError({ message: `Company with ID ${companyId} not found` });
+    }
+
+    const companyTypeIds = _.get(companyData, "company_types");
+    const userIsActive = _.get(companyData, "user_is_active");
+
+    // Validate company_types if provided
+    if (companyTypeIds && companyTypeIds.length > 0) {
+      const { data: companyTypes } = await CompanyTypeService.findAll({ company_type_ids: companyTypeIds });
+
+      if (companyTypes.length !== companyTypeIds.length) {
+        throw new BadRequestError({ message: "One or more company types not found." });
+      }
+    }
+
+    const updateData = _.pickBy(
+      {
+        ..._.omit(companyData, ['company_types', 'user_is_active']),
+        updated_at: companyData.updated_at || new Date().toISOString(),
+      },
+      (value) => value != null && value !== ""
+    );
+
+    const updatedCompany = await companyRepository.update({
+      companyId,
+      companyData: updateData,
+    });
+
+    // Update company_types if provided
+    if (companyTypeIds !== undefined) {
+      // Delete existing company_types
+      await companyTypeRepository.deleteByCompanyId(companyId);
+
+      // Create new company_types if array is not empty
+      if (companyTypeIds.length > 0) {
+        await companyTypeRepository.bulkCreateCompanyCompanyTypes({
+          companyCompanyTypesData: companyTypeIds.map((company_type_id) => ({
+            company_id: companyId,
+            company_type_id: company_type_id,
+          })),
+        });
+      }
+    }
+
+    // Update user's is_active status if provided
+    if (userIsActive !== undefined && existingCompany.user_id) {
+      await userRepository.update({
+        userId: existingCompany.user_id,
+        userData: {
+          is_active: userIsActive,
+          updated_at: new Date().toISOString(),
+        },
+      });
+    }
+
+    return updatedCompany;
   }
 }
 

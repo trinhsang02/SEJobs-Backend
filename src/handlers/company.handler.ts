@@ -5,6 +5,7 @@ import { createCompanySchema } from "@/dtos/company/CreateCompany.dto";
 import CompanyService from "@/services/company.service";
 import { BadRequestError, NotFoundError } from "@/utils/errors";
 import { updateCompanySchema } from "@/dtos/company/UpdateCompany.dto";
+import { updateCompanyAdminSchema } from "@/dtos/company/UpdateCompanyAdmin.dto";
 import convert from "@/utils/convert";
 
 export async function getCompanies(req: Request, res: Response) {
@@ -87,5 +88,21 @@ export async function deleteCompany(request: Request, response: Response) {
 
   response.status(200).json({
     success: true,
+  });
+}
+
+export async function updateCompanyAdmin(request: Request, response: Response) {
+  const id = request.params.id;
+  if (!id) {
+    throw new BadRequestError({ message: 'Missing required param: id'});
+  }
+
+  const companyData = validate.schema_validate(updateCompanyAdminSchema, request.body);
+
+  const updatedCompany = await CompanyService.updateCompanyAdmin({ companyId: _.toNumber(id), companyData: companyData });
+
+  response.status(200).json({
+    success: true,
+    data: updatedCompany,
   });
 }

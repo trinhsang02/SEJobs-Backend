@@ -153,6 +153,16 @@ export async function getJob(req: Request, res: Response) {
 export async function createJob(req: Request, res: Response) {
   const jobData = validate.schema_validate(createJobSchema, req.body);
 
+  // Check if user is Employer with verified company
+  if (req.user?.role === "Employer" && req.user?.userId) {
+    const companyRepository = (await import("@/repositories/company.repository")).default;
+    const company = await companyRepository.findOne({ user_id: req.user.userId });
+    
+    if (company?.is_verified === true) {
+      jobData.status = "Approved";
+    }
+  }
+
   const created_job = await jobService.create({ jobData });
 
   res.status(201).json({
@@ -169,6 +179,10 @@ export async function updateJob(req: Request, res: Response) {
   }
 
   const jobData = validate.schema_validate(updateJobSchema, req.body);
+
+  if (jobData.status && req.user?.role !== "Admin" && req.user?.role !== "Manager") {
+    throw new BadRequestError({ message: "Only Admin or Manager can update job status" });
+  }
 
   const updated_job = await jobService.update({ jobId: id, jobData });
 

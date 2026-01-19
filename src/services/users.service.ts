@@ -262,6 +262,53 @@ export class UserService {
       },
     });
 
+    // Auto-create company profile for Employer (empty)
+    if (newUser.role === "Employer") {
+      await companyService.createCompany({
+        companyData: {
+          name: "",
+          user_id: newUser.user_id,
+          email: newUser.email,
+          logo: null,
+          background: null,
+          description: null,
+          phone: "",
+          website_url: null,
+          images: null,
+          tech_stack: null,
+          employee_count: null,
+          company_types: [],
+          external_id: null,
+          company_branches: [],
+        },
+      });
+    }
+
+    // Auto-create student profile for Student (empty)
+    if (newUser.role === "Student") {
+      await studentRepository.create({
+        studentData: {
+          user_id: newUser.user_id,
+          about: null,
+          location: null,
+          open_for_opportunities: null,
+          skills: null,
+        },
+      });
+    }
+
+    await NotificationsService.create({
+      data: {
+        title: "Your account has been created!",
+        content:
+          "Your account has been created by an administrator. Please complete your profile to get started.",
+        type: NotificationType.UserCreated,
+        status: "sent",
+        receiver_id: newUser.user_id,
+        sender_id: 1,
+      },
+    });
+
     return newUser;
   }
 
