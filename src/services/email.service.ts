@@ -23,7 +23,7 @@ import nodemailer from "nodemailer";
 //       })
 //     : null;
 
-function getTransporter() {
+async function getTransporter() {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
 
@@ -31,12 +31,20 @@ function getTransporter() {
     return null;
   }
 
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: parseInt(process.env.SMTP_PORT || "587", 10),
-    secure: false,
-    auth: { user, pass },
-  });
+  try {
+    // Dynamic import - chỉ load khi cần
+    const nodemailer = await import("nodemailer");
+
+    return nodemailer.default.createTransport({
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: parseInt(process.env.SMTP_PORT || "587", 10),
+      secure: false,
+      auth: { user, pass },
+    });
+  } catch (error) {
+    console.warn("⚠️ nodemailer not installed - emails will be mocked");
+    return null;
+  }
 }
 
 // Email Templates
@@ -219,27 +227,33 @@ export class EmailService {
   }): Promise<void> {
     const { to, subject, html, logPrefix } = options;
 
-    const transporter = getTransporter();
-    const fromEmail = process.env.SMTP_USER || "no-reply@sejobs.edu.vn";
+    try {
+      const transporter = await getTransporter();
+      const fromEmail = process.env.SMTP_USER || "no-reply@sejobs.edu.vn";
 
-    if (transporter) {
-      try {
-        await transporter.sendMail({
-          from: `"SEJobs" <${fromEmail}>`,
-          to,
-          subject,
-          html,
-        });
-        console.log(`${logPrefix} thành công: ${to}`);
-      } catch (error) {
-        console.error(`Lỗi ${logPrefix}:`, error);
-        throw new Error(`Failed to send ${logPrefix}`);
+      if (transporter) {
+        try {
+          await transporter.sendMail({
+            from: `"SEJobs" <${fromEmail}>`,
+            to,
+            subject,
+            html,
+          });
+          console.log(`✅ ${logPrefix} thành công: ${to}`);
+        } catch (error) {
+          console.error(`❌ Lỗi ${logPrefix}:`, error);
+
+          console.warn(`⚠️ Email failed but app continues`);
+        }
+      } else {
+        console.log(`📧 [EMAIL MOCK] ${logPrefix} → ${to}`);
+        console.log(`📧 Subject: ${subject}`);
+        if (process.env.NODE_ENV === "development") {
+          console.log(`📧 HTML preview: ${html.substring(0, 200)}...`);
+        }
       }
-    } else {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("SMTP config missing — email will be logged to console instead");
-      }
-      console.log(`[EMAIL GIẢ LẬP] ${logPrefix} → ${to}`);
+    } catch (error) {
+      console.error(`❌ Email service error:`, error);
     }
   }
 
